@@ -1,37 +1,46 @@
-# System Files
-.DS_Store
-Thumbs.db
-.Spotlight-V100
-.Trashes
-
-# Node.js
+# --- Dependencies & System ---
 node_modules/
-dist/
-build/
-.next/
-.npm
-.eslintcache
-*.log
-
-# Python
+venv/
+.venv/
+env/
 __pycache__/
 *.py[cod]
 *$py.class
-.venv/
-venv/
-ENV/
-env/
-.pytest_cache/
-.coverage
-htmlcov/
+.DS_Store
+Thumbs.db
 
-# Environment Variables
+# --- Next.js / Frontend ---
+/front/.next/
+/front/out/
+/front/build/
+/front/.vercel
+/front/*.log
+
+# --- FastAPI / Backend ---
+/back/*.log
+/back/.pytest_cache/
+/back/.coverage
+/back/htmlcov/
+
+# --- Security & Environment (CRITICAL) ---
 .env
-.env*.local
-.env.development.local
-.env.test.local
-.env.production.local
-/back/.env
+.env.*
+!.env.example
+*.pem
+*.key
 
-# Cursor files
-.cursorrules
+# --- IDE & Tools ---
+.vscode/
+.idea/
+*.swp
+
+# --- Logs & Temporary ---
+*.log
+.cursor/debug.log
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+
+# --- Exceptions (Do NOT ignore) ---
+!.cursor/rules/
+!.cursorrules

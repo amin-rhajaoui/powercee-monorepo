@@ -10,10 +10,9 @@ app = FastAPI(
 )
 
 # Configuration CORS
-# On n'autorise que le frontend défini dans les settings et le local de développement
+# SECURITY: Explicit origins only
 origins = [
     settings.FRONTEND_URL,
-    "http://localhost:3000",
 ]
 
 app.add_middleware(

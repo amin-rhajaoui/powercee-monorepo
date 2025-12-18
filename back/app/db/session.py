@@ -8,6 +8,7 @@ engine = create_engine(
     settings.DATABASE_URL,
     # Ces options peuvent être ajustées selon les besoins de performance
     pool_pre_ping=True,
+    connect_args={"sslmode": "require"},
 )
 
 # Création d'une classe de session locale
