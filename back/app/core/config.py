@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     # Sécurité et Authentification
     # L'absence de valeur par défaut rend ces champs obligatoires au démarrage
     SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     STRIPE_SECRET_KEY: str
     
     # URLs externes

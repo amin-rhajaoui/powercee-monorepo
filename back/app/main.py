@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.api.routers import auth, users
 
 app = FastAPI(
     title="PowerCEE API",
@@ -22,6 +23,10 @@ app.add_middleware(
     allow_methods=["*"],  # Autorise toutes les méthodes (GET, POST, etc.)
     allow_headers=["*"],  # Autorise tous les headers
 )
+
+# Enregistrement des routers
+app.include_router(auth.router)
+app.include_router(users.router)
 
 
 @app.get("/health", tags=["Health"])
