@@ -18,5 +18,5 @@
 
 ## Infrastructure
 - **Front Host**: Vercel.
-- **Back Host**: Render.
+- **Back Host**: Railway.
 - **DB**: Neon (Serverless Postgres).
