@@ -139,7 +139,7 @@ async def login(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,  # Devrait être True en prod (HTTPS)
+        secure=False,  # Devrait être True en prod (HTTPS)
         samesite="lax",
         max_age=1800  # 30 minutes
     )

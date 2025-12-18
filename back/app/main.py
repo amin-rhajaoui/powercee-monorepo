@@ -14,6 +14,9 @@ app = FastAPI(
 # SECURITY: Explicit origins only
 origins = [
     settings.FRONTEND_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://192.168.1.10:3000",
 ]
 
 app.add_middleware(

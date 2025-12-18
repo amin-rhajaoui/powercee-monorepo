@@ -1,7 +1,16 @@
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <h1 className="text-4xl font-bold">PowerCEE - Loading...</h1>
-    </div>
-  );
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+export default async function Home() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+
+  // Redirection automatique selon l'état d'authentification
+  if (token) {
+    redirect("/app");
+  } else {
+    redirect("/login");
+  }
+
+  return null;
 }
