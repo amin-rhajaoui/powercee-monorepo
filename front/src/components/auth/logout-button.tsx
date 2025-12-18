@@ -6,8 +6,15 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-export function LogoutButton() {
+interface LogoutButtonProps {
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  className?: string;
+  showIcon?: boolean;
+}
+
+export function LogoutButton({ variant = "outline", className, showIcon = true }: LogoutButtonProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,13 +35,13 @@ export function LogoutButton() {
 
   return (
     <Button 
-      variant="outline" 
+      variant={variant} 
       onClick={handleLogout} 
       disabled={isLoading}
       size="sm"
-      className="flex items-center gap-2"
+      className={cn("flex items-center gap-2", className)}
     >
-      <LogOut className="h-4 w-4" />
+      {showIcon && <LogOut className="h-4 w-4" />}
       {isLoading ? "Déconnexion..." : "Se déconnecter"}
     </Button>
   );

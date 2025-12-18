@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "powercee-bucket.s3.*.amazonaws.com",
+      },
     ],
   },
   async rewrites() {

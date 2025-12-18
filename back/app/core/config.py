@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     # URLs externes
     FRONTEND_URL: str
 
+    # AWS S3 Configuration
+    AWS_ACCESS_KEY_ID: str | None = None
+    AWS_SECRET_ACCESS_KEY: str | None = None
+    AWS_BUCKET_NAME: str | None = None
+    AWS_REGION: str = "eu-west-3"
+
     # Configuration de Pydantic Settings
     model_config = SettingsConfigDict(
         env_file=".env",

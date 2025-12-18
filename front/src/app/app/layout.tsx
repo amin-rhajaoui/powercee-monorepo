@@ -1,47 +1,30 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { AppHeader } from "@/components/layout/app-header";
+import { ThemeProvider } from "next-themes";
 
-export default async function AppLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
-
-  if (!token) {
-    redirect("/login");
-  }
-
-  try {
-    // Appel manuel vers le backend pour vérifier le token
-    // On transfère le cookie access_token manuellement
-    const response = await fetch(`${API_URL}/users/me`, {
-      method: "GET",
-      headers: {
-        "Cookie": `access_token=${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      // Si l'API renvoie une erreur (401, etc.), on redirige
-      redirect("/login");
-    }
-
-    // Si tout va bien, on affiche le contenu protégé
-    return (
-      <div className="min-h-screen bg-background">
-        {/* On pourra ajouter une Sidebar ou un Header ici plus tard */}
-        <main>{children}</main>
-      </div>
-    );
-  } catch (error) {
-    // En cas d'erreur réseau ou autre, par sécurité on redirige
-    console.error("Auth Guard Error:", error);
-    redirect("/login");
-  }
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <SidebarProvider>
+        <div className="flex h-screen w-full overflow-hidden bg-muted/20">
+          <AppSidebar />
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <AppHeader />
+            <main className="flex-1 overflow-y-auto p-6 md:p-8">
+              <div className="max-w-7xl mx-auto w-full">
+                {children}
+              </div>
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
+    </ThemeProvider>
+  );
 }
-

@@ -36,7 +36,7 @@ export default function AuthLayout({
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
           {/* Logo avec bords arrondis et ombre */}
           <div className="mx-auto mb-8">
-            <Logo width={160} height={48} className="shadow-md border border-zinc-100/50" />
+            <Logo width={160} height={48} className="shadow-md" />
           </div>
 
           <div className="flex flex-col space-y-2">

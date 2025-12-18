@@ -9,6 +9,7 @@ from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.tenant import Tenant
+    from app.models.agency import Agency
 
 
 class UserRole(str, Enum):
@@ -17,6 +18,7 @@ class UserRole(str, Enum):
     Hérite de str pour une sérialisation facile.
     """
     DIRECTION = "DIRECTION"
+    ADMIN_AGENCE = "ADMIN_AGENCE"
     COMMERCIAL = "COMMERCIAL"
     POSEUR = "POSEUR"
     AUDITEUR = "AUDITEUR"
@@ -70,7 +72,16 @@ class User(Base):
         index=True,
         doc="ID du tenant auquel appartient l'utilisateur"
     )
+    
+    # Rattachement à une agence
+    agency_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("agencies.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        doc="ID de l'agence à laquelle appartient l'utilisateur"
+    )
 
     # Relationships
     tenant: Mapped["Tenant"] = relationship(back_populates="users")
+    agency: Mapped["Agency | None"] = relationship(back_populates="users")
 

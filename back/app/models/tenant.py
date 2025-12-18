@@ -9,6 +9,7 @@ from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.user import User
+    from app.models.agency import Agency
 
 
 class Tenant(Base):
@@ -40,6 +41,26 @@ class Tenant(Base):
         doc="Statut d'activation du tenant"
     )
 
+    # Branding
+    logo_url: Mapped[str] = mapped_column(
+        String(500),
+        nullable=True,
+        doc="URL du logo stocké sur S3"
+    )
+    primary_color: Mapped[str] = mapped_column(
+        String(7),
+        nullable=True,
+        default="#000000",
+        doc="Couleur principale (hex)"
+    )
+    secondary_color: Mapped[str] = mapped_column(
+        String(7),
+        nullable=True,
+        default="#FFFFFF",
+        doc="Couleur secondaire (hex)"
+    )
+
     # Relationships
     users: Mapped[List["User"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
+    agencies: Mapped[List["Agency"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
 
