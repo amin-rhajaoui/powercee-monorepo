@@ -24,33 +24,10 @@ async def get_current_user(
     """
     Dépendance pour récupérer l'utilisateur actuellement authentifié via un cookie JWT.
     """
-    # #region agent log
-    import json, time
-    def _log_debug(msg, data=None, hypothesis_id=""):
-        log_entry = {
-            "location": "deps.py:get_current_user",
-            "message": msg,
-            "data": data or {},
-            "timestamp": int(time.time() * 1000),
-            "sessionId": "debug-auth",
-            "hypothesisId": hypothesis_id
-        }
-        with open("/Users/aminrhajaoui/Documents/PowerCee/powercee-monorepo/.cursor/debug.log", "a") as f:
-            f.write(json.dumps(log_entry) + "\n")
-
-    _log_debug("Checking authentication", {
-        "cookies": list(request.cookies.keys()),
-        "has_access_token": "access_token" in request.cookies
-    }, "E,F,G")
-    # #endregion
-
     # ... (les étapes 1 à 4 restent identiques car elles ne touchent pas à la DB)
     token = request.cookies.get("access_token")
     
     if not token:
-        # #region agent log
-        _log_debug("Authentication failed: Missing token", {}, "E,F")
-        # #endregion
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Non authentifié. Token manquant.",
