@@ -1,18 +1,22 @@
 services:
+  # Service Backend (FastAPI)
   - type: web
     name: powercee-backend
-    runtime: python
+    env: python
+    region: frankfurt  # ou oregon, selon ton choix
+    rootDir: back      # <--- C'est ICI que la magie du monorepo opère
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
       - key: DATABASE_URL
-        value: "postgresql://user:password@localhost:5432/powercee"
+        sync: false # On devra la mettre manuellement dans le dashboard Render pour la sécurité
       - key: SECRET_KEY
         generateValue: true
-      - key: STRIPE_SECRET_KEY
-        value: "sk_test_..."
-      - key: FRONTEND_URL
-        value: "https://powercee-frontend.onrender.com"
-      - key: PYTHON_VERSION
-        value: "3.11.0"
+      - key: WEB_CONCURRENCY
+        value: 4 # Nombre de workers Uvicorn
 
+databases:
+  # On n'en met pas car on utilise Neon externe
