@@ -1,7 +1,10 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = typeof window === "undefined" 
+  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') 
+  : "/api/proxy";
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  const url = `${API_URL}/${cleanEndpoint}`;
 
   const defaultOptions: RequestInit = {
     credentials: 'include',

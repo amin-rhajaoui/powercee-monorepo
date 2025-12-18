@@ -9,6 +9,7 @@ from app.schemas.auth import UserRegister, UserResponse
 from app.services import auth_service
 from app.models import User
 from app.core import security, jwt
+from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -76,9 +77,9 @@ async def login(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,  # Devrait être True en prod (HTTPS)
+        secure=settings.ENVIRONMENT == "production",
         samesite="lax",
-        max_age=1800  # 30 minutes
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
 
     return response
@@ -89,6 +90,11 @@ def logout(response: Response):
     """
     Déconnecte l'utilisateur en supprimant le cookie d'authentification.
     """
-    response.delete_cookie("access_token")
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax",
+    )
     return {"message": "Déconnexion réussie"}
 

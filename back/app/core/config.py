@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     Configuration de l'application utilisant Pydantic Settings.
     Les variables sont chargées depuis l'environnement ou un fichier .env.
     """
+    # Configuration de l'application
+    ENVIRONMENT: str = "development"
+    
     # Configuration de la base de données
     DATABASE_URL: str
     
