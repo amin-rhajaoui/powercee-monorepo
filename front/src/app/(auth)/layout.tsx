@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 
@@ -23,27 +24,35 @@ export default function AuthLayout({
       </div>
 
       {/* Colonne de DROITE - Formulaire */}
-      <div className="flex flex-col items-center justify-center p-8 relative">
-        {/* Bouton Help/Back en haut à droite */}
-        <div className="absolute right-4 top-4 md:right-8 md:top-8">
-          <Button variant="ghost" asChild>
+      <div className="flex flex-col min-h-screen p-4 sm:p-6 md:p-8 relative">
+        {/* Header */}
+        <header className="w-full flex-shrink-0 flex justify-end py-4 sm:py-6">
+          <Button variant="default" asChild className="gap-2">
             <Link href="/">
+              <ArrowLeft className="h-4 w-4" />
               Retour au site
             </Link>
           </Button>
-        </div>
+        </header>
 
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
-          {/* Logo avec bords arrondis et ombre */}
-          <div className="mx-auto mb-8">
-            <Logo width={160} height={48} className="shadow-md" />
-          </div>
+        {/* Body */}
+        <main className="flex-1 flex items-center justify-center w-full py-4">
+          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
+            {/* Logo avec bords arrondis - Responsive */}
+            <div className="mx-auto mb-4 sm:mb-6 md:mb-8">
+              <Logo width={160} height={48} />
+            </div>
 
-          <div className="flex flex-col space-y-2">
-            {children}
+            {/* Contenu du formulaire */}
+            <div className="flex flex-col space-y-2">
+              {children}
+            </div>
           </div>
-          
-          <p className="px-8 text-center text-sm text-muted-foreground mt-4">
+        </main>
+
+        {/* Footer */}
+        <footer className="w-full flex-shrink-0 py-4 sm:py-6">
+          <p className="text-center text-xs sm:text-sm text-muted-foreground px-4">
             En continuant, vous acceptez nos{" "}
             <Link
               href="/terms"
@@ -60,7 +69,7 @@ export default function AuthLayout({
             </Link>
             .
           </p>
-        </div>
+        </footer>
       </div>
     </div>
   );

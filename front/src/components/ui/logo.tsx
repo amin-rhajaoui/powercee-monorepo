@@ -11,17 +11,19 @@ interface LogoProps {
  * Composant Logo pour PowerCEE.
  * Utilise l'image /logo.png placée dans le dossier public.
  */
-export const Logo = ({ className, width = 120, height = 40 }: LogoProps) => {
+export const Logo = ({ className, width = 240, height = 72 }: LogoProps) => {
   return (
-    <div className={cn("flex items-center justify-center rounded-2xl overflow-hidden border border-zinc-100/50", className)}>
-      <Image
-        src="/logo.png"
-        alt="PowerCEE Logo"
-        width={width}
-        height={height}
-        className="object-contain h-full w-auto"
-        priority
-      />
-    </div>
+    <Image
+      src="/logo.png"
+      alt="PowerCEE Logo"
+      width={width}
+      height={height}
+      className={cn(
+        "object-contain max-w-full rounded-[24px]",
+        "w-[180px] h-auto sm:w-[200px] md:w-[240px]",
+        className
+      )}
+      priority
+    />
   );
 };

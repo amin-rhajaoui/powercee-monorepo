@@ -11,7 +11,15 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "powercee-bucket.s3.*.amazonaws.com",
+        hostname: "powercee-bucket.s3.eu-north-1.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.s3.*.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.s3.amazonaws.com",
       },
     ],
   },

@@ -26,6 +26,7 @@ export default function BrandingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [tenantName, setTenantName] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const form = useForm<BrandingFormValues>({
     resolver: zodResolver(brandingSchema),
@@ -65,7 +66,27 @@ export default function BrandingPage() {
   async function onSubmit(values: BrandingFormValues) {
     setIsSaving(true);
     try {
-      await api.put("tenants/me/branding", values);
+      // Toujours envoyer via FormData pour que l'endpoint puisse gérer le fichier optionnel
+      const formData = new FormData();
+      
+      // Ajouter le fichier logo si présent
+      if (logoFile) {
+        formData.append("logo_file", logoFile);
+      }
+      
+      // Toujours envoyer les couleurs
+      formData.append("primary_color", values.primary_color);
+      formData.append("secondary_color", values.secondary_color);
+      
+      const response = await api.put("tenants/me/branding", formData);
+      const data = await response.json();
+      
+      // Mettre à jour le logo_url dans le formulaire avec la nouvelle URL si un fichier a été uploadé
+      if (logoFile && data.logo_url) {
+        form.setValue("logo_url", data.logo_url);
+        setLogoFile(null);
+      }
+      
       toast.success("Branding mis à jour avec succès.");
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la mise à jour.");
@@ -116,11 +137,12 @@ export default function BrandingPage() {
                         <ImageUpload 
                           value={field.value || ""} 
                           onChange={field.onChange}
+                          onFileChange={setLogoFile}
                           disabled={isSaving}
                         />
                       </FormControl>
                       <FormDescription>
-                        Format conseillé : PNG ou SVG (fond transparent).
+                        Format conseillé : PNG ou SVG (fond transparent). Le logo sera uploadé lors de l'enregistrement.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

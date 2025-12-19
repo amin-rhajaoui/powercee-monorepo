@@ -5,7 +5,6 @@ import {
   LayoutDashboard, 
   FolderOpen, 
   Users, 
-  Settings, 
   ChevronRight,
   LogOut,
   MapPin,
@@ -33,7 +32,14 @@ import {
 import { Logo } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
 
-const navItems = [
+type NavItem = {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items?: Array<{ title: string; url: string; icon?: React.ComponentType<{ className?: string }> }>;
+};
+
+const navItems: NavItem[] = [
   {
     title: "Tableau de bord",
     url: "/app",
@@ -49,23 +55,6 @@ const navItems = [
     url: "/app/clients",
     icon: Users,
   },
-  {
-    title: "Configuration",
-    url: "#",
-    icon: Settings,
-    items: [
-      {
-        title: "Mon Entreprise",
-        url: "/app/settings/branding",
-        icon: Palette,
-      },
-      {
-        title: "Agences",
-        url: "/app/settings/agencies",
-        icon: MapPin,
-      },
-    ],
-  },
 ];
 
 export function AppSidebar() {
@@ -75,8 +64,14 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex items-center justify-start p-4 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
         <Link href="/app" className="flex items-center gap-3 overflow-hidden group-data-[collapsible=icon]:gap-0">
-          <Logo className="h-9 w-auto shadow-sm shrink-0 group-data-[collapsible=icon]:h-6" width={36} height={36} />
-          <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
+          <div className="h-9 w-9 shrink-0 rounded-full overflow-hidden flex items-center justify-center group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9">
+            <Logo 
+              className="h-full w-full object-cover rounded-full" 
+              width={36} 
+              height={36} 
+            />
+          </div>
+          <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden whitespace-nowrap">
             <span className="font-bold text-xl tracking-tight">PowerCEE</span>
           </div>
         </Link>

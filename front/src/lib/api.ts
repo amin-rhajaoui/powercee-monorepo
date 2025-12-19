@@ -36,6 +36,27 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   return response;
 }
 
+/**
+ * Convertit une URL S3 en URL proxy pour servir l'image via le backend.
+ * @param s3Url URL S3 complète (ex: https://bucket.s3.region.amazonaws.com/path/to/file.png)
+ * @returns URL proxy (ex: /api/proxy/upload/proxy?path=path/to/file.png)
+ */
+export function s3UrlToProxyUrl(s3Url: string): string {
+  if (!s3Url) return s3Url;
+  
+  try {
+    const url = new URL(s3Url);
+    // Extraire le chemin S3 (tout après le hostname)
+    const s3Path = url.pathname.startsWith('/') ? url.pathname.slice(1) : url.pathname;
+    
+    // Retourner l'URL du proxy
+    return `/api/proxy/upload/proxy?path=${encodeURIComponent(s3Path)}`;
+  } catch (e) {
+    // Si ce n'est pas une URL valide, retourner l'original
+    return s3Url;
+  }
+}
+
 export const api = {
   get: (endpoint: string, options?: RequestInit) => 
     apiFetch(endpoint, { ...options, method: 'GET' }),
