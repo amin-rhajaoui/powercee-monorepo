@@ -279,7 +279,14 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
                   <FormControl>
                     <div className="relative">
                       <Input 
-                        ref={inputRef}
+                        ref={(e) => {
+                          inputRef.current = e;
+                          if (typeof field.ref === "function") {
+                            field.ref(e);
+                          } else if (field.ref) {
+                            field.ref.current = e;
+                          }
+                        }}
                         placeholder="Ex: 10 rue de la Paix, 75002 Paris" 
                         {...field}
                         onChange={(e) => {
