@@ -130,21 +130,9 @@ def upload_tenant_logo(
     folder = f"tenants/{tenant_id}"
     s3_key = f"{folder}/{filename}"
     
-    # Supprimer l'ancien logo s'il existe
-    if old_logo_url:
-        try:
-            # Extraire la clé S3 depuis l'URL
-            # Format: https://bucket.s3.region.amazonaws.com/tenants/xxx/logo-xxx.png
-            parsed_url = urlparse(old_logo_url)
-            old_s3_key = parsed_url.path.lstrip("/")
-            
-            # Vérifier que l'ancien logo appartient bien au même tenant
-            if old_s3_key.startswith(f"tenants/{tenant_id}/"):
-                delete_file_from_s3(old_s3_key)
-        except Exception:
-            # Si l'extraction ou la suppression échoue, on continue quand même
-            # (ne pas bloquer l'upload du nouveau logo)
-            pass
+    # Supprimer TOUS les logos existants du tenant (pour garantir un seul logo)
+    # Cela supprime tous les fichiers qui commencent par "logo-" dans le dossier du tenant
+    delete_all_tenant_logos(tenant_id)
     
     # Vérification de la configuration AWS
     if not all([settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY, settings.AWS_BUCKET_NAME]):
@@ -201,6 +189,43 @@ def delete_file_from_s3(s3_key: str) -> None:
             pass
     except Exception:
         # Ignorer toutes les autres erreurs pour ne pas bloquer le processus
+        pass
+
+
+def delete_all_tenant_logos(tenant_id: uuid.UUID) -> None:
+    """
+    Supprime tous les fichiers logo (commençant par "logo-") d'un tenant dans S3.
+    Ne lève pas d'exception en cas d'erreur (idempotent).
+    
+    Args:
+        tenant_id: L'ID du tenant
+    """
+    s3_client = get_s3_client()
+    folder = f"tenants/{tenant_id}/"
+    prefix = f"{folder}logo-"
+    
+    try:
+        # Lister tous les objets qui commencent par "logo-" dans le dossier du tenant
+        paginator = s3_client.get_paginator("list_objects_v2")
+        pages = paginator.paginate(
+            Bucket=settings.AWS_BUCKET_NAME,
+            Prefix=prefix
+        )
+        
+        # Supprimer tous les logos trouvés
+        for page in pages:
+            if "Contents" in page:
+                for obj in page["Contents"]:
+                    try:
+                        s3_client.delete_object(
+                            Bucket=settings.AWS_BUCKET_NAME,
+                            Key=obj["Key"]
+                        )
+                    except Exception:
+                        # Ignorer les erreurs de suppression individuelle
+                        pass
+    except Exception:
+        # Ignorer toutes les erreurs pour ne pas bloquer le processus
         pass
 
 

@@ -13,13 +13,17 @@ async function handleRequest(
   const path = pathSegments.join("/");
   const url = `${API_URL}/${path}${request.nextUrl.search}`;
 
-  // Récupérer tous les cookies
+  // Récupérer tous les cookies depuis la requête
+  // Les cookies HttpOnly sont transmis automatiquement dans les headers HTTP
   const cookieHeader = request.headers.get("cookie") || "";
-
+  
   // Préparer les headers
-  const headers: HeadersInit = {
-    ...(cookieHeader && { Cookie: cookieHeader }),
-  };
+  const headers: HeadersInit = {};
+  
+  // Transmettre les cookies au backend
+  if (cookieHeader) {
+    headers["Cookie"] = cookieHeader;
+  }
 
   // Préparer le body
   let body: BodyInit | undefined;
@@ -45,9 +49,6 @@ async function handleRequest(
       body,
     });
 
-    // Lire le body de la réponse
-    const responseBody = await response.text();
-
     // Créer les headers de réponse
     const responseHeaders = new Headers();
 
@@ -71,11 +72,28 @@ async function handleRequest(
       }
     });
 
-    return new NextResponse(responseBody, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders,
-    });
+    // Pour les images et autres fichiers binaires, utiliser arrayBuffer
+    // Pour les réponses JSON/text, utiliser text()
+    const contentType = response.headers.get("content-type") || "";
+    const isBinary = contentType.startsWith("image/") || 
+                     contentType.startsWith("application/octet-stream") ||
+                     contentType.includes("binary");
+
+    if (isBinary) {
+      const arrayBuffer = await response.arrayBuffer();
+      return new NextResponse(arrayBuffer, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
+    } else {
+      const responseBody = await response.text();
+      return new NextResponse(responseBody, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
+    }
   } catch (error) {
     console.error("Proxy error:", error);
     return NextResponse.json(
@@ -87,36 +105,41 @@ async function handleRequest(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return handleRequest(request, params.path, "GET");
+  const { path } = await params;
+  return handleRequest(request, path, "GET");
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return handleRequest(request, params.path, "POST");
+  const { path } = await params;
+  return handleRequest(request, path, "POST");
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return handleRequest(request, params.path, "PUT");
+  const { path } = await params;
+  return handleRequest(request, path, "PUT");
 }
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return handleRequest(request, params.path, "PATCH");
+  const { path } = await params;
+  return handleRequest(request, path, "PATCH");
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return handleRequest(request, params.path, "DELETE");
+  const { path } = await params;
+  return handleRequest(request, path, "DELETE");
 }
 

@@ -23,14 +23,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    return [
-      {
-        source: "/api/proxy/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/:path*`,
-      },
-    ];
-  },
+  // Le rewrite a été supprimé car il ne transmet pas les cookies HttpOnly
+  // Les requêtes passent maintenant par la route API /app/api/proxy/[...path]/route.ts
+  // qui transmet correctement les cookies au backend
 };
 
 export default nextConfig;

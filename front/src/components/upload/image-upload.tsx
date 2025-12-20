@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { s3UrlToProxyUrl } from "@/lib/api";
 import { Upload, X } from "lucide-react";
-import Image from "next/image";
 import { toast } from "sonner";
 
 interface ImageUploadProps {
@@ -22,7 +21,11 @@ export function ImageUpload({ value, onChange, onFileChange, disabled }: ImageUp
   // Reset image error when value changes
   useEffect(() => {
     setImageError(false);
-  }, [value]);
+    // Réinitialiser previewUrl si une nouvelle valeur arrive de l'extérieur
+    if (value && !previewUrlRef.current) {
+      setPreviewUrl(null);
+    }
+  }, [value, previewUrlRef]);
 
   // Nettoyer l'URL de prévisualisation lors du démontage
   useEffect(() => {
@@ -82,20 +85,24 @@ export function ImageUpload({ value, onChange, onFileChange, disabled }: ImageUp
   };
 
   // Utiliser l'URL de prévisualisation si disponible, sinon l'URL S3 existante
-  const imageSrc = previewUrl || (value && value.includes('.s3.') ? s3UrlToProxyUrl(value) : value);
+  const imageSrc = previewUrl || (value ? s3UrlToProxyUrl(value) : null);
 
   return (
     <div className="flex flex-col items-center gap-4">
       {imageSrc ? (
         <div className="relative w-40 h-40 rounded-lg overflow-hidden border">
           {!imageError ? (
-            <Image
-              src={imageSrc}
+            <img
+              src={imageSrc || ""}
               alt="Logo preview"
-              fill
-              className="object-contain"
-              onError={() => setImageError(true)}
-              unoptimized={true}
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                console.error("Erreur de chargement de l'image:", imageSrc, e);
+                setImageError(true);
+              }}
+              onLoad={() => {
+                setImageError(false);
+              }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-xs">

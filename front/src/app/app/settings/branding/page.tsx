@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Loader2, Palette, ShieldCheck } from "lucide-react";
+import { Loader2, Palette } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,8 +37,6 @@ export default function BrandingPage() {
     },
   });
 
-  const { watch } = form;
-  const watchedValues = watch();
 
   useEffect(() => {
     async function loadTenantData() {
@@ -112,8 +110,7 @@ export default function BrandingPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Formulaire */}
+      <div className="max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -209,106 +206,8 @@ export default function BrandingPage() {
             </Form>
           </CardContent>
         </Card>
-
-        {/* Live Preview */}
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>Aperçu en direct</CardTitle>
-            <CardDescription>
-              Visualisez comment vos couleurs s'appliqueront à l'interface.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="border rounded-lg overflow-hidden bg-background">
-              {/* Fake Header */}
-              <div 
-                className="h-14 px-4 flex items-center justify-between border-b"
-                style={{ borderBottomColor: `${watchedValues.primary_color}20` }}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 relative">
-                    {watchedValues.logo_url ? (
-                      <img src={watchedValues.logo_url} alt="Logo preview" className="object-contain w-full h-full" />
-                    ) : (
-                      <div className="w-full h-full bg-muted rounded flex items-center justify-center text-[10px] text-muted-foreground">Logo</div>
-                    )}
-                  </div>
-                  <span className="font-semibold text-sm">PowerCEE</span>
-                </div>
-                <div className="flex gap-2">
-                  <div className="w-4 h-4 rounded-full bg-muted" />
-                  <div className="w-4 h-4 rounded-full bg-muted" />
-                </div>
-              </div>
-
-              {/* Fake Content */}
-              <div className="p-6 space-y-4 bg-muted/30">
-                <div className="space-y-2">
-                  <div className="h-4 w-1/2 bg-muted rounded" />
-                  <div className="h-3 w-3/4 bg-muted/50 rounded" />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <Card className="p-3 bg-background border-none shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="p-1.5 rounded" style={{ backgroundColor: `${watchedValues.primary_color}15` }}>
-                        <ShieldCheck className="w-4 h-4" style={{ color: watchedValues.primary_color }} />
-                      </div>
-                      <div className="h-2.5 w-12 bg-muted rounded" />
-                    </div>
-                    <div className="h-3.5 w-8 bg-muted rounded" />
-                  </Card>
-                  
-                  <Card className="p-3 bg-background border-none shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="p-1.5 rounded" style={{ backgroundColor: `${watchedValues.secondary_color}15` }}>
-                        <Palette className="w-4 h-4" style={{ color: watchedValues.secondary_color }} />
-                      </div>
-                      <div className="h-2.5 w-12 bg-muted rounded" />
-                    </div>
-                    <div className="h-3.5 w-8 bg-muted rounded" />
-                  </Card>
-                </div>
-
-                <div className="pt-2">
-                  <Button 
-                    className="w-full text-xs h-9"
-                    style={{ 
-                      backgroundColor: watchedValues.primary_color,
-                      color: getContrastColor(watchedValues.primary_color)
-                    }}
-                  >
-                    Bouton Action
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/30 rounded-lg">
-              <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                Note : Les couleurs sont appliquées en temps réel ici, mais ne seront définitives qu'après enregistrement.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
-}
-
-// Helper simple pour déterminer la couleur du texte (noir ou blanc) selon la luminosité
-function getContrastColor(hexcolor: string) {
-  // Supprimer le #
-  const hex = hexcolor.replace("#", "");
-  
-  // Convertir en RGB
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-  
-  // Formule de luminosité YIQ
-  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-  
-  return (yiq >= 128) ? 'black' : 'white';
 }
 

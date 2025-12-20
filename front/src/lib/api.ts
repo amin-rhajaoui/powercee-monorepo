@@ -38,22 +38,33 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
 
 /**
  * Convertit une URL S3 en URL proxy pour servir l'image via le backend.
+ * Utilise une route API Next.js dédiée qui transmet les cookies côté serveur.
  * @param s3Url URL S3 complète (ex: https://bucket.s3.region.amazonaws.com/path/to/file.png)
- * @returns URL proxy (ex: /api/proxy/upload/proxy?path=path/to/file.png)
+ * @returns URL proxy (ex: /api/image?path=path/to/file.png)
  */
 export function s3UrlToProxyUrl(s3Url: string): string {
   if (!s3Url) return s3Url;
+  
+  // Si c'est déjà une URL proxy, la retourner telle quelle
+  if (s3Url.startsWith('/api/')) {
+    return s3Url;
+  }
+  
+  // Si c'est une URL relative (déjà un chemin), la convertir en proxy
+  if (s3Url.startsWith('/')) {
+    return `/api/image?path=${encodeURIComponent(s3Url.slice(1))}`;
+  }
   
   try {
     const url = new URL(s3Url);
     // Extraire le chemin S3 (tout après le hostname)
     const s3Path = url.pathname.startsWith('/') ? url.pathname.slice(1) : url.pathname;
     
-    // Retourner l'URL du proxy
-    return `/api/proxy/upload/proxy?path=${encodeURIComponent(s3Path)}`;
+    // Retourner l'URL de la route API Next.js qui transmet les cookies
+    return `/api/image?path=${encodeURIComponent(s3Path)}`;
   } catch (e) {
-    // Si ce n'est pas une URL valide, retourner l'original
-    return s3Url;
+    // Si ce n'est pas une URL valide, essayer de la traiter comme un chemin relatif
+    return `/api/image?path=${encodeURIComponent(s3Url)}`;
   }
 }
 
