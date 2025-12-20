@@ -121,3 +121,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Force les éléments Leaflet de la carte d'aperçu des agences à avoir un z-index bas */
+.agencies-overview-map .leaflet-container,
+.agencies-overview-map .leaflet-pane,
+.agencies-overview-map .leaflet-top,
+.agencies-overview-map .leaflet-bottom,
+.agencies-overview-map .leaflet-control {
+  z-index: 1 !important;
+}

@@ -22,6 +22,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api";
 import { AgencyDialog } from "@/components/agencies/agency-dialog";
+import dynamic from "next/dynamic";
+
+// Import dynamique du composant Map pour éviter les erreurs SSR
+const AgenciesOverviewMap = dynamic(
+  () => import("@/components/maps/agencies-overview-map"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[400px] w-full bg-muted animate-pulse rounded-md" />
+    ),
+  }
+);
 
 export default function AgenciesPage() {
   const [agencies, setAgencies] = useState<any[]>([]);
@@ -89,6 +101,24 @@ export default function AgenciesPage() {
           Nouvelle agence
         </Button>
       </div>
+
+      {/* Carte des agences */}
+      {agencies.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold">Localisation des agences</h2>
+          <AgenciesOverviewMap agencies={agencies} />
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#701a2a]"></div>
+              <span>Agences actives</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#808080]"></div>
+              <span>Agences inactives</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {agencies.length === 0 ? (
