@@ -273,31 +273,33 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
             <FormField
               control={form.control}
               name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Adresse postale</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input 
-                        ref={(e) => {
-                          inputRef.current = e;
-                          if (typeof field.ref === "function") {
-                            field.ref(e);
-                          } else if (field.ref) {
-                            field.ref.current = e;
-                          }
-                        }}
-                        placeholder="Ex: 10 rue de la Paix, 75002 Paris" 
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleAddressChange(e.target.value);
-                        }}
-                        onFocus={handleAddressFocus}
-                        onBlur={handleAddressBlur}
-                        onKeyDown={handleKeyDown}
-                        className="pr-10"
-                      />
+              render={({ field }) => {
+                const { ref: fieldRef, ...fieldProps } = field;
+                return (
+                  <FormItem>
+                    <FormLabel>Adresse postale</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          ref={(e) => {
+                            inputRef.current = e;
+                            if (typeof fieldRef === "function") {
+                              fieldRef(e);
+                            } else if (fieldRef) {
+                              fieldRef.current = e;
+                            }
+                          }}
+                          placeholder="Ex: 10 rue de la Paix, 75002 Paris" 
+                          {...fieldProps}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            handleAddressChange(e.target.value);
+                          }}
+                          onFocus={handleAddressFocus}
+                          onBlur={handleAddressBlur}
+                          onKeyDown={handleKeyDown}
+                          className="pr-10"
+                        />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
                         {isGeocoding || isLoadingSuggestions ? (
                           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -348,7 +350,8 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
                   </FormControl>
                   <FormMessage />
                 </FormItem>
-              )}
+                );
+              }}
             />
 
             <div className="space-y-2">
