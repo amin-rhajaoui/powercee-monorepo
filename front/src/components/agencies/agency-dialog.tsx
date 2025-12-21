@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { searchAddress, searchAddressSuggestions, type GeocodingResult } from "@/lib/geocoding";
+import { mergeRefs } from "@/lib/utils";
 
 // Import dynamique du composant Map pour éviter les erreurs SSR
 const AgencyMap = dynamic(() => import("@/components/maps/agency-map"), {
@@ -281,14 +282,7 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
                     <FormControl>
                       <div className="relative">
                         <Input 
-                          ref={(e) => {
-                            inputRef.current = e;
-                            if (typeof fieldRef === "function") {
-                              fieldRef(e);
-                            } else if (fieldRef) {
-                              fieldRef.current = e;
-                            }
-                          }}
+                          ref={mergeRefs(inputRef, fieldRef)}
                           placeholder="Ex: 10 rue de la Paix, 75002 Paris" 
                           {...fieldProps}
                           onChange={(e) => {
