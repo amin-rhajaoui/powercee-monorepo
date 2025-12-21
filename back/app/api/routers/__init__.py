@@ -1,2 +1,2 @@
-from . import auth, users
+from . import auth, users, invitations
 

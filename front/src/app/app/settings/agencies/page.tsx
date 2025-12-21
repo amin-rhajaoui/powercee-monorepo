@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 import { 
   Building2, 
   Loader2, 
@@ -9,7 +10,8 @@ import {
   MoreHorizontal, 
   Pencil, 
   Plus, 
-  Trash2 
+  Trash2,
+  Users
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -179,6 +181,14 @@ export default function AgenciesPage() {
                   }`}>
                     {agency.is_active ? "Active" : "Inactive"}
                   </div>
+                </div>
+                <div className="mt-4">
+                  <Link href={`/app/settings/agencies/${agency.id}`}>
+                    <Button variant="outline" className="w-full" size="sm">
+                      <Users className="w-4 h-4 mr-2" />
+                      Utilisateurs
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

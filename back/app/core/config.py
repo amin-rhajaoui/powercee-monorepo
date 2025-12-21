@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     AWS_BUCKET_NAME: str | None = None
     AWS_REGION: str = "eu-west-3"
 
+    # Email Configuration (Resend)
+    RESEND_API_KEY: str
+    EMAILS_FROM_EMAIL: str = "no_reply@powercee.spatiaal.com"
+
     # Configuration de Pydantic Settings
     model_config = SettingsConfigDict(
         env_file=".env",

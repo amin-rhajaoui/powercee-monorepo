@@ -18,7 +18,7 @@ class UserResponse(BaseModel):
     """
     id: UUID
     email: EmailStr
-    full_name: str
+    full_name: str | None = None
     role: str
     tenant_id: UUID
     is_active: bool
