@@ -73,8 +73,17 @@ const SelectTrigger = React.forwardRef<
 >(({ className, children, asChild, ...props }, ref) => {
   const { value, open, setOpen } = React.useContext(SelectContext)
   
+  // #region agent log
+  // Fix hypothèse 3: Typage correct pour React.cloneElement avec ref
+  // React.cloneElement a des limitations de typage avec les refs
+  // On utilise React.ReactElement<any> pour permettre le passage de ref
+  fetch('http://127.0.0.1:7245/ingest/608e63c0-36e9-4fc5-88de-a2cccab9ee5a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'select.tsx:76',message:'asChild branch - fix typage cloneElement',data:{asChild:!!asChild,hasChildren:!!children,fixType:'React.ReactElement<any>'},timestamp:Date.now(),sessionId:'debug-session',runId:'select-fix',hypothesisId:'3'})}).catch(()=>{});
+  // #endregion
+  
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, { ref, ...props })
+    // Type assertion nécessaire car React.cloneElement ne peut pas garantir
+    // que le type de l'élément enfant accepte une ref
+    return React.cloneElement(children as React.ReactElement<any>, { ref, ...props })
   }
 
   return (
