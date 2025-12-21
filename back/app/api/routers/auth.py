@@ -72,12 +72,13 @@ async def login(
     response = JSONResponse(content={"message": "Connexion réussie"})
     
     # SECURITY: Utilisation de HttpOnly pour empêcher l'accès via JS
-    # Secure=True en prod, SameSite=Lax pour la protection CSRF
+    # Secure=True en prod, False en local pour permettre les tests
+    # SameSite=Lax pour la protection CSRF
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=settings.ENVIRONMENT == "production",
+        secure=not settings.is_local,
         samesite="lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
@@ -93,7 +94,7 @@ def logout(response: Response):
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        secure=settings.ENVIRONMENT == "production",
+        secure=not settings.is_local,
         samesite="lax",
     )
     return {"message": "Déconnexion réussie"}

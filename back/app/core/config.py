@@ -33,6 +33,23 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=True
     )
+    
+    @property
+    def is_local(self) -> bool:
+        """
+        Détermine si l'application tourne en environnement local.
+        Le cookie secure sera False en local pour permettre les tests.
+        """
+        # Vérifier si l'environnement est development ou local
+        if self.ENVIRONMENT.lower() in ["development", "local", "dev"]:
+            return True
+        
+        # Vérifier si l'URL du frontend contient localhost ou 127.0.0.1
+        frontend_url_lower = self.FRONTEND_URL.lower()
+        if "localhost" in frontend_url_lower or "127.0.0.1" in frontend_url_lower:
+            return True
+        
+        return False
 
 try:
     # Instance globale pour être importée ailleurs dans l'application
