@@ -9,6 +9,7 @@ from app.db.base import Base
 if TYPE_CHECKING:
     from app.models.tenant import Tenant
     from app.models.user import User
+    from app.models.client import Client
 
 
 class Agency(Base):
@@ -59,4 +60,5 @@ class Agency(Base):
     # Relationships
     tenant: Mapped["Tenant"] = relationship(back_populates="agencies")
     users: Mapped[List["User"]] = relationship(back_populates="agency")
+    clients: Mapped[List["Client"]] = relationship(back_populates="agency")
 

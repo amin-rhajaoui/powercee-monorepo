@@ -10,6 +10,7 @@ from app.db.base import Base
 if TYPE_CHECKING:
     from app.models.tenant import Tenant
     from app.models.agency import Agency
+    from app.models.client import Client
 
 
 class UserRole(str, Enum):
@@ -84,4 +85,5 @@ class User(Base):
     # Relationships
     tenant: Mapped["Tenant"] = relationship(back_populates="users")
     agency: Mapped["Agency | None"] = relationship(back_populates="users")
+    clients: Mapped[list["Client"]] = relationship(back_populates="owner")
 

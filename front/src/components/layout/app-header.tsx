@@ -94,51 +94,60 @@ export function AppHeader() {
         </Button>
 
         {/* User Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src="" alt="Avatar" />
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  {user ? getInitials(user.full_name) : "U"}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">
-                  {isLoading ? "Chargement..." : user?.full_name || "Utilisateur"}
-                </p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {user?.email || ""}
-                </p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/app/profile" className="flex items-center cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>Mon Profil</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/app/settings/branding" className="flex items-center cursor-pointer">
-                <Palette className="mr-2 h-4 w-4" />
-                <span>Mon Entreprise</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/app/settings/agencies" className="flex items-center cursor-pointer">
-                <MapPin className="mr-2 h-4 w-4" />
-                <span>Mes Agences</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <LogoutButton variant="ghost" className="w-full justify-start px-2 py-1.5 h-auto font-normal" />
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {mounted && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src="" alt="Avatar" />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {user ? getInitials(user.full_name) : "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {isLoading ? "Chargement..." : user?.full_name || "Utilisateur"}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.email || ""}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/app/profile" className="flex items-center cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Mon Profil</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/app/settings/branding" className="flex items-center cursor-pointer">
+                  <Palette className="mr-2 h-4 w-4" />
+                  <span>Mon Entreprise</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/app/settings/agencies" className="flex items-center cursor-pointer">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  <span>Mes Agences</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <LogoutButton variant="ghost" className="w-full justify-start px-2 py-1.5 h-auto font-normal" />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        {!mounted && (
+          <Button variant="ghost" className="relative h-10 w-10 rounded-full" disabled>
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-primary/10 text-primary">U</AvatarFallback>
+            </Avatar>
+          </Button>
+        )}
       </div>
     </header>
   );
