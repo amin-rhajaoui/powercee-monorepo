@@ -86,14 +86,18 @@ const USAGE_MODE_LABELS = {
 
 function BarTh171Fields({ form }: BarTh171FieldsProps) {
   // Utiliser useFormState pour forcer le re-render quand les valeurs changent
-  const { values } = useFormState({ control: form.control });
-  const isPrincipalResidence = values.is_principal_residence;
-  const heatingSystem = values.heating_system;
-  const occupationStatus = values.occupation_status;
-  const isWaterHeatingLinked = values.is_water_heating_linked;
-  const waterHeatingType = values.water_heating_type;
-  const usageMode = values.usage_mode;
-  const electricalPhase = values.electrical_phase;
+  // useFormState déclenche un re-render à chaque changement du formulaire
+  useFormState({ control: form.control });
+  
+  // Utiliser form.watch() pour obtenir les valeurs actuelles
+  // Cela fonctionne maintenant car useFormState force le re-render
+  const isPrincipalResidence = form.watch("is_principal_residence");
+  const heatingSystem = form.watch("heating_system");
+  const occupationStatus = form.watch("occupation_status");
+  const isWaterHeatingLinked = form.watch("is_water_heating_linked");
+  const waterHeatingType = form.watch("water_heating_type");
+  const usageMode = form.watch("usage_mode");
+  const electricalPhase = form.watch("electrical_phase");
   
   // Utiliser la valeur du state pour garantir l'affichage
   const shouldShowQuestions = isWaterHeatingLinked === false;

@@ -34,7 +34,11 @@ export async function searchAddress(query: string): Promise<GeocodingResult | nu
     );
 
     if (!response.ok) {
-      throw new Error("Erreur lors de la recherche d'adresse");
+      // Ne pas lancer d'erreur, simplement logger et retourner null
+      console.warn(
+        `Erreur API géocodage (status ${response.status}): ${response.statusText}`
+      );
+      return null;
     }
 
     const data: GeoApiResponse = await response.json();
@@ -53,7 +57,12 @@ export async function searchAddress(query: string): Promise<GeocodingResult | nu
 
     return null;
   } catch (error) {
-    console.error("Geocoding error:", error);
+    // Gérer les erreurs réseau ou autres erreurs
+    if (error instanceof Error) {
+      console.error("Erreur lors de la recherche d'adresse:", error.message);
+    } else {
+      console.error("Erreur inconnue lors de la recherche d'adresse:", error);
+    }
     return null;
   }
 }
@@ -76,7 +85,11 @@ export async function searchAddressSuggestions(
     );
 
     if (!response.ok) {
-      throw new Error("Erreur lors de la recherche d'adresses");
+      // Ne pas lancer d'erreur, simplement logger et retourner un tableau vide
+      console.warn(
+        `Erreur API géocodage (status ${response.status}): ${response.statusText}`
+      );
+      return [];
     }
 
     const data: GeoApiResponse = await response.json();
@@ -96,7 +109,12 @@ export async function searchAddressSuggestions(
 
     return [];
   } catch (error) {
-    console.error("Geocoding suggestions error:", error);
+    // Gérer les erreurs réseau ou autres erreurs
+    if (error instanceof Error) {
+      console.error("Erreur lors de la recherche d'adresses:", error.message);
+    } else {
+      console.error("Erreur inconnue lors de la recherche d'adresses:", error);
+    }
     return [];
   }
 }
