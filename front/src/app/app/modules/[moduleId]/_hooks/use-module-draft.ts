@@ -11,7 +11,7 @@ import {
   listModuleDrafts,
   type ModuleDraftUpdate,
 } from "@/lib/api/modules";
-import { BatTh113Draft } from "../_schemas";
+import { BarTh171Draft } from "../_schemas";
 
 type UseModuleDraftOptions = {
   moduleId: string;
@@ -25,7 +25,7 @@ export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraft
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [draftData, setDraftData] = useState<BatTh113Draft>({});
+  const [draftData, setDraftData] = useState<BarTh171Draft>({});
 
   // Charger le brouillon existant si draftId est fourni
   useEffect(() => {
@@ -38,7 +38,7 @@ export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraft
         setDraft(loadedDraft);
         setCurrentStep(loadedDraft.current_step);
         if (loadedDraft.data) {
-          setDraftData(loadedDraft.data as BatTh113Draft);
+          setDraftData(loadedDraft.data as BarTh171Draft);
         }
       } catch (error) {
         console.error("Erreur lors du chargement du brouillon:", error);
@@ -81,7 +81,7 @@ export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraft
       setDraft(loadedDraft);
       setCurrentStep(loadedDraft.current_step);
       if (loadedDraft.data) {
-        setDraftData(loadedDraft.data as BatTh113Draft);
+        setDraftData(loadedDraft.data as BarTh171Draft);
       }
       // Mettre à jour l'URL avec le draftId
       router.replace(`/app/modules/${moduleId}?draftId=${loadedDraft.id}`);
@@ -124,10 +124,16 @@ export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraft
   );
 
   // Sauvegarder le brouillon (uniquement lors du passage d'une étape à l'autre)
+  // extraFields permet d'envoyer des champs au premier niveau (colonnes dédiées)
   const saveDraft = useCallback(
-    async (data: Partial<BatTh113Draft>, step?: number, clientId?: string): Promise<void> => {
-      console.log("saveDraft appelé", { data, step, clientId, draftId: draft?.id });
-      
+    async (
+      data: Partial<BarTh171Draft>,
+      step?: number,
+      clientId?: string,
+      extraFields?: Partial<ModuleDraftUpdate>
+    ): Promise<void> => {
+      console.log("saveDraft appelé", { data, step, clientId, extraFields, draftId: draft?.id });
+
       let draftIdToUse = draft?.id;
       let currentDraft = draft;
 
@@ -142,12 +148,12 @@ export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraft
         // Récupérer le draft fraîchement créé pour avoir les bonnes données
         currentDraft = await getModuleDraft(newDraftId);
         setDraft(currentDraft);
-        setDraftData((currentDraft.data as BatTh113Draft) || {});
+        setDraftData((currentDraft.data as BarTh171Draft) || {});
         console.log("Nouveau brouillon créé:", currentDraft);
       }
 
       // Utiliser les données actuelles du draft (toujours à jour) ou un objet vide
-      const currentDraftData = (currentDraft?.data as BatTh113Draft) || {};
+      const currentDraftData = (currentDraft?.data as BarTh171Draft) || {};
       const newData = { ...currentDraftData, ...data };
       console.log("Données à sauvegarder:", newData);
       setDraftData(newData);
@@ -157,6 +163,8 @@ export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraft
       try {
         const updatePayload: ModuleDraftUpdate = {
           data: newData,
+          // Inclure les champs supplémentaires au premier niveau
+          ...extraFields,
         };
         if (step !== undefined) {
           updatePayload.current_step = step;

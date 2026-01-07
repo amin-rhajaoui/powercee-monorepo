@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, DateTime, ForeignKey, Text, func, Index
+from sqlalchemy import String, DateTime, ForeignKey, Text, func, Index, Boolean, Float, Integer
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,7 +34,7 @@ class ModuleDraft(Base):
         String(50),
         nullable=False,
         index=True,
-        doc="Code du module (ex: BAT-TH-113).",
+        doc="Code du module (ex: BAR-TH-171).",
     )
     client_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("clients.id", ondelete="SET NULL"),
@@ -59,6 +59,90 @@ class ModuleDraft(Base):
         default=dict,
         doc="Données du brouillon stockées en JSON (flexible pour toutes les étapes).",
     )
+
+    # =========================================================================
+    # Champs spécifiques BAR-TH-171 (nullable car pas utilisés par tous les modules)
+    # =========================================================================
+    is_principal_residence: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="Le logement est-il la résidence principale ?",
+    )
+    occupation_status: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Statut d'occupation (PROPRIETAIRE, LOCATAIRE).",
+    )
+    heating_system: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Système de chauffage actuel (FIOUL, GAZ, CHARBON, BOIS, ELECTRIQUE).",
+    )
+    old_boiler_brand: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        doc="Marque de l'ancienne chaudière.",
+    )
+    is_water_heating_linked: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="L'eau chaude est-elle liée au système de chauffage ?",
+    )
+    water_heating_type: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        doc="Type de production d'eau chaude actuel.",
+    )
+    electrical_phase: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Type de compteur électrique (MONOPHASE, TRIPHASE).",
+    )
+    power_kva: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        doc="Puissance du compteur électrique en kVA.",
+    )
+    usage_mode: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+        doc="Mode d'usage souhaité : HEATING_ONLY ou HEATING_AND_HOT_WATER.",
+    )
+
+    # =========================================================================
+    # Champs spécifiques BAR-TH-171 - Étape 3 : Documents administratifs
+    # =========================================================================
+    tax_notice_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        doc="URL S3 de l'avis d'imposition.",
+    )
+    address_proof_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        doc="URL S3 du justificatif de domicile (si changement d'adresse).",
+    )
+    property_proof_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        doc="URL S3 de la taxe foncière ou acte notarié.",
+    )
+    energy_bill_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        doc="URL S3 de la facture d'énergie.",
+    )
+    reference_tax_income: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Revenu fiscal de référence.",
+    )
+    household_size: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Nombre de personnes dans le foyer fiscal.",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

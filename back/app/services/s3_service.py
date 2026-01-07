@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 from fastapi import UploadFile, HTTPException, status
 from app.core.config import settings
 
-def upload_file_to_s3(file: UploadFile, folder: str, allowed_types: list[str] = ["image/jpeg", "image/png", "image/webp"]) -> str:
+def upload_file_to_s3(file: UploadFile, folder: str, allowed_types: list[str] = ["image/jpeg", "image/png", "image/webp", "application/pdf"]) -> str:
     """
     Upload un fichier vers AWS S3 après validation du type MIME.
     Retourne l'URL publique du fichier.

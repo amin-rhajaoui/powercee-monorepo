@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { step1HouseholdSchema, type Step1HouseholdValues, type BatTh113Draft } from "../_schemas";
+import { step1HouseholdSchema, type Step1HouseholdValues, type BarTh171Draft } from "../_schemas";
 import { ClientSelector } from "../_components/client-selector";
 import { DraftResumeDialog } from "../_components/draft-resume-dialog";
 import { useModuleDraft } from "../_hooks/use-module-draft";
@@ -75,7 +75,7 @@ export function Step1Household({ moduleId, moduleCode, draftId, onNext }: Step1H
     try {
       await loadDraftById(existingDraft.id);
       // Mettre à jour le formulaire avec les données du brouillon
-      const draftData = existingDraft.data as BatTh113Draft;
+      const draftData = existingDraft.data as BarTh171Draft;
       if (draftData?.step1?.client_id) {
         form.setValue("client_id", draftData.step1.client_id, {
           shouldValidate: true,

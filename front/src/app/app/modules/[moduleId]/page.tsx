@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { useModuleDraft } from "./_hooks/use-module-draft";
 import { Step1Household } from "./_steps/step-1-household";
 import { Step2Property } from "./_steps/step-2-property";
-import { Step3TechnicalVisit } from "./_steps/step-3-technical-visit";
+import { Step3Documents } from "./_steps/step-3-documents";
 import { Step4Sizing } from "./_steps/step-4-sizing";
 import { Step5Offers } from "./_steps/step-5-offers";
 import { Step6Documents } from "./_steps/step-6-documents";
@@ -26,16 +26,16 @@ type ModuleDetailPageContentProps = {
 const STEP_LABELS = [
   "Foyer",
   "Logement",
-  "Visite technique",
+  "Documents",
   "Dimensionnement",
   "Offres",
-  "Documents",
+  "Génération",
 ];
 
 const STEP_DESCRIPTIONS = [
   "Sélectionnez ou créez un client particulier pour ce dossier",
   "Sélectionnez ou créez un logement pour ce dossier",
-  "Renseignez les informations de la visite technique",
+  "Collectez les documents administratifs du foyer",
   "Déterminez le dimensionnement de la pompe à chaleur",
   "Calculez les offres et le reste à charge",
   "Générez les documents conformes CEE + Anah",
@@ -108,7 +108,15 @@ function ModuleDetailPageContent({ moduleId }: ModuleDetailPageContentProps) {
           />
         );
       case 3:
-        return <Step3TechnicalVisit onNext={handleNext} onPrevious={handlePrevious} />;
+        return (
+          <Step3Documents
+            moduleId={moduleId}
+            moduleCode={module.code}
+            draftId={draftId}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+          />
+        );
       case 4:
         return <Step4Sizing onNext={handleNext} onPrevious={handlePrevious} />;
       case 5:

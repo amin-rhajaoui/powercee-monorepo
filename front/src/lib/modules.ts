@@ -17,8 +17,8 @@ export type Module = {
 
 export const modules: Module[] = [
   {
-    id: "bat-th-113",
-    code: "BAT-TH-113",
+    id: "bar-th-171",
+    code: "BAR-TH-171",
     title: "Pompe à chaleur de type air/eau ou eau/eau",
     description: "Module de calcul pour les pompes à chaleur air/eau ou eau/eau dans le cadre de la rénovation énergétique.",
     category: "PARTICULIER",
