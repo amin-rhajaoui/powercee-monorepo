@@ -7,7 +7,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -106,10 +105,14 @@ export function getColumns(handlers: Handlers): ColumnDef<Client>[] {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handlers.onView(client)}>Voir</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlers.onEdit(client)}>Modifier</DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handlers.onView(client)}
+                className="font-medium"
+              >
+                Voir la fiche complète
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handlers.onEdit(client)}>Modifier</DropdownMenuItem>
               {client.status === "ARCHIVE" ? (
                 <DropdownMenuItem onClick={() => handlers.onRestore(client)}>Restaurer</DropdownMenuItem>
               ) : (

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import String, DateTime, Enum as SQLEnum, ForeignKey, Boolean, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from app.models.tenant import Tenant
     from app.models.agency import Agency
     from app.models.user import User
+    from app.models.property import Property
+    from app.models.module_draft import ModuleDraft
 
 
 class ClientType(str, Enum):
@@ -124,5 +126,7 @@ class Client(Base):
     tenant: Mapped["Tenant"] = relationship(back_populates="clients")
     agency: Mapped["Agency | None"] = relationship(back_populates="clients")
     owner: Mapped["User"] = relationship(back_populates="clients")
+    properties: Mapped[List["Property"]] = relationship(back_populates="client", cascade="all, delete-orphan")
+    module_drafts: Mapped[list["ModuleDraft"]] = relationship(back_populates="client")
 
 

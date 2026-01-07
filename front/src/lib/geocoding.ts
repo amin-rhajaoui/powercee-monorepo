@@ -2,6 +2,24 @@ export interface GeocodingResult {
   label: string;
   latitude: number;
   longitude: number;
+  postal_code?: string;
+  city?: string;
+}
+
+// Type pour la reponse de l'API adresse.data.gouv.fr
+interface GeoApiFeature {
+  geometry: {
+    coordinates: [number, number];
+  };
+  properties: {
+    label: string;
+    postcode?: string;
+    city?: string;
+  };
+}
+
+interface GeoApiResponse {
+  features: GeoApiFeature[];
 }
 
 /**
@@ -19,7 +37,7 @@ export async function searchAddress(query: string): Promise<GeocodingResult | nu
       throw new Error("Erreur lors de la recherche d'adresse");
     }
 
-    const data = await response.json();
+    const data: GeoApiResponse = await response.json();
 
     if (data.features && data.features.length > 0) {
       const feature = data.features[0];
@@ -28,6 +46,8 @@ export async function searchAddress(query: string): Promise<GeocodingResult | nu
         label: feature.properties.label,
         latitude: lat,
         longitude: lon,
+        postal_code: feature.properties.postcode,
+        city: feature.properties.city,
       };
     }
 
@@ -40,8 +60,8 @@ export async function searchAddress(query: string): Promise<GeocodingResult | nu
 
 /**
  * Recherche plusieurs suggestions d'adresses via l'API adresse.data.gouv.fr
- * @param query Requête de recherche
- * @param limit Nombre maximum de résultats (par défaut: 3)
+ * @param query Requete de recherche
+ * @param limit Nombre maximum de resultats (par defaut: 3)
  * @returns Liste des suggestions d'adresses
  */
 export async function searchAddressSuggestions(
@@ -59,15 +79,17 @@ export async function searchAddressSuggestions(
       throw new Error("Erreur lors de la recherche d'adresses");
     }
 
-    const data = await response.json();
+    const data: GeoApiResponse = await response.json();
 
     if (data.features && data.features.length > 0) {
-      return data.features.map((feature: any) => {
+      return data.features.map((feature: GeoApiFeature) => {
         const [lon, lat] = feature.geometry.coordinates;
         return {
           label: feature.properties.label,
           latitude: lat,
           longitude: lon,
+          postal_code: feature.properties.postcode,
+          city: feature.properties.city,
         };
       });
     }
@@ -78,4 +100,3 @@ export async function searchAddressSuggestions(
     return [];
   }
 }
-

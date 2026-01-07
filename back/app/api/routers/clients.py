@@ -4,14 +4,15 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_current_user
-from app.models import ClientStatus, ClientType, User
+from app.models import ClientStatus, ClientType, PropertyType, User
 from app.schemas.client import (
-    ClientCreate,
-    ClientResponse,
-    ClientUpdate,
-    PaginatedClientsResponse,
+  ClientCreate,
+  ClientResponse,
+  ClientUpdate,
+  PaginatedClientsResponse,
 )
-from app.services import client_service
+from app.schemas.property import PaginatedPropertiesResponse
+from app.services import client_service, property_service
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
@@ -92,5 +93,34 @@ async def restore_client(
 ) -> ClientResponse:
     """Restaure un client archivé."""
     return await client_service.restore_client(db, current_user, client_id)
+
+
+@router.get("/{client_id}/properties", response_model=PaginatedPropertiesResponse)
+async def list_client_properties(
+    client_id: UUID,
+    search: str | None = Query(None, description="Recherche label/adresse/ville"),
+    type_filter: PropertyType | None = Query(None, alias="type", description="Filtre par type"),
+    is_active: bool | None = Query(None, description="Filtre par statut actif"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    sort_by: str | None = Query("created_at", pattern="^(label|type|address|city|created_at)$"),
+    sort_dir: str | None = Query("desc", pattern="^(asc|desc)$"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> PaginatedPropertiesResponse:
+    """Liste paginée des logements d'un client spécifique."""
+    items, total = await property_service.list_properties(
+        db,
+        current_user,
+        client_id=client_id,
+        search=search,
+        type_filter=type_filter,
+        is_active=is_active,
+        page=page,
+        page_size=page_size,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+    )
+    return PaginatedPropertiesResponse(items=items, total=total, page=page, page_size=page_size)
 
 

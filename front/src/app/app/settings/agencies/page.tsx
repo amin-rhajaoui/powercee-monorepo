@@ -22,7 +22,17 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { api } from "@/lib/api";
+import { api, type ApiError } from "@/lib/api";
+
+// Type pour les agences
+interface Agency {
+  id: string;
+  name: string;
+  address?: string;
+  is_active: boolean;
+  latitude?: number;
+  longitude?: number;
+}
 import { AgencyDialog } from "@/components/agencies/agency-dialog";
 import dynamic from "next/dynamic";
 

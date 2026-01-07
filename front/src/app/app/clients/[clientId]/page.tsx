@@ -9,13 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Client,
   archiveClient,
   getClient,
   restoreClient,
 } from "@/lib/api/clients";
+import { getPropertyLabels } from "@/lib/property-labels";
 import { ClientDialog } from "../_components/client-dialog";
+import { PropertiesSection } from "./_components/properties-section";
 
 export default function ClientDetailPage() {
   const router = useRouter();
@@ -25,6 +28,7 @@ export default function ClientDetailPage() {
   const [client, setClient] = useState<Client | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [propertiesCount, setPropertiesCount] = useState(0);
 
   const fetchClient = useCallback(async () => {
     if (!clientId) return;
@@ -32,8 +36,9 @@ export default function ClientDetailPage() {
     try {
       const data = await getClient(clientId);
       setClient(data);
-    } catch (error: any) {
-      toast.error(error?.data?.detail || "Client introuvable.");
+    } catch (error: unknown) {
+      const err = error as { data?: { detail?: string } };
+      toast.error(err?.data?.detail || "Client introuvable.");
     } finally {
       setIsLoading(false);
     }
@@ -47,10 +52,11 @@ export default function ClientDetailPage() {
     if (!client) return;
     try {
       await archiveClient(client.id);
-      toast.success("Client archivé.");
+      toast.success("Client archiv\u00e9.");
       fetchClient();
-    } catch (error: any) {
-      toast.error(error?.data?.detail || "Échec de l'archivage.");
+    } catch (error: unknown) {
+      const err = error as { data?: { detail?: string } };
+      toast.error(err?.data?.detail || "\u00c9chec de l'archivage.");
     }
   };
 
@@ -58,10 +64,11 @@ export default function ClientDetailPage() {
     if (!client) return;
     try {
       await restoreClient(client.id);
-      toast.success("Client restauré.");
+      toast.success("Client restaur\u00e9.");
       fetchClient();
-    } catch (error: any) {
-      toast.error(error?.data?.detail || "Échec de la restauration.");
+    } catch (error: unknown) {
+      const err = error as { data?: { detail?: string } };
+      toast.error(err?.data?.detail || "\u00c9chec de la restauration.");
     }
   };
 
@@ -69,6 +76,8 @@ export default function ClientDetailPage() {
     client?.type === "PROFESSIONNEL"
       ? client?.company_name
       : [client?.first_name, client?.last_name].filter(Boolean).join(" ");
+
+  const labels = client ? getPropertyLabels(client.type) : null;
 
   return (
     <div className="space-y-6">
@@ -88,8 +97,8 @@ export default function ClientDetailPage() {
               <Badge variant="secondary">
                 {client?.type === "PARTICULIER" ? "Particulier" : "Professionnel"}
               </Badge>
-              <Badge variant={client?.status === "ACTIF" ? "secondary" : "muted"}>
-                {client?.status === "ACTIF" ? "Actif" : "Archivé"}
+              <Badge variant={client?.status === "ACTIF" ? "secondary" : "outline"}>
+                {client?.status === "ACTIF" ? "Actif" : "Archiv\u00e9"}
               </Badge>
             </div>
           </div>
@@ -120,29 +129,8 @@ export default function ClientDetailPage() {
               Chargement du client...
             </div>
           ) : client ? (
-            <div className="space-y-4 text-sm">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <DetailField label="Email" value={client.email} />
-                <DetailField label="Téléphone" value={client.phone || "—"} />
-                <DetailField
-                  label="Contact"
-                  value={
-                    client.type === "PROFESSIONNEL"
-                      ? client.contact_name || "—"
-                      : [client.first_name, client.last_name].filter(Boolean).join(" ") || "—"
-                  }
-                />
-                <DetailField label="Agence" value={client.agency_id || "—"} />
-              </div>
-              <Separator />
-              <div className="grid gap-4 sm:grid-cols-3">
-                <DetailField label="Créé le" value={new Date(client.created_at).toLocaleString()} />
-                <DetailField label="Mis à jour" value={new Date(client.updated_at).toLocaleString()} />
-                <DetailField
-                  label="Archivé le"
-                  value={client.archived_at ? new Date(client.archived_at).toLocaleString() : "—"}
-                />
-              </div>
+            <div className="text-sm text-muted-foreground">
+              Utilisez les onglets ci-dessous pour voir les d\u00e9tails et les {labels?.plural || "logements"}.
             </div>
           ) : (
             <div className="text-sm text-muted-foreground">Client introuvable.</div>
@@ -156,6 +144,59 @@ export default function ClientDetailPage() {
         onSuccess={fetchClient}
         client={client}
       />
+
+      {client && (
+        <Card>
+          <CardContent className="pt-6">
+            <Tabs defaultValue="info" className="w-full">
+              <TabsList>
+                <TabsTrigger value="info">Informations</TabsTrigger>
+                <TabsTrigger value="properties">
+                  {labels?.pluralCapitalized || "Logements"}
+                  {propertiesCount > 0 && (
+                    <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                      {propertiesCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="info" className="mt-4">
+                <div className="space-y-4 text-sm">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <DetailField label="Email" value={client.email} />
+                    <DetailField label="T\u00e9l\u00e9phone" value={client.phone || "\u2014"} />
+                    <DetailField
+                      label="Contact"
+                      value={
+                        client.type === "PROFESSIONNEL"
+                          ? client.contact_name || "\u2014"
+                          : [client.first_name, client.last_name].filter(Boolean).join(" ") || "\u2014"
+                      }
+                    />
+                    <DetailField label="Agence" value={client.agency_id || "\u2014"} />
+                  </div>
+                  <Separator />
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <DetailField label="Cr\u00e9\u00e9 le" value={new Date(client.created_at).toLocaleString()} />
+                    <DetailField label="Mis \u00e0 jour" value={new Date(client.updated_at).toLocaleString()} />
+                    <DetailField
+                      label="Archiv\u00e9 le"
+                      value={client.archived_at ? new Date(client.archived_at).toLocaleString() : "\u2014"}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="properties" className="mt-4">
+                <PropertiesSection
+                  clientId={client.id}
+                  clientType={client.type}
+                  onCountChange={setPropertiesCount}
+                />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -168,4 +209,3 @@ function DetailField({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

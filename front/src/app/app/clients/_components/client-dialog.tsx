@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Client, createClient, updateClient } from "@/lib/api/clients";
+import type { ApiError } from "@/lib/api";
 import {
   clientCreateSchema,
   ClientFormValues,
@@ -42,6 +43,7 @@ type ClientDialogProps = {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   client?: Client | null;
+  forceType?: "PARTICULIER" | "PROFESSIONNEL";
 };
 
 const defaultValues: ClientFormValues = {
@@ -55,21 +57,24 @@ const defaultValues: ClientFormValues = {
   agency_id: null,
 };
 
-export function ClientDialog({ open, onOpenChange, onSuccess, client }: ClientDialogProps) {
+export function ClientDialog({ open, onOpenChange, onSuccess, client, forceType }: ClientDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientCreateSchema),
-    defaultValues,
+    defaultValues: {
+      ...defaultValues,
+      type: forceType || defaultValues.type,
+    },
     mode: "onChange",
   });
 
-  const currentType = form.watch("type");
+  const currentType = forceType || form.watch("type");
 
   useEffect(() => {
     if (client) {
       form.reset({
-        type: client.type,
+        type: forceType || client.type,
         first_name: client.first_name || "",
         last_name: client.last_name || "",
         company_name: client.company_name || "",
@@ -79,9 +84,12 @@ export function ClientDialog({ open, onOpenChange, onSuccess, client }: ClientDi
         agency_id: client.agency_id || null,
       });
     } else {
-      form.reset(defaultValues);
+      form.reset({
+        ...defaultValues,
+        type: forceType || defaultValues.type,
+      });
     }
-  }, [client, form, open]);
+  }, [client, form, open, forceType]);
 
   const submitLabel = useMemo(
     () => (client ? "Mettre à jour" : "Créer le client"),
@@ -98,15 +106,16 @@ export function ClientDialog({ open, onOpenChange, onSuccess, client }: ClientDi
         // Type explicite pour le payload de création (type toujours requis).
         const payload = {
           ...values,
-          type: values.type ?? "PARTICULIER",
+          type: forceType || (values.type ?? "PARTICULIER"),
         };
         await createClient(payload);
         toast.success("Client créé.");
       }
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      const message = error?.data?.detail || error?.message || "Erreur lors de l'enregistrement du client.";
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      const message = err?.data?.detail || err?.message || "Erreur lors de l'enregistrement du client.";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -121,30 +130,32 @@ export function ClientDialog({ open, onOpenChange, onSuccess, client }: ClientDi
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type de client</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clientTypeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {!forceType && (
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type de client</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {clientTypeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {currentType === "PARTICULIER" && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

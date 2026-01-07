@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   images: {
+    // Désactive l'optimisation en développement pour éviter les problèmes de port
+    // L'optimisation sera active en production automatiquement
+    unoptimized: process.env.NODE_ENV === "development",
     remotePatterns: [
       {
         protocol: "https",

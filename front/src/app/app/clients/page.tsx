@@ -15,6 +15,7 @@ import {
   listClients,
   restoreClient,
 } from "@/lib/api/clients";
+import type { ApiError } from "@/lib/api";
 import { DataTable } from "./_components/data-table";
 import { getColumns } from "./_components/columns";
 import { ClientDialog } from "./_components/client-dialog";
@@ -44,13 +45,14 @@ export default function ClientsPage() {
         page,
         pageSize,
         search: search || undefined,
-        sortBy: sortBy as any,
+        sortBy: sortBy as "name" | "company_name" | "email" | "status" | "created_at",
         sortDir,
       });
       setClients(data.items);
       setTotal(data.total);
-    } catch (error: any) {
-      const message = error?.data?.detail || error?.message || "Impossible de charger les clients.";
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      const message = err?.data?.detail || err?.message || "Impossible de charger les clients.";
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -65,10 +67,11 @@ export default function ClientsPage() {
     async (client: Client) => {
       try {
         await archiveClient(client.id);
-        toast.success("Client désactivé.");
+        toast.success("Client desactive.");
         fetchClients();
-      } catch (error: any) {
-        toast.error(error?.data?.detail || error?.message || "Échec de la désactivation.");
+      } catch (error: unknown) {
+        const err = error as ApiError;
+        toast.error(err?.data?.detail || err?.message || "Echec de la desactivation.");
       }
     },
     [fetchClients]
@@ -78,10 +81,11 @@ export default function ClientsPage() {
     async (client: Client) => {
       try {
         await restoreClient(client.id);
-        toast.success("Client restauré.");
+        toast.success("Client restaure.");
         fetchClients();
-      } catch (error: any) {
-        toast.error(error?.data?.detail || error?.message || "Échec de la restauration.");
+      } catch (error: unknown) {
+        const err = error as ApiError;
+        toast.error(err?.data?.detail || err?.message || "Echec de la restauration.");
       }
     },
     [fetchClients]

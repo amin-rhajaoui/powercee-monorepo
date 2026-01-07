@@ -31,10 +31,13 @@ import { searchAddress, searchAddressSuggestions, type GeocodingResult } from "@
 import { mergeRefs } from "@/lib/utils";
 
 // Import dynamique du composant Map pour éviter les erreurs SSR
-const AgencyMap = dynamic(() => import("@/components/maps/agency-map"), {
-  ssr: false,
-  loading: () => <div className="h-[300px] w-full bg-muted animate-pulse rounded-md" />,
-});
+const LocationPickerMap = dynamic(
+  () => import("@/components/maps/location-picker-map").then((mod) => ({ default: mod.LocationPickerMap })),
+  {
+    ssr: false,
+    loading: () => <div className="h-[300px] w-full bg-muted animate-pulse rounded-md" />,
+  }
+);
 
 const agencySchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
@@ -350,9 +353,9 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
 
             <div className="space-y-2">
               <FormLabel>Localisation sur la carte</FormLabel>
-              <AgencyMap 
-                lat={form.watch("latitude")} 
-                lng={form.watch("longitude")} 
+              <LocationPickerMap
+                lat={form.watch("latitude")}
+                lng={form.watch("longitude")}
                 onPositionChange={(lat, lng) => {
                   form.setValue("latitude", lat);
                   form.setValue("longitude", lng);

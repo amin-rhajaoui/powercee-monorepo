@@ -11,6 +11,8 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.agency import Agency
     from app.models.client import Client
+    from app.models.property import Property
+    from app.models.module_draft import ModuleDraft
 
 
 class Tenant(Base):
@@ -65,4 +67,6 @@ class Tenant(Base):
     users: Mapped[List["User"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     agencies: Mapped[List["Agency"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     clients: Mapped[List["Client"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
+    properties: Mapped[List["Property"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
+    module_drafts: Mapped[list["ModuleDraft"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
 

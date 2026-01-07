@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { Loader2, Palette } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,10 +24,12 @@ const brandingSchema = z.object({
 type BrandingFormValues = z.infer<typeof brandingSchema>;
 
 export default function BrandingPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [tenantName, setTenantName] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<BrandingFormValues>({
     resolver: zodResolver(brandingSchema),
@@ -41,7 +44,7 @@ export default function BrandingPage() {
   useEffect(() => {
     async function loadTenantData() {
       try {
-        const response = await api.get("tenants/me/branding"); // On utilise cet endpoint pour tester, mais on pourrait avoir un /me plus complet
+        const response = await api.get("tenants/me/branding");
         const data = await response.json();
         setTenantName(data.name);
         form.reset({
@@ -49,17 +52,30 @@ export default function BrandingPage() {
           primary_color: data.primary_color || "#000000",
           secondary_color: data.secondary_color || "#ffffff",
         });
-      } catch (error) {
-        // Si l'endpoint me/branding n'existe pas encore (GET), on pourrait échouer ici.
-        // Pour l'instant on ignore l'erreur pour permettre le développement UI.
-        console.error("Failed to load tenant data", error);
+        setError(null);
+      } catch (error: any) {
+        // Gestion des erreurs d'authentification
+        if (error?.status === 401 || error?.status === 403) {
+          setError("Vous n'êtes pas authentifié. Veuillez vous connecter.");
+          // Ne pas afficher de toast pour éviter la duplication avec le message d'erreur
+          // Redirection immédiate sans délai
+          router.push("/login");
+        } else if (error?.status === 404) {
+          // L'endpoint n'existe peut-être pas encore, on continue avec les valeurs par défaut
+          console.warn("Endpoint branding non trouvé, utilisation des valeurs par défaut");
+          setError(null);
+        } else {
+          const message = error?.data?.detail || error?.message || "Erreur lors du chargement des données";
+          setError(message);
+          toast.error(message);
+        }
       } finally {
         setIsLoading(false);
       }
     }
 
     loadTenantData();
-  }, [form]);
+  }, [form, router]);
 
   async function onSubmit(values: BrandingFormValues) {
     setIsSaving(true);
@@ -101,6 +117,23 @@ export default function BrandingPage() {
     );
   }
 
+  if (error && error.includes("authentifié")) {
+    return (
+      <div className="container max-w-6xl py-10">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <p className="text-destructive">{error}</p>
+              <Button onClick={() => router.push("/login")}>
+                Aller à la page de connexion
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container max-w-6xl py-10 space-y-8">
       <div>
@@ -108,6 +141,11 @@ export default function BrandingPage() {
         <p className="text-muted-foreground">
           Gérez l'identité visuelle de votre entreprise {tenantName && <strong>({tenantName})</strong>}.
         </p>
+        {error && !error.includes("authentifié") && (
+          <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-md">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
       </div>
 
       <div className="max-w-2xl">

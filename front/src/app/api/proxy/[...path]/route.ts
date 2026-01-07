@@ -23,6 +23,11 @@ async function handleRequest(
   // Transmettre les cookies au backend
   if (cookieHeader) {
     headers["Cookie"] = cookieHeader;
+  } else {
+    // Logger si aucun cookie n'est présent (pour debug)
+    if (path.includes("tenants/me") || path.includes("auth")) {
+      console.warn(`[Proxy] No cookies found for request to ${path}`);
+    }
   }
 
   // Préparer le body
@@ -88,6 +93,18 @@ async function handleRequest(
       });
     } else {
       const responseBody = await response.text();
+      
+      // Si le backend retourne une erreur, logger les détails
+      if (!response.ok) {
+        console.error(`Backend error [${response.status}]:`, {
+          url,
+          method,
+          status: response.status,
+          statusText: response.statusText,
+          body: responseBody,
+        });
+      }
+      
       return new NextResponse(responseBody, {
         status: response.status,
         statusText: response.statusText,
@@ -95,9 +112,17 @@ async function handleRequest(
       });
     }
   } catch (error) {
-    console.error("Proxy error:", error);
+    console.error("Proxy error:", {
+      error: error instanceof Error ? error.message : String(error),
+      url,
+      method,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
-      { detail: "Erreur lors de la communication avec le serveur" },
+      { 
+        detail: "Erreur lors de la communication avec le serveur",
+        error: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

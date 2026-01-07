@@ -1,16 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { 
-  LayoutDashboard, 
-  FolderOpen, 
-  Users, 
+import {
+  LayoutDashboard,
+  FolderOpen,
+  Users,
+  Package,
   ChevronRight,
-  LogOut,
-  MapPin,
-  Palette,
-  Building,
-  Building2
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -26,7 +22,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarTrigger,
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/ui/logo";
@@ -54,6 +49,11 @@ const navItems: NavItem[] = [
     title: "Clients",
     url: "/app/clients",
     icon: Users,
+  },
+  {
+    title: "Modules",
+    url: "/app/modules",
+    icon: Package,
   },
 ];
 
