@@ -115,6 +115,7 @@ export function PropertiesSection({ clientId, clientType, onCountChange }: Prope
                 <TableHead>Label</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Adresse</TableHead>
+                <TableHead>Altitude</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -130,6 +131,11 @@ export function PropertiesSection({ clientId, clientType, onCountChange }: Prope
                       <MapPin className="h-3 w-3" />
                       <span className="truncate max-w-[300px]">{property.address}</span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {property.altitude !== null && property.altitude !== undefined
+                      ? `${Math.round(property.altitude)} m`
+                      : "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

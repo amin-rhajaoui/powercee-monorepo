@@ -103,6 +103,11 @@ class Property(Base):
         nullable=True,
         doc="Notes libres.",
     )
+    altitude: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        doc="Altitude en mètres (récupérée depuis une API externe).",
+    )
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,

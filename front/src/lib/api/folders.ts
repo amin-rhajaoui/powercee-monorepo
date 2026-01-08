@@ -15,6 +15,8 @@ export type Folder = {
   status: FolderStatus;
   data: Record<string, unknown>;
   source_draft_id: string | null;
+  mpr_color?: string | null;
+  emitter_type?: string | null;
   created_at: string;
   updated_at: string;
 };

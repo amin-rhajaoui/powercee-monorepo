@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -6,8 +7,48 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.folder import Folder, FolderStatus
 from app.models.module_draft import ModuleDraft
+from app.models.property import Property
 from app.models.user import User
 from app.schemas.folder import FolderCreate, FolderUpdate
+from app.services.elevation_service import get_elevation
+from app.services.mpr_service import calculate_mpr_color
+
+logger = logging.getLogger(__name__)
+
+
+def determine_emitter_type(emitters_configuration: list[dict] | None) -> str | None:
+    """
+    Détermine le type d'émetteur principal du logement.
+    
+    Args:
+        emitters_configuration: Liste des configurations d'émetteurs par niveau
+            Format: [{"level": 0, "emitters": ["FONTE", "RADIATEURS"]}, ...]
+    
+    Returns:
+        "BASSE_TEMPERATURE" si tous les niveaux ont uniquement "PLANCHER_CHAUFFANT"
+        "MOYENNE_HAUTE_TEMPERATURE" sinon
+        None si la configuration est vide ou invalide
+    """
+    if not emitters_configuration or len(emitters_configuration) == 0:
+        return None
+    
+    # Vérifier que tous les niveaux ont uniquement "PLANCHER_CHAUFFANT"
+    for config in emitters_configuration:
+        emitters = config.get("emitters", [])
+        
+        # Si aucun émetteur configuré, on considère que ce n'est pas basse température
+        if not emitters or len(emitters) == 0:
+            return "MOYENNE_HAUTE_TEMPERATURE"
+        
+        # Si un seul type d'émetteur et c'est PLANCHER_CHAUFFANT, continuer
+        # Sinon, c'est moyenne/haute température
+        if len(emitters) == 1 and emitters[0] == "PLANCHER_CHAUFFANT":
+            continue
+        else:
+            return "MOYENNE_HAUTE_TEMPERATURE"
+    
+    # Si on arrive ici, tous les niveaux ont uniquement PLANCHER_CHAUFFANT
+    return "BASSE_TEMPERATURE"
 
 
 async def create_folder(
@@ -95,6 +136,61 @@ async def create_folder_from_draft(
         **draft.data,
     }
 
+    # Calculer la couleur MPR
+    mpr_color = None
+    if draft.reference_tax_income is not None and draft.household_size is not None:
+        # Récupérer le code postal depuis la Property si disponible
+        postal_code = None
+        property_obj = None
+        
+        if draft.property_id:
+            property_result = await db.execute(
+                select(Property).where(
+                    and_(
+                        Property.id == draft.property_id,
+                        Property.tenant_id == user.tenant_id,
+                    )
+                )
+            )
+            property_obj = property_result.scalar_one_or_none()
+            if property_obj and property_obj.postal_code:
+                postal_code = property_obj.postal_code
+        
+        if postal_code:
+            try:
+                mpr_color = calculate_mpr_color(
+                    rfr=float(draft.reference_tax_income),
+                    household_size=draft.household_size,
+                    postal_code=postal_code
+                )
+                logger.info(f"Couleur MPR calculée: {mpr_color} pour RFR={draft.reference_tax_income}, household_size={draft.household_size}, postal_code={postal_code}")
+            except Exception as e:
+                logger.error(f"Erreur lors du calcul de la couleur MPR: {e}")
+        else:
+            logger.warning("Code postal non disponible pour calculer la couleur MPR")
+    else:
+        logger.warning("RFR ou household_size manquant pour calculer la couleur MPR")
+
+    # Déterminer le type d'émetteur
+    emitter_type = determine_emitter_type(draft.emitters_configuration)
+    if emitter_type:
+        logger.info(f"Type d'émetteur déterminé: {emitter_type}")
+
+    # Récupérer l'altitude si une Property est associée
+    if property_obj and property_obj.latitude is not None and property_obj.longitude is not None:
+        try:
+            altitude = await get_elevation(
+                latitude=property_obj.latitude,
+                longitude=property_obj.longitude
+            )
+            if altitude is not None:
+                property_obj.altitude = altitude
+                logger.info(f"Altitude récupérée et mise à jour: {altitude}m pour Property {property_obj.id}")
+            else:
+                logger.warning(f"Impossible de récupérer l'altitude pour Property {property_obj.id}")
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération de l'altitude: {e}")
+
     # Créer le dossier
     folder = Folder(
         tenant_id=user.tenant_id,
@@ -104,6 +200,8 @@ async def create_folder_from_draft(
         status=FolderStatus.IN_PROGRESS,
         data=draft_data,
         source_draft_id=draft.id,
+        mpr_color=mpr_color,
+        emitter_type=emitter_type,
     )
     db.add(folder)
 

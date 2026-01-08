@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuration de l'API
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
@@ -7,6 +8,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
 // Clés de stockage
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const ACCESS_TOKEN_KEY = 'access_token';
+const TOKEN_KEY = '@powercee:access_token';
 
 // Instance axios de base
 export const apiClient: AxiosInstance = axios.create({
@@ -52,6 +54,12 @@ const getRefreshToken = async (): Promise<string | null> => {
 // Fonction pour sauvegarder les tokens
 export const setTokens = async (access: string, refresh?: string) => {
   accessToken = access;
+  // Sauvegarder aussi dans AsyncStorage pour persistance
+  try {
+    await AsyncStorage.setItem(TOKEN_KEY, access);
+  } catch (error) {
+    console.error('Error saving access token to AsyncStorage:', error);
+  }
   if (refresh) {
     await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refresh);
   }
@@ -68,6 +76,7 @@ export const clearTokens = async () => {
   try {
     await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
     await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
+    await AsyncStorage.removeItem(TOKEN_KEY);
   } catch (error) {
     console.error('Error clearing tokens:', error);
   }
@@ -111,6 +120,12 @@ const refreshAccessToken = async (): Promise<string | null> => {
     
     if (access_token) {
       accessToken = access_token;
+      // Sauvegarder aussi dans AsyncStorage pour persistance
+      try {
+        await AsyncStorage.setItem(TOKEN_KEY, access_token);
+      } catch (error) {
+        console.error('Error saving refreshed token to AsyncStorage:', error);
+      }
       if (newRefreshToken) {
         await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, newRefreshToken);
       }
@@ -132,6 +147,18 @@ const refreshAccessToken = async (): Promise<string | null> => {
 // Intercepteur de requête : ajouter le token Bearer
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // Si le token n'est pas en mémoire, essayer de le récupérer depuis AsyncStorage
+    if (!accessToken) {
+      try {
+        const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
+        if (storedToken) {
+          accessToken = storedToken;
+        }
+      } catch (error) {
+        console.error('Error loading token from AsyncStorage:', error);
+      }
+    }
+    
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }

@@ -21,6 +21,7 @@ class PropertyBase(BaseModel):
     country: str | None = Field(default="France", max_length=100, description="Pays")
     surface_m2: float | None = Field(None, gt=0, description="Surface en m²")
     construction_year: int | None = Field(None, ge=1000, le=2100, description="Année de construction")
+    altitude: float | None = Field(None, description="Altitude en mètres")
     notes: str | None = Field(None, description="Notes libres")
 
     @model_validator(mode="after")
@@ -51,6 +52,7 @@ class PropertyUpdate(BaseModel):
     country: str | None = Field(None, max_length=100)
     surface_m2: float | None = Field(None, gt=0)
     construction_year: int | None = Field(None, ge=1000, le=2100)
+    altitude: float | None = None
     notes: str | None = None
 
     @model_validator(mode="after")

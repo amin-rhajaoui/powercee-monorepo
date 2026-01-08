@@ -1,11 +1,17 @@
 import { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { TextInput, Button, Text, Card, HelperText } from 'react-native-paper';
+import { View, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/useAuth';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { lightColors } from '@/lib/colors';
 
 const registerSchema = z.object({
   company_name: z.string().min(2, { message: 'Le nom de l\'entreprise doit faire au moins 2 caractères' }),
@@ -54,49 +60,37 @@ export default function RegisterScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
-      <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="headlineMedium" style={styles.title}>
-              Créer un compte
-            </Text>
-            <Text variant="bodyMedium" style={styles.subtitle}>
+          <View>
+            <Text style={styles.title}>Créer un compte</Text>
+            <Text style={styles.subtitle}>
               Commencez à gérer vos dossiers CEE dès aujourd'hui.
             </Text>
 
             {error && (
-              <Card style={styles.errorCard}>
-                <Card.Content>
-                  <Text variant="bodySmall" style={styles.errorText}>
-                    {error}
-                  </Text>
-                </Card.Content>
-              </Card>
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
             )}
 
-            <View style={styles.form}>
+            <View>
               <Controller
                 control={control}
                 name="full_name"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <View>
-                    <TextInput
-                      label="Nom complet"
-                      mode="outlined"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      autoCapitalize="words"
-                      error={!!errors.full_name}
-                      style={styles.input}
-                    />
-                    {errors.full_name && (
-                      <HelperText type="error" visible={!!errors.full_name}>
-                        {errors.full_name.message}
-                      </HelperText>
-                    )}
-                  </View>
+                  <Input
+                    label="Nom complet"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    error={errors.full_name?.message}
+                    autoCapitalize="words"
+                  />
                 )}
               />
 
@@ -104,23 +98,14 @@ export default function RegisterScreen() {
                 control={control}
                 name="company_name"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <View>
-                    <TextInput
-                      label="Entreprise"
-                      mode="outlined"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      autoCapitalize="words"
-                      error={!!errors.company_name}
-                      style={styles.input}
-                    />
-                    {errors.company_name && (
-                      <HelperText type="error" visible={!!errors.company_name}>
-                        {errors.company_name.message}
-                      </HelperText>
-                    )}
-                  </View>
+                  <Input
+                    label="Entreprise"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    error={errors.company_name?.message}
+                    autoCapitalize="words"
+                  />
                 )}
               />
 
@@ -128,25 +113,16 @@ export default function RegisterScreen() {
                 control={control}
                 name="email"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <View>
-                    <TextInput
-                      label="Email professionnel"
-                      mode="outlined"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      autoComplete="email"
-                      error={!!errors.email}
-                      style={styles.input}
-                    />
-                    {errors.email && (
-                      <HelperText type="error" visible={!!errors.email}>
-                        {errors.email.message}
-                      </HelperText>
-                    )}
-                  </View>
+                  <Input
+                    label="Email professionnel"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    error={errors.email?.message}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoComplete="email"
+                  />
                 )}
               />
 
@@ -154,75 +130,79 @@ export default function RegisterScreen() {
                 control={control}
                 name="password"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <View>
-                    <TextInput
-                      label="Mot de passe"
-                      mode="outlined"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      secureTextEntry={!showPassword}
-                      autoComplete="password"
-                      error={!!errors.password}
-                      right={
-                        <TextInput.Icon
-                          icon={showPassword ? 'eye-off' : 'eye'}
-                          onPress={() => setShowPassword(!showPassword)}
+                  <View style={styles.passwordContainer}>
+                    <Text style={styles.passwordLabel}>Mot de passe</Text>
+                    <View style={styles.passwordInputContainer}>
+                      <TextInput
+                        style={styles.passwordInput}
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        secureTextEntry={!showPassword}
+                        autoComplete="password"
+                        placeholderTextColor={lightColors.mutedForeground}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        style={styles.eyeIcon}
+                      >
+                        <Icon
+                          name={showPassword ? 'eye-off' : 'eye'}
+                          size={20}
+                          color={lightColors.mutedForeground}
                         />
-                      }
-                      style={styles.input}
-                    />
-                    <HelperText type="info" visible={true}>
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.helperText}>
                       8 caractères minimum.
-                    </HelperText>
+                    </Text>
                     {errors.password && (
-                      <HelperText type="error" visible={!!errors.password}>
+                      <Text style={styles.errorHelperText}>
                         {errors.password.message}
-                      </HelperText>
+                      </Text>
                     )}
                   </View>
                 )}
               />
 
               <Button
-                mode="contained"
+                variant="contained"
                 onPress={handleSubmit(onSubmit)}
                 loading={isLoading}
                 disabled={isLoading}
-                style={styles.button}
+                fullWidth
+                style={styles.submitButton}
               >
                 Commencer l'essai gratuit
               </Button>
             </View>
 
             <View style={styles.footer}>
-              <Text variant="bodySmall" style={styles.footerText}>
-                Déjà un compte ?{' '}
-              </Text>
+              <Text style={styles.footerText}>Déjà un compte ? </Text>
               <Button
-                mode="text"
+                variant="text"
                 onPress={() => router.push('/(auth)/login')}
-                compact
+                style={styles.linkButton}
               >
                 Se connecter
               </Button>
             </View>
-          </Card.Content>
+          </View>
         </Card>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: lightColors.background,
+  },
   scrollContent: {
     flexGrow: 1,
-  },
-  container: {
-    flex: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#f5f5f5',
   },
   card: {
     maxWidth: 400,
@@ -230,28 +210,74 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: lightColors.cardForeground,
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
+    fontSize: 16,
+    color: lightColors.mutedForeground,
     marginBottom: 24,
     textAlign: 'center',
     opacity: 0.7,
   },
-  form: {
-    width: '100%',
-  },
-  input: {
-    marginBottom: 8,
-  },
-  errorCard: {
-    backgroundColor: '#ffebee',
+  errorContainer: {
+    backgroundColor: `${lightColors.destructive}1A`,
+    borderWidth: 1,
+    borderColor: `${lightColors.destructive}33`,
+    borderRadius: 10,
+    padding: 16,
     marginBottom: 16,
   },
   errorText: {
-    color: '#c62828',
+    fontSize: 14,
+    color: lightColors.destructive,
   },
-  button: {
+  passwordContainer: {
+    marginBottom: 16,
+  },
+  passwordLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: lightColors.foreground,
+    marginBottom: 8,
+  },
+  passwordInputContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingRight: 48,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: lightColors.input,
+    backgroundColor: lightColors.background,
+    color: lightColors.foreground,
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    transform: [{ translateY: -10 }],
+  },
+  helperText: {
+    fontSize: 12,
+    color: lightColors.mutedForeground,
+    marginTop: 4,
+    paddingHorizontal: 4,
+  },
+  errorHelperText: {
+    fontSize: 12,
+    color: lightColors.destructive,
+    marginTop: 4,
+    paddingHorizontal: 4,
+  },
+  submitButton: {
     marginTop: 8,
     marginBottom: 16,
   },
@@ -262,6 +288,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   footerText: {
+    fontSize: 14,
+    color: lightColors.mutedForeground,
     opacity: 0.7,
+  },
+  linkButton: {
+    padding: 0,
   },
 });

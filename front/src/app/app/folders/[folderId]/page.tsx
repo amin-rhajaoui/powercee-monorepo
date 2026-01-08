@@ -32,6 +32,9 @@ import {
   ArrowLeft,
   Phone,
   Mail,
+  CheckCircle2,
+  XCircle,
+  Download,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
@@ -162,6 +165,172 @@ function InfoRow({
       <div className="flex items-center gap-2">
         <span className="font-medium">{value}</span>
         {actionButton}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// MPR Color Badge Component
+// ============================================================================
+
+function MprColorBadge({ color }: { color: string | null | undefined }) {
+  if (!color) return null;
+
+  const colorConfig: Record<
+    string,
+    { bg: string; text: string; border: string; label: string }
+  > = {
+    Bleu: {
+      bg: "bg-blue-50 dark:bg-blue-950",
+      text: "text-blue-700 dark:text-blue-300",
+      border: "border-blue-200 dark:border-blue-800",
+      label: "Très Modeste",
+    },
+    Jaune: {
+      bg: "bg-yellow-50 dark:bg-yellow-950",
+      text: "text-yellow-700 dark:text-yellow-300",
+      border: "border-yellow-200 dark:border-yellow-800",
+      label: "Modeste",
+    },
+    Violet: {
+      bg: "bg-purple-50 dark:bg-purple-950",
+      text: "text-purple-700 dark:text-purple-300",
+      border: "border-purple-200 dark:border-purple-800",
+      label: "Intermédiaire",
+    },
+    Rose: {
+      bg: "bg-pink-50 dark:bg-pink-950",
+      text: "text-pink-700 dark:text-pink-300",
+      border: "border-pink-200 dark:border-pink-800",
+      label: "Classique",
+    },
+    Inconnu: {
+      bg: "bg-gray-50 dark:bg-gray-950",
+      text: "text-gray-700 dark:text-gray-300",
+      border: "border-gray-200 dark:border-gray-800",
+      label: "Inconnu",
+    },
+  };
+
+  const config = colorConfig[color] || colorConfig.Inconnu;
+
+  return (
+    <div className="flex justify-between py-1 items-center">
+      <span className="text-muted-foreground">Couleur MPR</span>
+      <div className="flex items-center gap-2">
+        <div
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 ${config.bg} ${config.text} ${config.border} font-semibold`}
+        >
+          <div
+            className={`w-3 h-3 rounded-full ${
+              color === "Bleu"
+                ? "bg-blue-500"
+                : color === "Jaune"
+                ? "bg-yellow-500"
+                : color === "Violet"
+                ? "bg-purple-500"
+                : color === "Rose"
+                ? "bg-pink-500"
+                : "bg-gray-500"
+            }`}
+          />
+          <span>{color}</span>
+          <span className="text-xs opacity-75">({config.label})</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Emitter Type Badge Component
+// ============================================================================
+
+function EmitterTypeBadge({
+  emitterType,
+}: {
+  emitterType: string | null | undefined;
+}) {
+  if (!emitterType) return null;
+
+  const isBasseTemperature = emitterType === "BASSE_TEMPERATURE";
+
+  return (
+    <div className="mt-3 p-4 rounded-lg border-2 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              isBasseTemperature
+                ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                : "bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300"
+            }`}
+          >
+            <Thermometer className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Type d'émetteur</p>
+            <p className="font-semibold text-base">
+              {isBasseTemperature
+                ? "Basse température"
+                : "Moyenne / Haute température"}
+            </p>
+          </div>
+        </div>
+        <Badge
+          variant={isBasseTemperature ? "default" : "secondary"}
+          className="text-xs"
+        >
+          {isBasseTemperature ? "Plancher chauffant" : "Radiateurs"}
+        </Badge>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Document Status Row Component
+// ============================================================================
+
+function DocumentStatusRow({
+  label,
+  url,
+  downloadLabel,
+}: {
+  label: string;
+  url: string | null | undefined;
+  downloadLabel: string;
+}) {
+  const isUploaded = !!url;
+
+  return (
+    <div className="flex justify-between py-2 items-center">
+      <span className="text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-3">
+        {isUploaded ? (
+          <>
+            <Badge
+              variant="default"
+              className="bg-green-500 hover:bg-green-600 text-white border-0 flex items-center gap-1.5 px-3 py-1"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Téléversé</span>
+            </Badge>
+            <DownloadButton
+              href={url}
+              label={downloadLabel}
+            />
+          </>
+        ) : (
+          <Badge
+            variant="outline"
+            className="border-gray-300 dark:border-gray-700 text-muted-foreground flex items-center gap-1.5 px-3 py-1"
+          >
+            <XCircle className="h-3.5 w-3.5" />
+            <span>Non fourni</span>
+          </Badge>
+        )}
       </div>
     </div>
   );
@@ -409,6 +578,7 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                           : null
                       }
                     />
+                    <MprColorBadge color={folder.mpr_color} />
                   </div>
                 ) : (
                   <p className="text-muted-foreground pl-7">
@@ -458,6 +628,15 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                         <InfoRow
                           label="Annee de construction"
                           value={property.construction_year}
+                        />
+                        <InfoRow
+                          label="Altitude"
+                          value={
+                            property.altitude !== null &&
+                            property.altitude !== undefined
+                              ? `${Math.round(property.altitude)} m`
+                              : null
+                          }
                         />
                       </div>
                       {property.latitude && property.longitude
@@ -543,54 +722,26 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="space-y-2 pl-7">
-                  <InfoRow
+                <div className="space-y-3 pl-7">
+                  <DocumentStatusRow
                     label="Avis d'imposition"
-                    value={data.tax_notice_url ? "Televerse" : "Non fourni"}
-                    actionButton={
-                      data.tax_notice_url ? (
-                        <DownloadButton
-                          href={data.tax_notice_url as string}
-                          label="Telecharger l'avis d'imposition"
-                        />
-                      ) : undefined
-                    }
+                    url={data.tax_notice_url as string | null | undefined}
+                    downloadLabel="Télécharger l'avis d'imposition"
                   />
-                  <InfoRow
+                  <DocumentStatusRow
                     label="Justificatif de domicile"
-                    value={data.address_proof_url ? "Televerse" : "Non fourni"}
-                    actionButton={
-                      data.address_proof_url ? (
-                        <DownloadButton
-                          href={data.address_proof_url as string}
-                          label="Telecharger le justificatif de domicile"
-                        />
-                      ) : undefined
-                    }
+                    url={data.address_proof_url as string | null | undefined}
+                    downloadLabel="Télécharger le justificatif de domicile"
                   />
-                  <InfoRow
-                    label="Taxe fonciere / Acte de propriete"
-                    value={data.property_proof_url ? "Televerse" : "Non fourni"}
-                    actionButton={
-                      data.property_proof_url ? (
-                        <DownloadButton
-                          href={data.property_proof_url as string}
-                          label="Telecharger la taxe fonciere ou l'acte de propriete"
-                        />
-                      ) : undefined
-                    }
+                  <DocumentStatusRow
+                    label="Taxe foncière / Acte de propriété"
+                    url={data.property_proof_url as string | null | undefined}
+                    downloadLabel="Télécharger la taxe foncière ou l'acte de propriété"
                   />
-                  <InfoRow
-                    label="Facture d'energie"
-                    value={data.energy_bill_url ? "Televerse" : "Non fourni"}
-                    actionButton={
-                      data.energy_bill_url ? (
-                        <DownloadButton
-                          href={data.energy_bill_url as string}
-                          label="Telecharger la facture d'energie"
-                        />
-                      ) : undefined
-                    }
+                  <DocumentStatusRow
+                    label="Facture d'énergie"
+                    url={data.energy_bill_url as string | null | undefined}
+                    downloadLabel="Télécharger la facture d'énergie"
                   />
                   <InfoRow
                     label="Revenu fiscal de reference"
@@ -670,6 +821,7 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                         </div>
                       )
                       : null}
+                    <EmitterTypeBadge emitterType={folder.emitter_type} />
                   </div>
 
                   <Separator />

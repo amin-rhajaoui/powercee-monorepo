@@ -50,6 +50,8 @@ class FolderResponse(FolderBase):
     id: UUID
     tenant_id: UUID
     source_draft_id: UUID | None
+    mpr_color: str | None = Field(None, description="Couleur MPR calculée (Bleu, Jaune, Violet, Rose, Inconnu)")
+    emitter_type: str | None = Field(None, description="Type d'émetteur (BASSE_TEMPERATURE, MOYENNE_HAUTE_TEMPERATURE)")
     created_at: datetime
     updated_at: datetime
 

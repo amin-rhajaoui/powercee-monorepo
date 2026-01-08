@@ -16,6 +16,7 @@ import {
   getClient,
   restoreClient,
 } from "@/lib/api/clients";
+import { listFolders, Folder } from "@/lib/api/folders";
 import { getPropertyLabels } from "@/lib/property-labels";
 import { ClientDialog } from "../_components/client-dialog";
 import { PropertiesSection } from "./_components/properties-section";
@@ -29,6 +30,7 @@ export default function ClientDetailPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [propertiesCount, setPropertiesCount] = useState(0);
+  const [folders, setFolders] = useState<Folder[]>([]);
 
   const fetchClient = useCallback(async () => {
     if (!clientId) return;
@@ -36,6 +38,15 @@ export default function ClientDetailPage() {
     try {
       const data = await getClient(clientId);
       setClient(data);
+      
+      // Récupérer les dossiers du client pour afficher les informations MPR et type d'émetteur
+      try {
+        const foldersData = await listFolders({ client_id: clientId, page: 1, pageSize: 100 });
+        setFolders(foldersData.items);
+      } catch (error) {
+        // Ne pas afficher d'erreur si les dossiers ne peuvent pas être récupérés
+        console.warn("Erreur lors de la récupération des dossiers:", error);
+      }
     } catch (error: unknown) {
       const err = error as { data?: { detail?: string } };
       toast.error(err?.data?.detail || "Client introuvable.");
@@ -176,6 +187,53 @@ export default function ClientDetailPage() {
                     <DetailField label="Agence" value={client.agency_id || "\u2014"} />
                   </div>
                   <Separator />
+                  {/* Informations techniques */}
+                  {folders.length > 0 && (
+                    <>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold">Informations techniques</h4>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {(() => {
+                            // Récupérer la dernière couleur MPR disponible
+                            const lastMprColor = folders
+                              .filter(f => f.mpr_color)
+                              .map(f => f.mpr_color)
+                              .slice(-1)[0];
+                            
+                            // Récupérer le dernier type d'émetteur disponible
+                            const lastEmitterType = folders
+                              .filter(f => f.emitter_type)
+                              .map(f => f.emitter_type)
+                              .slice(-1)[0];
+                            
+                            return (
+                              <>
+                                {lastMprColor && (
+                                  <DetailField 
+                                    label="Couleur MPR" 
+                                    value={lastMprColor}
+                                  />
+                                )}
+                                {lastEmitterType && (
+                                  <DetailField 
+                                    label="Type d'émetteur" 
+                                    value={
+                                      lastEmitterType === "BASSE_TEMPERATURE"
+                                        ? "Basse température"
+                                        : lastEmitterType === "MOYENNE_HAUTE_TEMPERATURE"
+                                        ? "Moyenne / Haute température"
+                                        : lastEmitterType
+                                    }
+                                  />
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
                   <div className="grid gap-4 sm:grid-cols-3">
                     <DetailField label="Cr\u00e9\u00e9 le" value={new Date(client.created_at).toLocaleString()} />
                     <DetailField label="Mis \u00e0 jour" value={new Date(client.updated_at).toLocaleString()} />

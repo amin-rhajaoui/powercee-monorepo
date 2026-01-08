@@ -73,6 +73,16 @@ class Folder(Base):
         index=True,
         doc="ID du draft source (pour traçabilité).",
     )
+    mpr_color: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Couleur MPR calculée (Bleu, Jaune, Violet, Rose, Inconnu).",
+    )
+    emitter_type: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+        doc="Type d'émetteur (BASSE_TEMPERATURE, MOYENNE_HAUTE_TEMPERATURE).",
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
