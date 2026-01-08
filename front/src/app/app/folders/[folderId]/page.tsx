@@ -1,0 +1,775 @@
+"use client";
+
+import { use, useState, useEffect } from "react";
+import { notFound } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { DownloadButton } from "@/components/ui/download-button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  User,
+  Home,
+  FileText,
+  Thermometer,
+  Camera,
+  Settings,
+  Calculator,
+  FileSignature,
+  Loader2,
+  ArrowLeft,
+  Phone,
+  Mail,
+} from "lucide-react";
+import dynamic from "next/dynamic";
+import { toast } from "sonner";
+import Link from "next/link";
+import { getFolder, type Folder } from "@/lib/api/folders";
+import { getClient, type Client } from "@/lib/api/clients";
+import { getProperty, type Property } from "@/lib/api/properties";
+import { getModuleById } from "@/lib/modules";
+
+// Import dynamique de la carte pour éviter les erreurs SSR
+const PropertyMap = dynamic(
+  () =>
+    import("@/components/maps/location-picker-map").then(
+      (mod) => mod.LocationPickerMap
+    ),
+  { ssr: false }
+);
+
+// ============================================================================
+// Types
+// ============================================================================
+
+type FolderDetailPageProps = {
+  params: Promise<{ folderId: string }>;
+};
+
+// ============================================================================
+// Labels pour les enums
+// ============================================================================
+
+const OCCUPATION_STATUS_LABELS: Record<string, string> = {
+  PROPRIETAIRE: "Proprietaire",
+  LOCATAIRE: "Locataire",
+};
+
+const HEATING_SYSTEM_LABELS: Record<string, string> = {
+  FIOUL: "Fioul",
+  GAZ: "Gaz",
+  CHARBON: "Charbon",
+  BOIS: "Bois",
+  ELECTRIQUE: "Electrique",
+};
+
+const WATER_HEATING_TYPE_LABELS: Record<string, string> = {
+  BALLON_ELECTRIQUE: "Ballon electrique",
+  CHAUFFE_EAU_GAZ: "Chauffe-eau gaz",
+  CHAUFFE_EAU_THERMODYNAMIQUE: "Chauffe-eau thermodynamique",
+  AUTRE: "Autre",
+};
+
+const PROPERTY_TYPE_LABELS: Record<string, string> = {
+  MAISON: "Maison",
+  APPARTEMENT: "Appartement",
+  BATIMENT_PRO: "Batiment professionnel",
+  AUTRE: "Autre",
+};
+
+const ATTIC_TYPE_LABELS: Record<string, string> = {
+  PERDUS: "Combles perdus",
+  HABITES: "Combles amenages / habites",
+};
+
+const FLOOR_TYPE_LABELS: Record<string, string> = {
+  CAVE: "Cave / Sous-sol",
+  VIDE_SANITAIRE: "Vide sanitaire",
+  TERRE_PLEIN: "Terre-plein (sur dalle)",
+};
+
+const WALL_ISOLATION_TYPE_LABELS: Record<string, string> = {
+  AUCUNE: "Aucune isolation",
+  INTERIEUR: "Isolation par l'interieur (ITI)",
+  EXTERIEUR: "Isolation par l'exterieur (ITE)",
+  DOUBLE: "Double isolation (ITI + ITE)",
+};
+
+const JOINERY_TYPE_LABELS: Record<string, string> = {
+  SIMPLE: "Simple vitrage",
+  DOUBLE_OLD: "Double vitrage ancien (avant 2000)",
+  DOUBLE_RECENT: "Double vitrage recent (apres 2000)",
+};
+
+const EMITTER_TYPE_LABELS: Record<string, string> = {
+  FONTE: "Radiateurs fonte",
+  RADIATEURS: "Radiateurs (acier/alu)",
+  PLANCHER_CHAUFFANT: "Plancher chauffant",
+};
+
+const LEVEL_LABELS: Record<number, string> = {
+  0: "RDC",
+  1: "R+1",
+  2: "R+2",
+  3: "R+3",
+  4: "R+4",
+};
+
+const FOLDER_STATUS_LABELS: Record<string, string> = {
+  IN_PROGRESS: "En cours",
+  CLOSED: "Clos",
+  ARCHIVED: "Archive",
+};
+
+const FOLDER_STATUS_VARIANTS: Record<
+  string,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
+  IN_PROGRESS: "default",
+  CLOSED: "secondary",
+  ARCHIVED: "outline",
+};
+
+// ============================================================================
+// Info Row Component
+// ============================================================================
+
+function InfoRow({
+  label,
+  value,
+  actionButton,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+  actionButton?: React.ReactNode;
+}) {
+  if (value === null || value === undefined || value === "") return null;
+  return (
+    <div className="flex justify-between py-1 items-center">
+      <span className="text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-2">
+        <span className="font-medium">{value}</span>
+        {actionButton}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+function FolderDetailPageContent({ folderId }: { folderId: string }) {
+  const [folder, setFolder] = useState<Folder | null>(null);
+  const [client, setClient] = useState<Client | null>(null);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load folder data
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const folderData = await getFolder(folderId);
+        setFolder(folderData);
+
+        // Load client and property in parallel
+        const [clientData, propertyData] = await Promise.all([
+          folderData.client_id ? getClient(folderData.client_id) : null,
+          folderData.property_id ? getProperty(folderData.property_id) : null,
+        ]);
+
+        setClient(clientData);
+        setProperty(propertyData);
+      } catch (err) {
+        console.error("Erreur lors du chargement du dossier:", err);
+        setError("Dossier introuvable");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, [folderId]);
+
+  // Get module info
+  const module = folder?.module_code
+    ? getModuleById(folder.module_code)
+    : null;
+
+  // Extract data from folder
+  const data = folder?.data || {};
+
+  // Action button handlers (placeholders)
+  const handleAddPhotos = () => {
+    toast.info("Fonctionnalite 'Ajouter photos' a venir");
+  };
+
+  const handleInstallationRecommendations = () => {
+    toast.info("Fonctionnalite 'Preconisations d'installations' a venir");
+  };
+
+  const handleSizingNote = () => {
+    toast.info("Fonctionnalite 'Note de dimensionnement' a venir");
+  };
+
+  const handleQuoteAndSignature = () => {
+    toast.info("Fonctionnalite 'Devis et signature' a venir");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error || !folder) {
+    notFound();
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/app/dossiers">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Dossier {client ? `${client.first_name} ${client.last_name}` : ""}
+            </h1>
+            <Badge variant={FOLDER_STATUS_VARIANTS[folder.status]}>
+              {FOLDER_STATUS_LABELS[folder.status]}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            {folder.module_code && (
+              <Badge variant="outline" className="font-mono text-xs">
+                {folder.module_code}
+              </Badge>
+            )}
+            {!folder.module_code && (
+              <Badge variant="secondary" className="text-xs">
+                Dossier libre
+              </Badge>
+            )}
+            {module && (
+              <span className="text-sm text-muted-foreground">
+                {module.title}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Fiche Dossier</CardTitle>
+          <CardDescription>
+            Recapitulatif des informations et actions disponibles
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-2"
+              onClick={handleAddPhotos}
+            >
+              <Camera className="h-6 w-6" />
+              <span className="text-sm">Ajouter photos</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-2"
+              onClick={handleInstallationRecommendations}
+            >
+              <Settings className="h-6 w-6" />
+              <span className="text-sm">Preconisations</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-2"
+              onClick={handleSizingNote}
+            >
+              <Calculator className="h-6 w-6" />
+              <span className="text-sm">Dimensionnement</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-2"
+              onClick={handleQuoteAndSignature}
+            >
+              <FileSignature className="h-6 w-6" />
+              <span className="text-sm">Devis et signature</span>
+            </Button>
+          </div>
+
+          <Separator />
+
+          {/* Collapsible Sections */}
+          <Accordion
+            type="multiple"
+            defaultValue={["foyer", "logement", "documents", "visite"]}
+            className="w-full"
+          >
+            {/* Section 1: Foyer (Client) */}
+            <AccordionItem value="foyer">
+              <AccordionTrigger className="text-lg">
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  <span>Foyer</span>
+                  {client && (
+                    <Badge variant="secondary" className="ml-2">
+                      {client.first_name} {client.last_name}
+                    </Badge>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                {client ? (
+                  <div className="space-y-2 pl-7">
+                    <InfoRow
+                      label="Nom"
+                      value={`${client.first_name || ""} ${client.last_name || ""}`}
+                    />
+                    <InfoRow
+                      label="Email"
+                      value={client.email}
+                      actionButton={
+                        client.email ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            asChild
+                          >
+                            <Link href={`mailto:${client.email}`}>
+                              <Mail className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        ) : undefined
+                      }
+                    />
+                    <InfoRow
+                      label="Telephone"
+                      value={client.phone}
+                      actionButton={
+                        client.phone ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            asChild
+                          >
+                            <Link href={`tel:${client.phone}`}>
+                              <Phone className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        ) : undefined
+                      }
+                    />
+                    <InfoRow
+                      label="Statut d'occupation"
+                      value={
+                        data.occupation_status
+                          ? OCCUPATION_STATUS_LABELS[data.occupation_status as string]
+                          : null
+                      }
+                    />
+                    <InfoRow
+                      label="Residence principale"
+                      value={
+                        data.is_principal_residence === true
+                          ? "Oui"
+                          : data.is_principal_residence === false
+                          ? "Non"
+                          : null
+                      }
+                    />
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground pl-7">
+                    Aucun client selectionne
+                  </p>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section 2: Logement (Property) */}
+            <AccordionItem value="logement">
+              <AccordionTrigger className="text-lg">
+                <div className="flex items-center gap-2">
+                  <Home className="h-5 w-5 text-primary" />
+                  <span>Logement</span>
+                  {property && (
+                    <Badge variant="secondary" className="ml-2">
+                      {property.label}
+                    </Badge>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                {property ? (
+                  <div className="space-y-4 pl-7">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Informations generales</h4>
+                        <InfoRow
+                          label="Type"
+                          value={PROPERTY_TYPE_LABELS[property.type]}
+                        />
+                        <InfoRow label="Adresse" value={property.address} />
+                        <InfoRow
+                          label="Code postal"
+                          value={property.postal_code}
+                        />
+                        <InfoRow label="Ville" value={property.city} />
+                        <InfoRow
+                          label="Surface"
+                          value={
+                            property.surface_m2
+                              ? `${property.surface_m2} m²`
+                              : null
+                          }
+                        />
+                        <InfoRow
+                          label="Annee de construction"
+                          value={property.construction_year}
+                        />
+                      </div>
+                      {property.latitude && property.longitude && (
+                        <div className="space-y-2">
+                          <h4 className="font-medium">Localisation</h4>
+                          <div className="w-full h-[300px] rounded-md overflow-hidden border">
+                            <PropertyMap
+                              lat={property.latitude}
+                              lng={property.longitude}
+                              onPositionChange={() => {}}
+                              zoom={15}
+                              height="300px"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <Separator />
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Systeme de chauffage</h4>
+                      <InfoRow
+                        label="Type de chauffage"
+                        value={
+                          data.heating_system
+                            ? HEATING_SYSTEM_LABELS[data.heating_system as string]
+                            : null
+                        }
+                      />
+                      <InfoRow
+                        label="Marque ancienne chaudiere"
+                        value={data.old_boiler_brand as string}
+                      />
+                      <InfoRow
+                        label="Eau chaude liee au chauffage"
+                        value={
+                          data.is_water_heating_linked === true
+                            ? "Oui"
+                            : data.is_water_heating_linked === false
+                            ? "Non"
+                            : null
+                        }
+                      />
+                      {data.is_water_heating_linked === false && (
+                        <InfoRow
+                          label="Type d'eau chaude"
+                          value={
+                            data.water_heating_type
+                              ? WATER_HEATING_TYPE_LABELS[
+                                  data.water_heating_type as string
+                                ]
+                              : null
+                          }
+                        />
+                      )}
+                      <InfoRow
+                        label="Phase electrique"
+                        value={data.electrical_phase as string}
+                      />
+                      <InfoRow
+                        label="Puissance"
+                        value={
+                          data.power_kva ? `${data.power_kva} kVA` : null
+                        }
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground pl-7">
+                    Aucun logement selectionne
+                  </p>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section 3: Documents */}
+            <AccordionItem value="documents">
+              <AccordionTrigger className="text-lg">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <span>Documents administratifs</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-2 pl-7">
+                  <InfoRow
+                    label="Avis d'imposition"
+                    value={data.tax_notice_url ? "Televerse" : "Non fourni"}
+                    actionButton={
+                      data.tax_notice_url ? (
+                        <DownloadButton
+                          href={data.tax_notice_url as string}
+                          label="Telecharger l'avis d'imposition"
+                        />
+                      ) : undefined
+                    }
+                  />
+                  <InfoRow
+                    label="Justificatif de domicile"
+                    value={data.address_proof_url ? "Televerse" : "Non fourni"}
+                    actionButton={
+                      data.address_proof_url ? (
+                        <DownloadButton
+                          href={data.address_proof_url as string}
+                          label="Telecharger le justificatif de domicile"
+                        />
+                      ) : undefined
+                    }
+                  />
+                  <InfoRow
+                    label="Taxe fonciere / Acte de propriete"
+                    value={data.property_proof_url ? "Televerse" : "Non fourni"}
+                    actionButton={
+                      data.property_proof_url ? (
+                        <DownloadButton
+                          href={data.property_proof_url as string}
+                          label="Telecharger la taxe fonciere ou l'acte de propriete"
+                        />
+                      ) : undefined
+                    }
+                  />
+                  <InfoRow
+                    label="Facture d'energie"
+                    value={data.energy_bill_url ? "Televerse" : "Non fourni"}
+                    actionButton={
+                      data.energy_bill_url ? (
+                        <DownloadButton
+                          href={data.energy_bill_url as string}
+                          label="Telecharger la facture d'energie"
+                        />
+                      ) : undefined
+                    }
+                  />
+                  <InfoRow
+                    label="Revenu fiscal de reference"
+                    value={
+                      data.reference_tax_income
+                        ? `${(data.reference_tax_income as number).toLocaleString()} €`
+                        : null
+                    }
+                  />
+                  <InfoRow
+                    label="Personnes dans le foyer"
+                    value={data.household_size as number}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section 4: Visite Technique */}
+            <AccordionItem value="visite">
+              <AccordionTrigger className="text-lg">
+                <div className="flex items-center gap-2">
+                  <Thermometer className="h-5 w-5 text-primary" />
+                  <span>Visite Technique</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pl-7">
+                  {/* Chauffage */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Chauffage</h4>
+                    <InfoRow
+                      label="Nombre de niveaux"
+                      value={data.nb_levels as number}
+                    />
+                    <InfoRow
+                      label="Hauteur sous plafond"
+                      value={
+                        data.avg_ceiling_height
+                          ? `${data.avg_ceiling_height} m`
+                          : null
+                      }
+                    />
+                    <InfoRow
+                      label="Temperature cible"
+                      value={
+                        data.target_temperature
+                          ? `${data.target_temperature}°C`
+                          : null
+                      }
+                    />
+
+                    {/* Emitters by level */}
+                    {data.emitters_configuration &&
+                      Array.isArray(data.emitters_configuration) &&
+                      (data.emitters_configuration as Array<{ level: number; emitters: string[] }>).length > 0 && (
+                        <div className="mt-2">
+                          <span className="text-muted-foreground">
+                            Emetteurs par niveau:
+                          </span>
+                          <div className="mt-1 space-y-1">
+                            {(data.emitters_configuration as Array<{ level: number; emitters: string[] }>).map(
+                              (config) => (
+                                <div key={config.level} className="flex gap-2 text-sm">
+                                  <span className="font-medium">
+                                    {LEVEL_LABELS[config.level]}:
+                                  </span>
+                                  <span>
+                                    {config.emitters
+                                      .map((e) => EMITTER_TYPE_LABELS[e] || e)
+                                      .join(", ") || "Aucun"}
+                                  </span>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Enveloppe */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Enveloppe</h4>
+
+                    {/* Combles */}
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Combles: </span>
+                      <span>
+                        {data.attic_type
+                          ? ATTIC_TYPE_LABELS[data.attic_type as string]
+                          : "Non renseigne"}
+                      </span>
+                      {data.is_attic_isolated !== null &&
+                        data.is_attic_isolated !== undefined && (
+                          <span>
+                            {" "}
+                            -{" "}
+                            {data.is_attic_isolated
+                              ? `Isole (${data.attic_isolation_year || "annee inconnue"})`
+                              : "Non isole"}
+                          </span>
+                        )}
+                    </div>
+
+                    {/* Plancher bas */}
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">
+                        Plancher bas:{" "}
+                      </span>
+                      <span>
+                        {data.floor_type
+                          ? FLOOR_TYPE_LABELS[data.floor_type as string]
+                          : "Non renseigne"}
+                      </span>
+                      {data.is_floor_isolated !== null &&
+                        data.is_floor_isolated !== undefined && (
+                          <span>
+                            {" "}
+                            -{" "}
+                            {data.is_floor_isolated
+                              ? `Isole (${data.floor_isolation_year || "annee inconnue"})`
+                              : "Non isole"}
+                          </span>
+                        )}
+                    </div>
+
+                    {/* Murs */}
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Murs: </span>
+                      <span>
+                        {data.wall_isolation_type
+                          ? WALL_ISOLATION_TYPE_LABELS[
+                              data.wall_isolation_type as string
+                            ]
+                          : "Non renseigne"}
+                      </span>
+                      {data.wall_isolation_type === "INTERIEUR" &&
+                        data.wall_isolation_year_interior && (
+                          <span> ({data.wall_isolation_year_interior})</span>
+                        )}
+                      {data.wall_isolation_type === "EXTERIEUR" &&
+                        data.wall_isolation_year_exterior && (
+                          <span> ({data.wall_isolation_year_exterior})</span>
+                        )}
+                      {data.wall_isolation_type === "DOUBLE" && (
+                        <span>
+                          {data.wall_isolation_year_interior &&
+                            ` ITI: ${data.wall_isolation_year_interior}`}
+                          {data.wall_isolation_year_exterior &&
+                            ` ITE: ${data.wall_isolation_year_exterior}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Menuiseries */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Menuiseries</h4>
+                    <InfoRow
+                      label="Type de vitrage"
+                      value={
+                        data.joinery_type
+                          ? JOINERY_TYPE_LABELS[data.joinery_type as string]
+                          : null
+                      }
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function FolderDetailPage({ params }: FolderDetailPageProps) {
+  const resolvedParams = use(params);
+  return <FolderDetailPageContent folderId={resolvedParams.folderId} />;
+}

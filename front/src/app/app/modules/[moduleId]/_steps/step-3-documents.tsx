@@ -233,13 +233,14 @@ export function Step3Documents({
             </Label>
             <Select
               value={
-                isAddressSameAsWorks === undefined
-                  ? undefined
+                isAddressSameAsWorks === undefined || isAddressSameAsWorks === null
+                  ? ""
                   : isAddressSameAsWorks
                   ? "oui"
                   : "non"
               }
               onValueChange={(value) => {
+                if (value === "") return;
                 form.setValue("is_address_same_as_works", value === "oui", {
                   shouldValidate: true,
                 });

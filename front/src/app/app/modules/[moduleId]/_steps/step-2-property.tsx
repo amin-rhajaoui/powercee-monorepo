@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useForm, UseFormReturn, useFormState } from "react-hook-form";
+import { useForm, UseFormReturn, useFormState, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Card,
@@ -85,22 +85,33 @@ const USAGE_MODE_LABELS = {
 // ============================================================================
 
 function BarTh171Fields({ form }: BarTh171FieldsProps) {
-  // Utiliser useFormState pour forcer le re-render quand les valeurs changent
-  // useFormState déclenche un re-render à chaque changement du formulaire
-  useFormState({ control: form.control });
+  // Utiliser useWatch pour déclencher les re-renders quand les valeurs changent
+  const isPrincipalResidence = useWatch({ control: form.control, name: "is_principal_residence" });
+  const heatingSystem = useWatch({ control: form.control, name: "heating_system" });
+  const occupationStatus = useWatch({ control: form.control, name: "occupation_status" });
+  const isWaterHeatingLinked = useWatch({ control: form.control, name: "is_water_heating_linked" });
+  const waterHeatingType = useWatch({ control: form.control, name: "water_heating_type" });
+  const usageMode = useWatch({ control: form.control, name: "usage_mode" });
+  const electricalPhase = useWatch({ control: form.control, name: "electrical_phase" });
   
-  // Utiliser form.watch() pour obtenir les valeurs actuelles
-  // Cela fonctionne maintenant car useFormState force le re-render
-  const isPrincipalResidence = form.watch("is_principal_residence");
-  const heatingSystem = form.watch("heating_system");
-  const occupationStatus = form.watch("occupation_status");
-  const isWaterHeatingLinked = form.watch("is_water_heating_linked");
-  const waterHeatingType = form.watch("water_heating_type");
-  const usageMode = form.watch("usage_mode");
-  const electricalPhase = form.watch("electrical_phase");
+  // Utiliser un état local pour garantir que le re-render se déclenche
+  const [localIsWaterHeatingLinked, setLocalIsWaterHeatingLinked] = useState<boolean | undefined>(isWaterHeatingLinked);
   
-  // Utiliser la valeur du state pour garantir l'affichage
-  const shouldShowQuestions = isWaterHeatingLinked === false;
+  // Synchroniser l'état local avec la valeur du formulaire
+  useEffect(() => {
+    setLocalIsWaterHeatingLinked(isWaterHeatingLinked);
+  }, [isWaterHeatingLinked]);
+  
+  // Afficher les questions si is_water_heating_linked est explicitement false
+  const shouldShowQuestions = localIsWaterHeatingLinked === false;
+  
+  // Forcer la validation quand is_water_heating_linked change
+  useEffect(() => {
+    if (localIsWaterHeatingLinked === false) {
+      form.trigger("water_heating_type");
+      form.trigger("usage_mode");
+    }
+  }, [localIsWaterHeatingLinked, form]);
 
   return (
     <div className="space-y-6 border-t pt-6 mt-6">
@@ -115,13 +126,14 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
             </Label>
             <Select
               value={
-                isPrincipalResidence === undefined
-                  ? undefined
+                isPrincipalResidence === undefined || isPrincipalResidence === null
+                  ? ""
                   : isPrincipalResidence
                   ? "oui"
                   : "non"
               }
               onValueChange={(value) => {
+                if (value === "") return;
                 form.setValue(
                   "is_principal_residence",
                   value === "oui",
@@ -142,8 +154,9 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
           <div className="space-y-2">
             <Label htmlFor="occupation_status">Statut d&apos;occupation</Label>
             <Select
-              value={occupationStatus ?? undefined}
+              value={occupationStatus ?? ""}
               onValueChange={(value) => {
+                if (value === "") return;
                 form.setValue(
                   "occupation_status",
                   value as "PROPRIETAIRE" | "LOCATAIRE",
@@ -185,8 +198,9 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
           <div className="space-y-2">
             <Label htmlFor="heating_system">Type de chauffage à remplacer</Label>
             <Select
-              value={heatingSystem ?? undefined}
+              value={heatingSystem ?? ""}
               onValueChange={(value) => {
+                if (value === "") return;
                 form.setValue(
                   "heating_system",
                   value as "FIOUL" | "GAZ" | "CHARBON" | "BOIS" | "ELECTRIQUE",
@@ -241,14 +255,16 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
           </Label>
           <Select
             value={
-              isWaterHeatingLinked === undefined
-                ? undefined
+              isWaterHeatingLinked === undefined || isWaterHeatingLinked === null
+                ? ""
                 : isWaterHeatingLinked
                 ? "oui"
                 : "non"
             }
             onValueChange={(value) => {
+              if (value === "") return;
               const newValue = value === "oui";
+              setLocalIsWaterHeatingLinked(newValue);
               form.setValue("is_water_heating_linked", newValue, {
                 shouldValidate: true,
                 shouldDirty: true,
@@ -277,8 +293,9 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
                 Système actuel de production d&apos;eau chaude
               </Label>
               <Select
-                value={waterHeatingType ?? undefined}
+                value={waterHeatingType ?? ""}
                 onValueChange={(value) => {
+                  if (value === "") return;
                   form.setValue(
                     "water_heating_type",
                     value as
@@ -315,8 +332,9 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
                 Mode d&apos;usage souhaité
               </Label>
               <Select
-                value={usageMode ?? undefined}
+                value={usageMode ?? ""}
                 onValueChange={(value) => {
+                  if (value === "") return;
                   form.setValue(
                     "usage_mode",
                     value as "HEATING_ONLY" | "HEATING_AND_HOT_WATER",
@@ -353,8 +371,9 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
           <div className="space-y-2">
             <Label htmlFor="electrical_phase">Type de compteur</Label>
             <Select
-              value={electricalPhase ?? undefined}
+              value={electricalPhase ?? ""}
               onValueChange={(value) => {
+                if (value === "") return;
                 form.setValue(
                   "electrical_phase",
                   value as "MONOPHASE" | "TRIPHASE",
@@ -481,9 +500,10 @@ export function Step2Property({
     }
   }, [draft, draftData.step2?.property_id, form]);
 
-  const propertyId = form.watch("property_id");
-  const isPrincipalResidence = form.watch("is_principal_residence");
-  const heatingSystem = form.watch("heating_system");
+  // Utiliser useWatch pour garantir la synchronisation
+  const propertyId = useWatch({ control: form.control, name: "property_id" });
+  const isPrincipalResidence = useWatch({ control: form.control, name: "is_principal_residence" });
+  const heatingSystem = useWatch({ control: form.control, name: "heating_system" });
 
   // Refs pour suivre les valeurs précédentes et éviter d'afficher le toast plusieurs fois
   const prevPrincipalResidenceRef = useRef<boolean | undefined>(undefined);
@@ -555,8 +575,19 @@ export function Step2Property({
       if (errors.heating_system) {
         toast.error(errors.heating_system.message || "");
       }
+      if (errors.water_heating_type) {
+        toast.error(errors.water_heating_type.message || "");
+      }
       if (errors.usage_mode) {
         toast.error(errors.usage_mode.message || "");
+      }
+      // Afficher toutes les autres erreurs
+      const otherErrors = Object.keys(errors).filter(
+        (key) =>
+          !["property_id", "is_principal_residence", "heating_system", "water_heating_type", "usage_mode"].includes(key)
+      );
+      if (otherErrors.length > 0) {
+        console.error("Autres erreurs de validation:", otherErrors);
       }
       return;
     }
@@ -592,6 +623,8 @@ export function Step2Property({
           power_kva: values.power_kva,
         }
       );
+      console.log("Sauvegarde réussie, navigation vers étape 3");
+      // Appeler onNext après la sauvegarde pour naviguer vers l'étape suivante
       onNext();
     } catch (error) {
       console.error("Erreur lors de la navigation:", error);
@@ -641,7 +674,10 @@ export function Step2Property({
           </Button>
           <Button
             type="button"
-            onClick={handleNext}
+            onClick={(e) => {
+              e.preventDefault();
+              handleNext(e);
+            }}
             disabled={
               !propertyId ||
               isNavigating ||

@@ -19,6 +19,25 @@ export type ElectricalPhase = "MONOPHASE" | "TRIPHASE";
 export type UsageMode = "HEATING_ONLY" | "HEATING_AND_HOT_WATER";
 
 // ============================================================================
+// Enums pour BAR-TH-171 - Étape 4 : Visite Technique
+// ============================================================================
+
+export type AtticType = "PERDUS" | "HABITES";
+
+export type FloorType = "CAVE" | "VIDE_SANITAIRE" | "TERRE_PLEIN";
+
+export type WallIsolationType = "AUCUNE" | "INTERIEUR" | "EXTERIEUR" | "DOUBLE";
+
+export type JoineryType = "SIMPLE" | "DOUBLE_OLD" | "DOUBLE_RECENT";
+
+export type EmitterType = "FONTE" | "RADIATEURS" | "PLANCHER_CHAUFFANT";
+
+export type LevelEmitters = {
+  level: number;
+  emitters: EmitterType[];
+};
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -50,6 +69,21 @@ export type ModuleDraft = {
   energy_bill_url: string | null;
   reference_tax_income: number | null;
   household_size: number | null;
+  // Champs spécifiques BAR-TH-171 - Étape 4 : Visite Technique
+  nb_levels: number | null;
+  avg_ceiling_height: number | null;
+  target_temperature: number | null;
+  attic_type: AtticType | null;
+  is_attic_isolated: boolean | null;
+  attic_isolation_year: number | null;
+  floor_type: FloorType | null;
+  is_floor_isolated: boolean | null;
+  floor_isolation_year: number | null;
+  wall_isolation_type: WallIsolationType | null;
+  wall_isolation_year_interior: number | null;
+  wall_isolation_year_exterior: number | null;
+  joinery_type: JoineryType | null;
+  emitters_configuration: LevelEmitters[] | null;
 };
 
 export type ModuleDraftCreate = {
@@ -82,6 +116,21 @@ export type ModuleDraftUpdate = {
   energy_bill_url?: string | null;
   reference_tax_income?: number | null;
   household_size?: number | null;
+  // Champs spécifiques BAR-TH-171 - Étape 4 : Visite Technique
+  nb_levels?: number | null;
+  avg_ceiling_height?: number | null;
+  target_temperature?: number | null;
+  attic_type?: AtticType | null;
+  is_attic_isolated?: boolean | null;
+  attic_isolation_year?: number | null;
+  floor_type?: FloorType | null;
+  is_floor_isolated?: boolean | null;
+  floor_isolation_year?: number | null;
+  wall_isolation_type?: WallIsolationType | null;
+  wall_isolation_year_interior?: number | null;
+  wall_isolation_year_exterior?: number | null;
+  joinery_type?: JoineryType | null;
+  emitters_configuration?: LevelEmitters[] | null;
 };
 
 export type PaginatedModuleDrafts = {

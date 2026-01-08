@@ -1,4 +1,4 @@
-from . import auth_service, client_service, email_service, invitation_service, property_service, s3_service, module_draft_service
+from . import auth_service, client_service, email_service, invitation_service, property_service, s3_service, module_draft_service, folder_service
 
 __all__ = [
     "auth_service",
@@ -8,5 +8,6 @@ __all__ = [
     "property_service",
     "s3_service",
     "module_draft_service",
+    "folder_service",
 ]
 

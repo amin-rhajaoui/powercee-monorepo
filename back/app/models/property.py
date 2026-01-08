@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.models.tenant import Tenant
     from app.models.client import Client
     from app.models.module_draft import ModuleDraft
+    from app.models.folder import Folder
 
 
 class PropertyType(str, Enum):
@@ -132,4 +133,5 @@ class Property(Base):
     tenant: Mapped["Tenant"] = relationship(back_populates="properties")
     client: Mapped["Client"] = relationship(back_populates="properties")
     module_drafts: Mapped[list["ModuleDraft"]] = relationship(back_populates="property")
+    folders: Mapped[list["Folder"]] = relationship(back_populates="property")
 

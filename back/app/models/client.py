@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.property import Property
     from app.models.module_draft import ModuleDraft
+    from app.models.folder import Folder
 
 
 class ClientType(str, Enum):
@@ -128,5 +129,6 @@ class Client(Base):
     owner: Mapped["User"] = relationship(back_populates="clients")
     properties: Mapped[List["Property"]] = relationship(back_populates="client", cascade="all, delete-orphan")
     module_drafts: Mapped[list["ModuleDraft"]] = relationship(back_populates="client")
+    folders: Mapped[list["Folder"]] = relationship(back_populates="client")
 
 

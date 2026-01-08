@@ -5,6 +5,7 @@ from .invitation import Invitation
 from .client import Client, ClientType, ClientStatus
 from .property import Property, PropertyType
 from .module_draft import ModuleDraft
+from .folder import Folder, FolderStatus
 
-__all__ = ["Tenant", "User", "UserRole", "Agency", "Invitation", "Client", "ClientType", "ClientStatus", "Property", "PropertyType", "ModuleDraft"]
+__all__ = ["Tenant", "User", "UserRole", "Agency", "Invitation", "Client", "ClientType", "ClientStatus", "Property", "PropertyType", "ModuleDraft", "Folder", "FolderStatus"]
 

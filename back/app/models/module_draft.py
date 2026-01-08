@@ -143,6 +143,80 @@ class ModuleDraft(Base):
         doc="Nombre de personnes dans le foyer fiscal.",
     )
 
+    # =========================================================================
+    # Champs spécifiques BAR-TH-171 - Étape 4 : Visite Technique
+    # =========================================================================
+    nb_levels: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Nombre de niveaux du logement (1 à 5).",
+    )
+    avg_ceiling_height: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        doc="Hauteur moyenne sous plafond en mètres.",
+    )
+    target_temperature: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Température de confort souhaitée (par défaut 19°C).",
+    )
+    attic_type: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Type de combles (PERDUS, HABITES).",
+    )
+    is_attic_isolated: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="Les combles sont-ils isolés ?",
+    )
+    attic_isolation_year: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Année d'isolation des combles.",
+    )
+    floor_type: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Type de plancher bas (CAVE, VIDE_SANITAIRE, TERRE_PLEIN).",
+    )
+    is_floor_isolated: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="Le plancher bas est-il isolé ?",
+    )
+    floor_isolation_year: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Année d'isolation du plancher bas.",
+    )
+    wall_isolation_type: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Type d'isolation des murs (AUCUNE, INTERIEUR, EXTERIEUR, DOUBLE).",
+    )
+    wall_isolation_year_interior: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Année d'isolation intérieure des murs.",
+    )
+    wall_isolation_year_exterior: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Année d'isolation extérieure des murs.",
+    )
+    joinery_type: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Type de menuiseries (SIMPLE, DOUBLE_OLD, DOUBLE_RECENT).",
+    )
+    emitters_configuration: Mapped[dict | None] = mapped_column(
+        JSONB,
+        nullable=True,
+        doc="Configuration des émetteurs par niveau [{level: 0, emitters: ['FONTE', 'RADIATEURS']}].",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

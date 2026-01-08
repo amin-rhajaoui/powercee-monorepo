@@ -41,6 +41,41 @@ class UsageMode(str, Enum):
 
 
 # ============================================================================
+# Enums pour BAR-TH-171 - Étape 4 : Visite Technique
+# ============================================================================
+
+
+class AtticType(str, Enum):
+    PERDUS = "PERDUS"
+    HABITES = "HABITES"
+
+
+class FloorType(str, Enum):
+    CAVE = "CAVE"
+    VIDE_SANITAIRE = "VIDE_SANITAIRE"
+    TERRE_PLEIN = "TERRE_PLEIN"
+
+
+class WallIsolationType(str, Enum):
+    AUCUNE = "AUCUNE"
+    INTERIEUR = "INTERIEUR"
+    EXTERIEUR = "EXTERIEUR"
+    DOUBLE = "DOUBLE"
+
+
+class JoineryType(str, Enum):
+    SIMPLE = "SIMPLE"
+    DOUBLE_OLD = "DOUBLE_OLD"
+    DOUBLE_RECENT = "DOUBLE_RECENT"
+
+
+class EmitterType(str, Enum):
+    FONTE = "FONTE"
+    RADIATEURS = "RADIATEURS"
+    PLANCHER_CHAUFFANT = "PLANCHER_CHAUFFANT"
+
+
+# ============================================================================
 # Schémas Pydantic
 # ============================================================================
 
@@ -71,6 +106,22 @@ class ModuleDraftBase(BaseModel):
     energy_bill_url: str | None = Field(None, max_length=500, description="URL S3 de la facture d'énergie")
     reference_tax_income: int | None = Field(None, ge=0, description="Revenu fiscal de référence")
     household_size: int | None = Field(None, ge=1, le=20, description="Nombre de personnes dans le foyer fiscal")
+
+    # Champs spécifiques BAR-TH-171 - Étape 4 : Visite Technique
+    nb_levels: int | None = Field(None, ge=1, le=5, description="Nombre de niveaux (1 à 5)")
+    avg_ceiling_height: float | None = Field(None, ge=1.5, le=6.0, description="Hauteur sous plafond en mètres")
+    target_temperature: int | None = Field(None, ge=15, le=25, description="Température de confort souhaitée (défaut 19°C)")
+    attic_type: AtticType | None = Field(None, description="Type de combles")
+    is_attic_isolated: bool | None = Field(None, description="Les combles sont-ils isolés ?")
+    attic_isolation_year: int | None = Field(None, ge=1900, le=2030, description="Année d'isolation des combles")
+    floor_type: FloorType | None = Field(None, description="Type de plancher bas")
+    is_floor_isolated: bool | None = Field(None, description="Le plancher bas est-il isolé ?")
+    floor_isolation_year: int | None = Field(None, ge=1900, le=2030, description="Année d'isolation du plancher bas")
+    wall_isolation_type: WallIsolationType | None = Field(None, description="Type d'isolation des murs")
+    wall_isolation_year_interior: int | None = Field(None, ge=1900, le=2030, description="Année d'isolation intérieure des murs")
+    wall_isolation_year_exterior: int | None = Field(None, ge=1900, le=2030, description="Année d'isolation extérieure des murs")
+    joinery_type: JoineryType | None = Field(None, description="Type de menuiseries")
+    emitters_configuration: list[dict] | None = Field(None, description="Configuration des émetteurs par niveau [{level: 0, emitters: ['FONTE']}]")
 
 
 class ModuleDraftCreate(ModuleDraftBase):
@@ -105,6 +156,22 @@ class ModuleDraftUpdate(BaseModel):
     energy_bill_url: str | None = Field(None, max_length=500)
     reference_tax_income: int | None = Field(None, ge=0)
     household_size: int | None = Field(None, ge=1, le=20)
+
+    # Champs spécifiques BAR-TH-171 - Étape 4 : Visite Technique
+    nb_levels: int | None = Field(None, ge=1, le=5)
+    avg_ceiling_height: float | None = Field(None, ge=1.5, le=6.0)
+    target_temperature: int | None = Field(None, ge=15, le=25)
+    attic_type: AtticType | None = None
+    is_attic_isolated: bool | None = None
+    attic_isolation_year: int | None = Field(None, ge=1900, le=2030)
+    floor_type: FloorType | None = None
+    is_floor_isolated: bool | None = None
+    floor_isolation_year: int | None = Field(None, ge=1900, le=2030)
+    wall_isolation_type: WallIsolationType | None = None
+    wall_isolation_year_interior: int | None = Field(None, ge=1900, le=2030)
+    wall_isolation_year_exterior: int | None = Field(None, ge=1900, le=2030)
+    joinery_type: JoineryType | None = None
+    emitters_configuration: list[dict] | None = None
 
 
 class ModuleDraftResponse(ModuleDraftBase):

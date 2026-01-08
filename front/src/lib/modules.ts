@@ -1,4 +1,4 @@
-import { Package, Building2, Home, ThermometerSun } from "lucide-react";
+import { Package, Building2, Home, ThermometerSun, Wrench } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
 export type ModuleCategory = "PARTICULIER" | "PROFESSIONNEL";
@@ -23,6 +23,15 @@ export const modules: Module[] = [
     description: "Module de calcul pour les pompes à chaleur air/eau ou eau/eau dans le cadre de la rénovation énergétique.",
     category: "PARTICULIER",
     icon: ThermometerSun,
+    status: "IN_DEVELOPMENT",
+  },
+  {
+    id: "bat-th-xxx",
+    code: "BAT-TH-XXX",
+    title: "Rénovation globale tertiaire",
+    description: "Module de calcul pour la rénovation globale des bâtiments tertiaires dans le cadre de la rénovation énergétique.",
+    category: "PROFESSIONNEL",
+    icon: Wrench,
     status: "IN_DEVELOPMENT",
   },
 ];
