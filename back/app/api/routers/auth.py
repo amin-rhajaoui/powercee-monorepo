@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,11 +29,14 @@ async def register(
 
 @router.post("/login")
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Authentifie un utilisateur et définit un cookie HTTPOnly contenant le JWT.
+    Authentifie un utilisateur.
+    - Pour le web : définit un cookie HTTPOnly contenant le JWT.
+    - Pour mobile : retourne le token dans le body JSON (si header Accept: application/json).
     """
     # a. Chercher User par email
     query = select(User).where(User.email == form_data.username)
@@ -68,22 +71,38 @@ async def login(
         data={"sub": user.email, "tenant_id": str(user.tenant_id)}
     )
 
-    # d. & e. Créer une JSONResponse et définir le cookie
-    response = JSONResponse(content={"message": "Connexion réussie"})
-    
-    # SECURITY: Utilisation de HttpOnly pour empêcher l'accès via JS
-    # Secure=True en prod, False en local pour permettre les tests
-    # SameSite=Lax pour la protection CSRF
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=not settings.is_local,
-        samesite="lax",
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    # d. Détecter si c'est une requête mobile (via header Accept ou paramètre format)
+    accept_header = request.headers.get("Accept", "")
+    format_param = request.query_params.get("format")
+    is_mobile_request = (
+        "application/json" in accept_header or 
+        format_param == "json"
     )
 
-    return response
+    if is_mobile_request:
+        # Pour mobile : retourner le token dans le body JSON
+        return JSONResponse(content={
+            "access_token": access_token,
+            "token_type": "bearer",
+            "message": "Connexion réussie"
+        })
+    else:
+        # Pour web : définir le cookie HTTPOnly
+        response = JSONResponse(content={"message": "Connexion réussie"})
+        
+        # SECURITY: Utilisation de HttpOnly pour empêcher l'accès via JS
+        # Secure=True en prod, False en local pour permettre les tests
+        # SameSite=Lax pour la protection CSRF
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=not settings.is_local,
+            samesite="lax",
+            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        )
+        
+        return response
 
 
 @router.post("/logout")

@@ -460,20 +460,22 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                           value={property.construction_year}
                         />
                       </div>
-                      {property.latitude && property.longitude && (
-                        <div className="space-y-2">
-                          <h4 className="font-medium">Localisation</h4>
-                          <div className="w-full h-[300px] rounded-md overflow-hidden border">
-                            <PropertyMap
-                              lat={property.latitude}
-                              lng={property.longitude}
-                              onPositionChange={() => {}}
-                              zoom={15}
-                              height="300px"
-                            />
+                      {property.latitude && property.longitude
+                        ? (
+                          <div className="space-y-2">
+                            <h4 className="font-medium">Localisation</h4>
+                            <div className="w-full h-[300px] rounded-md overflow-hidden border">
+                              <PropertyMap
+                                lat={property.latitude}
+                                lng={property.longitude}
+                                onPositionChange={() => {}}
+                                zoom={15}
+                                height="300px"
+                              />
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )
+                        : null}
                     </div>
                     <Separator />
                     <div className="space-y-2">
@@ -643,7 +645,8 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                     {/* Emitters by level */}
                     {data.emitters_configuration &&
                       Array.isArray(data.emitters_configuration) &&
-                      (data.emitters_configuration as Array<{ level: number; emitters: string[] }>).length > 0 && (
+                      (data.emitters_configuration as Array<{ level: number; emitters: string[] }>).length > 0
+                      ? (
                         <div className="mt-2">
                           <span className="text-muted-foreground">
                             Emetteurs par niveau:
@@ -665,7 +668,8 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                             )}
                           </div>
                         </div>
-                      )}
+                      )
+                      : null}
                   </div>
 
                   <Separator />
@@ -727,21 +731,29 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                           : "Non renseigne"}
                       </span>
                       {data.wall_isolation_type === "INTERIEUR" &&
-                        data.wall_isolation_year_interior && (
-                          <span> ({data.wall_isolation_year_interior})</span>
-                        )}
+                        data.wall_isolation_year_interior
+                        ? (
+                          <span> ({String(data.wall_isolation_year_interior)})</span>
+                        )
+                        : null}
                       {data.wall_isolation_type === "EXTERIEUR" &&
-                        data.wall_isolation_year_exterior && (
-                          <span> ({data.wall_isolation_year_exterior})</span>
-                        )}
-                      {data.wall_isolation_type === "DOUBLE" && (
-                        <span>
-                          {data.wall_isolation_year_interior &&
-                            ` ITI: ${data.wall_isolation_year_interior}`}
-                          {data.wall_isolation_year_exterior &&
-                            ` ITE: ${data.wall_isolation_year_exterior}`}
-                        </span>
-                      )}
+                        data.wall_isolation_year_exterior
+                        ? (
+                          <span> ({String(data.wall_isolation_year_exterior)})</span>
+                        )
+                        : null}
+                      {data.wall_isolation_type === "DOUBLE"
+                        ? (
+                          <span>
+                            {data.wall_isolation_year_interior
+                              ? ` ITI: ${String(data.wall_isolation_year_interior)}`
+                              : null}
+                            {data.wall_isolation_year_exterior
+                              ? ` ITE: ${String(data.wall_isolation_year_exterior)}`
+                              : null}
+                          </span>
+                        )
+                        : null}
                     </div>
                   </div>
 

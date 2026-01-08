@@ -22,10 +22,18 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """
-    Dépendance pour récupérer l'utilisateur actuellement authentifié via un cookie JWT.
+    Dépendance pour récupérer l'utilisateur actuellement authentifié.
+    Supporte à la fois les tokens Bearer (mobile) et les cookies HttpOnly (web).
     """
-    # ... (les étapes 1 à 4 restent identiques car elles ne touchent pas à la DB)
-    token = request.cookies.get("access_token")
+    token = None
+    
+    # 1. Vérifier d'abord le header Authorization pour les tokens Bearer (mobile)
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+    # 2. Sinon, vérifier le cookie (web)
+    else:
+        token = request.cookies.get("access_token")
     
     if not token:
         raise HTTPException(
