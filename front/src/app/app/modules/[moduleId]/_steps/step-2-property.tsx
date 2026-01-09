@@ -477,7 +477,7 @@ export function Step2Property({
       water_heating_type: draft?.water_heating_type ?? undefined,
       usage_mode: draft?.usage_mode ?? undefined,
       electrical_phase: draft?.electrical_phase ?? undefined,
-      power_kva: draft?.power_kva ?? undefined,
+      power_kva: draft?.power_kva != null ? draft.power_kva : undefined,
     },
     mode: "onChange",
   });
@@ -485,7 +485,7 @@ export function Step2Property({
   // Recharger les valeurs quand le draft change
   useEffect(() => {
     if (draft) {
-      form.reset({
+      const resetValues = {
         property_id: draftData.step2?.property_id || draft.property_id || "",
         is_principal_residence: draft.is_principal_residence ?? undefined,
         occupation_status: draft.occupation_status ?? undefined,
@@ -495,8 +495,13 @@ export function Step2Property({
         water_heating_type: draft.water_heating_type ?? undefined,
         usage_mode: draft.usage_mode ?? undefined,
         electrical_phase: draft.electrical_phase ?? undefined,
-        power_kva: draft.power_kva ?? undefined,
-      });
+        power_kva: draft.power_kva != null ? draft.power_kva : undefined,
+      };
+      form.reset(resetValues);
+      // Forcer la mise à jour du champ power_kva pour les inputs numériques
+      if (draft.power_kva != null) {
+        form.setValue("power_kva", draft.power_kva, { shouldValidate: false, shouldDirty: false });
+      }
     }
   }, [draft, draftData.step2?.property_id, form]);
 

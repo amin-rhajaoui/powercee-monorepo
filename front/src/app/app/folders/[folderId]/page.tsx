@@ -35,6 +35,7 @@ import {
   CheckCircle2,
   XCircle,
   Download,
+  MapPin,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
@@ -43,6 +44,7 @@ import { getFolder, type Folder } from "@/lib/api/folders";
 import { getClient, type Client } from "@/lib/api/clients";
 import { getProperty, type Property } from "@/lib/api/properties";
 import { getModuleById } from "@/lib/modules";
+import { SizingDialog } from "@/components/sizing/sizing-dialog";
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const PropertyMap = dynamic(
@@ -290,6 +292,86 @@ function EmitterTypeBadge({
 }
 
 // ============================================================================
+// Climate Zone Info Row Component
+// ============================================================================
+
+function ClimateZoneInfoRow({ zone }: { zone: string }) {
+  const zoneLabels: Record<string, string> = {
+    h1: "Zone H1",
+    h2: "Zone H2",
+    h3: "Zone H3",
+  };
+
+  const zoneColors: Record<
+    string,
+    { bg: string; border: string; text: string; badge: string }
+  > = {
+    h1: {
+      bg: "bg-orange-50 dark:bg-orange-950",
+      border: "border-orange-200 dark:border-orange-800",
+      text: "text-orange-700 dark:text-orange-300",
+      badge: "bg-orange-100 dark:bg-orange-900",
+    },
+    h2: {
+      bg: "bg-amber-50 dark:bg-amber-950",
+      border: "border-amber-200 dark:border-amber-800",
+      text: "text-amber-700 dark:text-amber-300",
+      badge: "bg-amber-100 dark:bg-amber-900",
+    },
+    h3: {
+      bg: "bg-yellow-50 dark:bg-yellow-950",
+      border: "border-yellow-200 dark:border-yellow-800",
+      text: "text-yellow-700 dark:text-yellow-300",
+      badge: "bg-yellow-100 dark:bg-yellow-900",
+    },
+  };
+
+  const config =
+    zoneColors[zone.toLowerCase()] ||
+    zoneColors.h1;
+
+  return (
+    <div className="flex justify-between py-1 items-center">
+      <span className="text-muted-foreground">Zone climatique</span>
+      <div className="flex items-center gap-2">
+        <Badge
+          variant="outline"
+          className={`${config.border} ${config.bg} ${config.text} flex items-center gap-1.5 px-2.5 py-0.5`}
+        >
+          <MapPin className="h-3.5 w-3.5" />
+          <span className="font-semibold">
+            {zoneLabels[zone.toLowerCase()] || zone.toUpperCase()}
+          </span>
+        </Badge>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Base Temperature Info Row Component
+// ============================================================================
+
+function BaseTemperatureInfoRow({ temperature }: { temperature: number }) {
+  return (
+    <div className="flex justify-between py-1 items-center">
+      <span className="text-muted-foreground">Température extérieure de base</span>
+      <div className="flex items-center gap-2">
+        <Badge
+          variant="outline"
+          className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center gap-1.5 px-2.5 py-0.5"
+        >
+          <Thermometer className="h-3.5 w-3.5" />
+          <span className="font-semibold">
+            {temperature > 0 ? `+${temperature}` : temperature}°C
+          </span>
+        </Badge>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Document Status Row Component
 // ============================================================================
 
@@ -346,6 +428,7 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sizingDialogOpen, setSizingDialogOpen] = useState(false);
 
   // Load folder data
   useEffect(() => {
@@ -394,7 +477,11 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
   };
 
   const handleSizingNote = () => {
-    toast.info("Fonctionnalite 'Note de dimensionnement' a venir");
+    if (!folder) {
+      toast.error("Dossier non chargé");
+      return;
+    }
+    setSizingDialogOpen(true);
   };
 
   const handleQuoteAndSignature = () => {
@@ -638,6 +725,9 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                               : null
                           }
                         />
+                        {property.zone_climatique && (
+                          <ClimateZoneInfoRow zone={property.zone_climatique} />
+                        )}
                       </div>
                       {property.latitude && property.longitude
                         ? (
@@ -792,6 +882,9 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                           : null
                       }
                     />
+                    {property?.base_temperature !== null && property?.base_temperature !== undefined && (
+                      <BaseTemperatureInfoRow temperature={property.base_temperature} />
+                    )}
 
                     {/* Emitters by level */}
                     {data.emitters_configuration &&
@@ -929,6 +1022,16 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
           </Accordion>
         </CardContent>
       </Card>
+
+      {/* Dialog de dimensionnement */}
+      {folder && (
+        <SizingDialog
+          open={sizingDialogOpen}
+          onOpenChange={setSizingDialogOpen}
+          folder={folder}
+          property={property}
+        />
+      )}
     </div>
   );
 }

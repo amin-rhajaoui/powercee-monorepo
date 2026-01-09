@@ -108,6 +108,16 @@ class Property(Base):
         nullable=True,
         doc="Altitude en mètres (récupérée depuis une API externe).",
     )
+    base_temperature: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        doc="Température extérieure de base en °C (calculée selon zone TEB et altitude).",
+    )
+    zone_climatique: Mapped[str | None] = mapped_column(
+        String(10),
+        nullable=True,
+        doc="Zone climatique (h1, h2, h3) déterminée selon le département.",
+    )
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,

@@ -83,6 +83,11 @@ class Folder(Base):
         nullable=True,
         doc="Type d'émetteur (BASSE_TEMPERATURE, MOYENNE_HAUTE_TEMPERATURE).",
     )
+    zone_climatique: Mapped[str | None] = mapped_column(
+        String(10),
+        nullable=True,
+        doc="Zone climatique (h1, h2, h3) du logement associé au dossier.",
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

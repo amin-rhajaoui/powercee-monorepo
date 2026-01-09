@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..'
 
 from app.db.base import Base
 from app.core.config import settings
-from app.models import User, Tenant, Agency, Invitation # Important pour enregistrer les modèles dans Base.metadata
+from app.models import User, Tenant, Agency, Invitation, ClimateZone, BaseTemperature # Important pour enregistrer les modèles dans Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

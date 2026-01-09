@@ -12,6 +12,7 @@ from app.models.user import User
 from app.schemas.folder import FolderCreate, FolderUpdate
 from app.services.elevation_service import get_elevation
 from app.services.mpr_service import calculate_mpr_color
+from app.services.climate_service import get_climate_zone
 
 logger = logging.getLogger(__name__)
 
@@ -191,6 +192,25 @@ async def create_folder_from_draft(
         except Exception as e:
             logger.error(f"Erreur lors de la récupération de l'altitude: {e}")
 
+    # Récupérer la zone climatique depuis la Property ou la calculer
+    zone_climatique = None
+    if property_obj:
+        # Utiliser la zone_climatique de la Property si disponible
+        if property_obj.zone_climatique:
+            zone_climatique = property_obj.zone_climatique
+            logger.info(f"Zone climatique récupérée depuis Property: {zone_climatique}")
+        elif property_obj.postal_code:
+            # Sinon, la calculer depuis le code postal
+            try:
+                climate_zone = await get_climate_zone(db, property_obj.postal_code)
+                if climate_zone:
+                    zone_climatique = climate_zone.zone_climatique
+                    # Mettre à jour la Property aussi pour éviter de recalculer
+                    property_obj.zone_climatique = zone_climatique
+                    logger.info(f"Zone climatique calculée: {zone_climatique} pour Property {property_obj.id}")
+            except Exception as e:
+                logger.error(f"Erreur lors de la récupération de la zone climatique: {e}")
+
     # Créer le dossier
     folder = Folder(
         tenant_id=user.tenant_id,
@@ -202,6 +222,7 @@ async def create_folder_from_draft(
         source_draft_id=draft.id,
         mpr_color=mpr_color,
         emitter_type=emitter_type,
+        zone_climatique=zone_climatique,
     )
     db.add(folder)
 

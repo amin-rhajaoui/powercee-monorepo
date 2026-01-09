@@ -17,6 +17,8 @@ export type Property = {
   surface_m2?: number | null;
   construction_year?: number | null;
   altitude?: number | null;
+  base_temperature?: number | null;
+  zone_climatique?: string | null;
   notes?: string | null;
   is_active: boolean;
   created_at: string;

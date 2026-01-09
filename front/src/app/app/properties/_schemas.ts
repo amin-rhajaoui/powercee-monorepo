@@ -34,7 +34,7 @@ export const propertyCreateSchema = basePropertySchema.superRefine((data, ctx) =
   }
 });
 
-export const propertyUpdateSchema = propertyCreateSchema.partial();
+export const propertyUpdateSchema = basePropertySchema.partial();
 
 export type PropertyFormValues = z.infer<typeof propertyCreateSchema>;
 export type PropertyUpdateValues = z.infer<typeof propertyUpdateSchema>;

@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
@@ -8,6 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Client, Property, PropertyType, User, UserRole
 from app.schemas.property import PropertyCreate, PropertyUpdate
+from app.services.elevation_service import get_elevation
+from app.services.climate_service import get_climate_zone, get_base_temperature
+
+logger = logging.getLogger(__name__)
 
 
 def _base_scoped_query(current_user: User):
@@ -184,6 +189,51 @@ async def _verify_client_access(
     return client
 
 
+async def _calculate_property_climate_data(
+    db: AsyncSession,
+    property_obj: Property,
+) -> None:
+    """
+    Calcule et met à jour l'altitude, zone_climatique et base_temperature d'une propriété.
+    """
+    # Récupérer l'altitude si les coordonnées sont disponibles
+    if property_obj.latitude is not None and property_obj.longitude is not None:
+        try:
+            altitude = await get_elevation(
+                latitude=property_obj.latitude,
+                longitude=property_obj.longitude
+            )
+            if altitude is not None:
+                property_obj.altitude = altitude
+                logger.info(f"Altitude calculée: {altitude}m pour Property {property_obj.id}")
+        except Exception as e:
+            logger.error(f"Erreur lors du calcul de l'altitude: {e}")
+    
+    # Récupérer la zone climatique si le code postal est disponible
+    if property_obj.postal_code:
+        try:
+            climate_zone = await get_climate_zone(db, property_obj.postal_code)
+            if climate_zone:
+                property_obj.zone_climatique = climate_zone.zone_climatique
+                logger.info(f"Zone climatique trouvée: {climate_zone.zone_climatique} pour Property {property_obj.id}")
+                
+                # Calculer la température de base si on a l'altitude et la zone TEB
+                if property_obj.altitude is not None:
+                    try:
+                        base_temp = await get_base_temperature(
+                            db,
+                            zone_teb=climate_zone.zone_teb,
+                            altitude=property_obj.altitude
+                        )
+                        if base_temp is not None:
+                            property_obj.base_temperature = base_temp
+                            logger.info(f"Température de base calculée: {base_temp}°C pour Property {property_obj.id}")
+                    except Exception as e:
+                        logger.error(f"Erreur lors du calcul de la température de base: {e}")
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération de la zone climatique: {e}")
+
+
 async def create_property(
     db: AsyncSession,
     current_user: User,
@@ -200,6 +250,11 @@ async def create_property(
         client_id=property_in.client_id,
     )
     db.add(property_obj)
+    await db.flush()  # Flush pour avoir l'ID avant le commit
+    
+    # Calculer les données climatiques
+    await _calculate_property_climate_data(db, property_obj)
+    
     await db.commit()
     await db.refresh(property_obj)
     return property_obj
@@ -241,9 +296,29 @@ async def update_property(
     if "client_id" in update_data:
         await _verify_client_access(db, current_user, update_data["client_id"])
 
+    # Vérifier si les coordonnées ou le code postal ont changé (nécessite recalcul)
+    needs_recalculation = False
+    old_postal_code = property_obj.postal_code
+    old_latitude = property_obj.latitude
+    old_longitude = property_obj.longitude
+
     for field, value in update_data.items():
         setattr(property_obj, field, value)
+    
+    # Déterminer si un recalcul est nécessaire
+    if (
+        "postal_code" in update_data and update_data["postal_code"] != old_postal_code
+    ) or (
+        ("latitude" in update_data or "longitude" in update_data) and
+        (update_data.get("latitude") != old_latitude or update_data.get("longitude") != old_longitude)
+    ):
+        needs_recalculation = True
+    
     property_obj.updated_at = datetime.now(timezone.utc)
+
+    # Recalculer les données climatiques si nécessaire
+    if needs_recalculation:
+        await _calculate_property_climate_data(db, property_obj)
 
     await db.commit()
     await db.refresh(property_obj)

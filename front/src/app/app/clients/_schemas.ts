@@ -38,7 +38,7 @@ export const clientCreateSchema = baseClientSchema.superRefine((data, ctx) => {
   }
 });
 
-export const clientUpdateSchema = clientCreateSchema.partial();
+export const clientUpdateSchema = baseClientSchema.partial();
 
 // On utilise l'input schema pour autoriser les valeurs avec defaults/aplanissement côté Zod.
 export type ClientFormValues = z.input<typeof clientCreateSchema>;

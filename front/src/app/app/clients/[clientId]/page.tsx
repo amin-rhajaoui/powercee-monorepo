@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Pencil, RefreshCw } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, RefreshCw, Thermometer, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import {
   restoreClient,
 } from "@/lib/api/clients";
 import { listFolders, Folder } from "@/lib/api/folders";
+import { listClientProperties, Property } from "@/lib/api/properties";
 import { getPropertyLabels } from "@/lib/property-labels";
 import { ClientDialog } from "../_components/client-dialog";
 import { PropertiesSection } from "./_components/properties-section";
@@ -31,6 +32,7 @@ export default function ClientDetailPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [propertiesCount, setPropertiesCount] = useState(0);
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
 
   const fetchClient = useCallback(async () => {
     if (!clientId) return;
@@ -46,6 +48,14 @@ export default function ClientDetailPage() {
       } catch (error) {
         // Ne pas afficher d'erreur si les dossiers ne peuvent pas être récupérés
         console.warn("Erreur lors de la récupération des dossiers:", error);
+      }
+      
+      // Récupérer les propriétés du client pour afficher la température de base et la zone climatique
+      try {
+        const propertiesData = await listClientProperties(clientId, { page: 1, pageSize: 100, isActive: true });
+        setProperties(propertiesData.items);
+      } catch (error) {
+        console.warn("Erreur lors de la récupération des propriétés:", error);
       }
     } catch (error: unknown) {
       const err = error as { data?: { detail?: string } };
@@ -188,7 +198,7 @@ export default function ClientDetailPage() {
                   </div>
                   <Separator />
                   {/* Informations techniques */}
-                  {folders.length > 0 && (
+                  {(folders.length > 0 || properties.length > 0) && (
                     <>
                       <div className="space-y-2">
                         <h4 className="text-sm font-semibold">Informations techniques</h4>
@@ -205,6 +215,22 @@ export default function ClientDetailPage() {
                               .filter(f => f.emitter_type)
                               .map(f => f.emitter_type)
                               .slice(-1)[0];
+                            
+                            // Récupérer la dernière zone climatique (depuis dossier ou propriété)
+                            const lastZoneClimatique = folders
+                              .filter(f => f.zone_climatique)
+                              .map(f => f.zone_climatique)
+                              .slice(-1)[0] || 
+                              properties
+                              .filter(p => p.zone_climatique)
+                              .map(p => p.zone_climatique)
+                              .slice(-1)[0];
+                            
+                            // Récupérer la température de base depuis la première propriété disponible
+                            const baseTemperature = properties
+                              .filter(p => p.base_temperature !== null && p.base_temperature !== undefined)
+                              .map(p => p.base_temperature)
+                              [0];
                             
                             return (
                               <>
@@ -225,6 +251,12 @@ export default function ClientDetailPage() {
                                         : lastEmitterType
                                     }
                                   />
+                                )}
+                                {baseTemperature !== undefined && baseTemperature !== null && (
+                                  <BaseTemperatureBadge temperature={baseTemperature} />
+                                )}
+                                {lastZoneClimatique && (
+                                  <ClimateZoneBadge zone={lastZoneClimatique} />
                                 )}
                               </>
                             );
@@ -264,6 +296,80 @@ function DetailField({ label, value }: { label: string; value: string }) {
     <div className="space-y-1">
       <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
       <p className="text-sm text-foreground">{value}</p>
+    </div>
+  );
+}
+
+// ============================================================================
+// Base Temperature Badge Component
+// ============================================================================
+
+function BaseTemperatureBadge({ temperature }: { temperature: number }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs text-muted-foreground uppercase tracking-wide">
+        Température extérieure de base
+      </p>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border-2 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+          <Thermometer className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+            {temperature > 0 ? `+${temperature}` : temperature}°C
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Climate Zone Badge Component
+// ============================================================================
+
+function ClimateZoneBadge({ zone }: { zone: string }) {
+  const zoneLabels: Record<string, string> = {
+    h1: "Zone H1",
+    h2: "Zone H2",
+    h3: "Zone H3",
+  };
+  
+  const zoneColors: Record<string, { bg: string; border: string; text: string }> = {
+    h1: {
+      bg: "bg-orange-50 dark:bg-orange-950",
+      border: "border-orange-200 dark:border-orange-800",
+      text: "text-orange-700 dark:text-orange-300",
+    },
+    h2: {
+      bg: "bg-amber-50 dark:bg-amber-950",
+      border: "border-amber-200 dark:border-amber-800",
+      text: "text-amber-700 dark:text-amber-300",
+    },
+    h3: {
+      bg: "bg-yellow-50 dark:bg-yellow-950",
+      border: "border-yellow-200 dark:border-yellow-800",
+      text: "text-yellow-700 dark:text-yellow-300",
+    },
+  };
+  
+  const config = zoneColors[zone.toLowerCase()] || {
+    bg: "bg-gray-50 dark:bg-gray-950",
+    border: "border-gray-200 dark:border-gray-800",
+    text: "text-gray-700 dark:text-gray-300",
+  };
+  
+  return (
+    <div className="space-y-1">
+      <p className="text-xs text-muted-foreground uppercase tracking-wide">
+        Zone climatique
+      </p>
+      <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 ${config.bg} ${config.border}`}>
+          <MapPin className={`h-4 w-4 ${config.text}`} />
+          <span className={`text-sm font-semibold ${config.text}`}>
+            {zoneLabels[zone.toLowerCase()] || zone.toUpperCase()}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

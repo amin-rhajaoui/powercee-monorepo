@@ -22,6 +22,8 @@ class PropertyBase(BaseModel):
     surface_m2: float | None = Field(None, gt=0, description="Surface en m²")
     construction_year: int | None = Field(None, ge=1000, le=2100, description="Année de construction")
     altitude: float | None = Field(None, description="Altitude en mètres")
+    base_temperature: float | None = Field(None, description="Température extérieure de base en °C")
+    zone_climatique: str | None = Field(None, max_length=10, description="Zone climatique (h1, h2, h3)")
     notes: str | None = Field(None, description="Notes libres")
 
     @model_validator(mode="after")
@@ -53,6 +55,8 @@ class PropertyUpdate(BaseModel):
     surface_m2: float | None = Field(None, gt=0)
     construction_year: int | None = Field(None, ge=1000, le=2100)
     altitude: float | None = None
+    base_temperature: float | None = None
+    zone_climatique: str | None = None
     notes: str | None = None
 
     @model_validator(mode="after")
