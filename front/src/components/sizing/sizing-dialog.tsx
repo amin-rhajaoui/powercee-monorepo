@@ -35,8 +35,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { calculateSizing, generateSizingPdf, type SizingRequest, type SizingResponse } from "@/lib/api/sizing";
-import type { Folder } from "@/lib/api/folders";
+import { calculateSizing, generateSizingPdf, saveSizingPdf, type SizingRequest, type SizingResponse } from "@/lib/api/sizing";
+import { getFolder, type Folder } from "@/lib/api/folders";
 import type { Property } from "@/lib/api/properties";
 
 type SizingDialogProps = {
@@ -44,11 +44,13 @@ type SizingDialogProps = {
   onOpenChange: (open: boolean) => void;
   folder: Folder;
   property: Property | null;
+  onFolderUpdate?: (folder: Folder) => void;
 };
 
-export function SizingDialog({ open, onOpenChange, folder, property }: SizingDialogProps) {
+export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpdate }: SizingDialogProps) {
   const [loading, setLoading] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [savingPdf, setSavingPdf] = useState(false);
   const [sizingResult, setSizingResult] = useState<SizingResponse | null>(null);
   
   // Paramètres modifiables
@@ -166,6 +168,46 @@ export function SizingDialog({ open, onOpenChange, folder, property }: SizingDia
       toast.error(message);
     } finally {
       setGeneratingPdf(false);
+    }
+  };
+
+  // Validation et sauvegarde du PDF
+  const handleValidate = async () => {
+    if (!folder?.id || !sizingResult) {
+      toast.error("Calcul de dimensionnement requis avant la validation");
+      return;
+    }
+
+    setSavingPdf(true);
+    try {
+      const params: SizingRequest = {
+        surface_chauffee: surfaceChauffee,
+        hauteur_plafond: hauteurPlafond,
+        temperature_consigne: temperatureConsigne,
+        type_emetteur_override: typeEmetteur || null,
+        type_isolation_override: typeIsolationOverride || null,
+      };
+
+      await saveSizingPdf(folder.id, {
+        sizing_params: params,
+      });
+
+      // Rafraîchir le dossier pour obtenir les nouvelles données
+      const updatedFolder = await getFolder(folder.id);
+      
+      // Appeler le callback pour mettre à jour le dossier dans le parent
+      if (onFolderUpdate) {
+        onFolderUpdate(updatedFolder);
+      }
+
+      toast.success("Note de dimensionnement validée et sauvegardée");
+      onOpenChange(false);
+    } catch (error: unknown) {
+      console.error("Erreur lors de la validation:", error);
+      const message = error instanceof Error ? error.message : "Erreur lors de la validation";
+      toast.error(message);
+    } finally {
+      setSavingPdf(false);
     }
   };
 
@@ -614,7 +656,8 @@ export function SizingDialog({ open, onOpenChange, folder, property }: SizingDia
           </Button>
           <Button
             onClick={handleGeneratePdf}
-            disabled={!sizingResult || generatingPdf || loading}
+            disabled={!sizingResult || generatingPdf || loading || savingPdf}
+            variant="outline"
             className="min-w-[160px] w-full sm:w-auto"
           >
             {generatingPdf ? (
@@ -626,6 +669,23 @@ export function SizingDialog({ open, onOpenChange, folder, property }: SizingDia
               <>
                 <Download className="mr-2 h-4 w-4 flex-shrink-0" />
                 <span className="truncate">Générer le PDF</span>
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={handleValidate}
+            disabled={!sizingResult || savingPdf || generatingPdf || loading}
+            className="min-w-[160px] w-full sm:w-auto"
+          >
+            {savingPdf ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <span className="truncate">Validation...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">Valider</span>
               </>
             )}
           </Button>

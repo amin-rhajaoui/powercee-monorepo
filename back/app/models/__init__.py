@@ -8,6 +8,29 @@ from .module_draft import ModuleDraft
 from .folder import Folder, FolderStatus
 from .climate_zone import ClimateZone
 from .base_temperature import BaseTemperature
+from .product import Product, ProductCategory, PowerSupply, ProductHeatPump, ProductThermostat, ProductCompatibility
 
-__all__ = ["Tenant", "User", "UserRole", "Agency", "Invitation", "Client", "ClientType", "ClientStatus", "Property", "PropertyType", "ModuleDraft", "Folder", "FolderStatus", "ClimateZone", "BaseTemperature"]
+__all__ = [
+    "Tenant",
+    "User",
+    "UserRole",
+    "Agency",
+    "Invitation",
+    "Client",
+    "ClientType",
+    "ClientStatus",
+    "Property",
+    "PropertyType",
+    "ModuleDraft",
+    "Folder",
+    "FolderStatus",
+    "ClimateZone",
+    "BaseTemperature",
+    "Product",
+    "ProductCategory",
+    "PowerSupply",
+    "ProductHeatPump",
+    "ProductThermostat",
+    "ProductCompatibility",
+]
 

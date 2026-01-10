@@ -229,6 +229,63 @@ def delete_all_tenant_logos(tenant_id: uuid.UUID) -> None:
         pass
 
 
+def upload_bytes_to_s3(
+    file_bytes: bytes,
+    folder: str,
+    filename: str,
+    content_type: str = "application/pdf",
+) -> str:
+    """
+    Upload des bytes vers AWS S3.
+    Retourne l'URL publique du fichier.
+    
+    Args:
+        file_bytes: Le contenu du fichier en bytes
+        folder: Le dossier dans S3 (ex: "folders/{folder_id}")
+        filename: Le nom du fichier (ex: "note_dimensionnement.pdf")
+        content_type: Le type MIME du fichier (défaut: application/pdf)
+        
+    Returns:
+        L'URL publique du fichier uploadé
+    """
+    # Vérification de la configuration AWS
+    if not all([settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY, settings.AWS_BUCKET_NAME]):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Configuration AWS S3 manquante."
+        )
+    
+    # Initialisation du client S3
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION
+    )
+    
+    # Génération de la clé S3
+    s3_key = f"{folder}/{filename}"
+    
+    try:
+        # Upload depuis bytes
+        from io import BytesIO
+        s3_client.upload_fileobj(
+            BytesIO(file_bytes),
+            settings.AWS_BUCKET_NAME,
+            s3_key,
+            ExtraArgs={"ContentType": content_type}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de l'upload vers S3 : {str(e)}"
+        )
+    
+    # Construction de l'URL
+    url = f"https://{settings.AWS_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+    return url
+
+
 def get_file_from_s3(s3_key: str) -> tuple[bytes, str]:
     """
     Télécharge un fichier depuis S3 et retourne son contenu ainsi que son type MIME.

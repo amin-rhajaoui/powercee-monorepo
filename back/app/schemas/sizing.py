@@ -61,3 +61,30 @@ class SizingPdfRequest(BaseModel):
     selected_pump: dict[str, Any] | None = Field(None, description="PAC sélectionnée pour le devis")
     selected_heater: dict[str, Any] | None = Field(None, description="Ballon thermodynamique associé")
     thermostat_details: dict[str, Any] | None = Field(None, description="Détails du thermostat")
+
+
+class CompatiblePacResponse(BaseModel):
+    """Réponse pour une PAC compatible avec le dimensionnement."""
+
+    id: str = Field(..., description="ID du produit")
+    name: str = Field(..., description="Nom/modèle du produit")
+    brand: str = Field(..., description="Marque")
+    reference: str = Field(..., description="Référence produit")
+    price_ht: float = Field(..., description="Prix HT en euros")
+    image_url: str | None = Field(None, description="URL de l'image")
+    # Détails techniques PAC
+    puissance_moins_7: float | None = Field(None, description="Puissance à -7°C en kW")
+    etas_35: int | None = Field(None, description="ETAS à 35°C (%)")
+    etas_55: int | None = Field(None, description="ETAS à 55°C (%)")
+    usage: str = Field(..., description="Usage: 'Chauffage Seul' ou 'Chauffage + ECS'")
+    alimentation: str = Field(..., description="Alimentation: 'Monophasé' ou 'Triphasé'")
+    class_regulator: str | None = Field(None, description="Classe régulateur")
+    refrigerant_type: str | None = Field(None, description="Type de réfrigérant")
+    noise_level: float | None = Field(None, description="Niveau sonore en dB")
+
+
+class CompatiblePacsResponse(BaseModel):
+    """Réponse avec la liste des PAC compatibles."""
+
+    pacs: list[CompatiblePacResponse] = Field(..., description="Liste des PAC compatibles")
+    total: int = Field(..., description="Nombre total de PAC compatibles")

@@ -208,7 +208,11 @@ export function Step5ClientSheet({
   };
 
   const handleQuoteAndSignature = () => {
-    toast.info("Fonctionnalite 'Devis et signature' a venir");
+    // Dans le contexte d'un draft, il faut d'abord créer un dossier
+    // Pour l'instant, on affiche un message informatif
+    toast.info(
+      "Pour consulter les PAC compatibles, veuillez d'abord créer un dossier depuis ce module."
+    );
   };
 
   if (isDraftLoading || isLoadingData) {

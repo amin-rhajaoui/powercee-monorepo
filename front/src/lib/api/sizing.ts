@@ -94,3 +94,53 @@ export async function generateSizingPdf(
   const blob = await res.blob();
   return blob;
 }
+
+export type SaveSizingPdfResponse = {
+  pdf_url: string;
+  message: string;
+};
+
+export async function saveSizingPdf(
+  folderId: string,
+  params: SizingPdfRequest
+): Promise<SaveSizingPdfResponse> {
+  const res = await api.post(`/folders/${folderId}/sizing/save-pdf`, params);
+  return res.json();
+}
+
+// ============================================================================
+// Compatible PACs Types
+// ============================================================================
+
+export type CompatiblePac = {
+  id: string;
+  name: string;
+  brand: string;
+  reference: string;
+  price_ht: number;
+  image_url: string | null;
+  puissance_moins_7: number | null;
+  etas_35: number | null;
+  etas_55: number | null;
+  usage: string;
+  alimentation: string;
+  class_regulator: string | null;
+  refrigerant_type: string | null;
+  noise_level: number | null;
+};
+
+export type CompatiblePacsResponse = {
+  pacs: CompatiblePac[];
+  total: number;
+};
+
+// ============================================================================
+// Compatible PACs API
+// ============================================================================
+
+export async function getCompatiblePacs(
+  folderId: string
+): Promise<CompatiblePacsResponse> {
+  const res = await api.get(`/folders/${folderId}/compatible-pacs`);
+  return res.json();
+}

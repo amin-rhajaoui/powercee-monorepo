@@ -6,6 +6,7 @@ import {
   FolderOpen,
   Users,
   Package,
+  Boxes,
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -54,6 +55,11 @@ const navItems: NavItem[] = [
     title: "Modules",
     url: "/app/modules",
     icon: Package,
+  },
+  {
+    title: "Stock & Catalogue",
+    url: "/app/stock",
+    icon: Boxes,
   },
 ];
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState, useEffect } from "react";
+import React from "react";
 import { notFound } from "next/navigation";
 import {
   Card,
@@ -36,6 +37,7 @@ import {
   XCircle,
   Download,
   MapPin,
+  Zap,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
@@ -131,6 +133,41 @@ const LEVEL_LABELS: Record<number, string> = {
   3: "R+3",
   4: "R+4",
 };
+
+// Helper component to render emitters configuration
+function EmittersConfigurationDisplay({
+  emittersConfig,
+}: {
+  emittersConfig: unknown;
+}) {
+  if (!emittersConfig || !Array.isArray(emittersConfig) || emittersConfig.length === 0) {
+    return null;
+  }
+
+  const configArray = emittersConfig as Array<{ level: number; emitters: string[] }>;
+
+  return (
+    <div className="mt-2">
+      <span className="text-muted-foreground">
+        Emetteurs par niveau:
+      </span>
+      <div className="mt-1 space-y-1">
+        {configArray.map((config) => (
+          <div key={config.level} className="flex gap-2 text-sm">
+            <span className="font-medium">
+              {LEVEL_LABELS[config.level]}:
+            </span>
+            <span>
+              {config.emitters
+                .map((e) => EMITTER_TYPE_LABELS[e] || e)
+                .join(", ") || "Aucun"}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const FOLDER_STATUS_LABELS: Record<string, string> = {
   IN_PROGRESS: "En cours",
@@ -249,11 +286,7 @@ function MprColorBadge({ color }: { color: string | null | undefined }) {
 // Emitter Type Badge Component
 // ============================================================================
 
-function EmitterTypeBadge({
-  emitterType,
-}: {
-  emitterType: string | null | undefined;
-}) {
+function EmitterTypeBadge({ emitterType }: { emitterType: string | null | undefined }): React.ReactNode {
   if (!emitterType) return null;
 
   const isBasseTemperature = emitterType === "BASSE_TEMPERATURE";
@@ -465,7 +498,7 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
     : null;
 
   // Extract data from folder
-  const data = folder?.data || {};
+  const data: Record<string, unknown> = folder?.data || {};
 
   // Action button handlers (placeholders)
   const handleAddPhotos = () => {
@@ -485,8 +518,9 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
   };
 
   const handleQuoteAndSignature = () => {
-    toast.info("Fonctionnalite 'Devis et signature' a venir");
+    window.location.href = `/app/folders/${folderId}/quote`;
   };
+
 
   if (isLoading) {
     return (
@@ -499,6 +533,10 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
   if (error || !folder) {
     notFound();
   }
+
+  // TypeScript assertion: folder is guaranteed to be non-null after the check above
+  const folderData: Folder = folder!;
+
 
   return (
     <div className="space-y-6">
@@ -514,17 +552,17 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
             <h1 className="text-3xl font-bold tracking-tight">
               Dossier {client ? `${client.first_name} ${client.last_name}` : ""}
             </h1>
-            <Badge variant={FOLDER_STATUS_VARIANTS[folder.status]}>
-              {FOLDER_STATUS_LABELS[folder.status]}
+            <Badge variant={FOLDER_STATUS_VARIANTS[folderData.status]}>
+              {FOLDER_STATUS_LABELS[folderData.status]}
             </Badge>
           </div>
           <div className="flex items-center gap-2 mt-1">
-            {folder.module_code && (
+            {folderData.module_code && (
               <Badge variant="outline" className="font-mono text-xs">
-                {folder.module_code}
+                {folderData.module_code}
               </Badge>
             )}
-            {!folder.module_code && (
+            {!folderData.module_code && (
               <Badge variant="secondary" className="text-xs">
                 Dossier libre
               </Badge>
@@ -567,7 +605,11 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
             </Button>
             <Button
               variant="outline"
-              className="h-auto py-4 flex flex-col gap-2"
+              className={`h-auto py-4 flex flex-col gap-2 ${
+                folderData.data?.sizing_validated
+                  ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900"
+                  : ""
+              }`}
               onClick={handleSizingNote}
             >
               <Calculator className="h-6 w-6" />
@@ -665,7 +707,7 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                           : null
                       }
                     />
-                    <MprColorBadge color={folder.mpr_color} />
+                    <MprColorBadge color={folderData.mpr_color} />
                   </div>
                 ) : (
                   <p className="text-muted-foreground pl-7">
@@ -886,35 +928,41 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                       <BaseTemperatureInfoRow temperature={property.base_temperature} />
                     )}
 
-                    {/* Emitters by level */}
-                    {data.emitters_configuration &&
-                      Array.isArray(data.emitters_configuration) &&
-                      (data.emitters_configuration as Array<{ level: number; emitters: string[] }>).length > 0
-                      ? (
-                        <div className="mt-2">
-                          <span className="text-muted-foreground">
-                            Emetteurs par niveau:
-                          </span>
-                          <div className="mt-1 space-y-1">
-                            {(data.emitters_configuration as Array<{ level: number; emitters: string[] }>).map(
-                              (config) => (
-                                <div key={config.level} className="flex gap-2 text-sm">
-                                  <span className="font-medium">
-                                    {LEVEL_LABELS[config.level]}:
-                                  </span>
-                                  <span>
-                                    {config.emitters
-                                      .map((e) => EMITTER_TYPE_LABELS[e] || e)
-                                      .join(", ") || "Aucun"}
-                                  </span>
-                                </div>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )
-                      : null}
-                    <EmitterTypeBadge emitterType={folder.emitter_type} />
+                    <EmittersConfigurationDisplay emittersConfig={data.emitters_configuration} />
+
+                    {/* Puissance préconisée - Affichée uniquement si le dimensionnement est validé */}
+                    {Boolean(data.sizing_validated) && Boolean(data.sizing_recommended_power_kw) && (
+                      <div className="mt-4 pt-4 border-t">
+                        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="rounded-full bg-primary/10 p-2">
+                                <Zap className="h-5 w-5 text-primary" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-muted-foreground">
+                                  Puissance préconisée
+                                </p>
+                                <p className="text-2xl font-bold text-primary mt-1">
+                                  {Number(data.sizing_recommended_power_kw).toFixed(1)} kW
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Dimensionnement validé le{" "}
+                                  {data.sizing_validated_at
+                                    ? new Date(data.sizing_validated_at as string).toLocaleDateString("fr-FR", {
+                                        day: "numeric",
+                                        month: "long",
+                                        year: "numeric",
+                                      })
+                                    : ""}
+                                </p>
+                              </div>
+                              <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
                   </div>
 
                   <Separator />
@@ -1024,14 +1072,15 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
       </Card>
 
       {/* Dialog de dimensionnement */}
-      {folder && (
-        <SizingDialog
-          open={sizingDialogOpen}
-          onOpenChange={setSizingDialogOpen}
-          folder={folder}
-          property={property}
+      <SizingDialog
+        open={sizingDialogOpen}
+        onOpenChange={setSizingDialogOpen}
+        folder={folderData}
+        property={property}
+          onFolderUpdate={(updatedFolder) => {
+            setFolder(updatedFolder);
+          }}
         />
-      )}
     </div>
   );
 }
