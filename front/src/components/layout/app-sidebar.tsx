@@ -8,6 +8,7 @@ import {
   Package,
   Boxes,
   ChevronRight,
+  BadgeEuro,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -60,6 +61,11 @@ const navItems: NavItem[] = [
     title: "Stock & Catalogue",
     url: "/app/stock",
     icon: Boxes,
+  },
+  {
+    title: "Valorisation CEE",
+    url: "/app/settings/valuation",
+    icon: BadgeEuro,
   },
 ];
 

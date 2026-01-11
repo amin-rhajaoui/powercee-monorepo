@@ -71,6 +71,7 @@ type RecommendationsSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   folderId: string;
+  onRecommendationUpdate?: (recommendation: InstallationRecommendation) => void;
 };
 
 // ============================================================================
@@ -81,6 +82,7 @@ export function RecommendationsSheet({
   open,
   onOpenChange,
   folderId,
+  onRecommendationUpdate,
 }: RecommendationsSheetProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -145,6 +147,10 @@ export function RecommendationsSheet({
         photo_urls: values.photo_urls || null,
       });
       setExistingData(result);
+      // Notifier le parent de la mise à jour
+      if (onRecommendationUpdate) {
+        onRecommendationUpdate(result);
+      }
       toast.success("Preconisations enregistrees avec succes.");
       onOpenChange(false);
     } catch (error) {

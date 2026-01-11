@@ -10,6 +10,7 @@ from .climate_zone import ClimateZone
 from .base_temperature import BaseTemperature
 from .product import Product, ProductCategory, PowerSupply, ProductHeatPump, ProductThermostat, ProductCompatibility
 from .installation_recommendation import InstallationRecommendation
+from .cee_valuation import CEEValuation
 
 __all__ = [
     "Tenant",
@@ -34,5 +35,6 @@ __all__ = [
     "ProductThermostat",
     "ProductCompatibility",
     "InstallationRecommendation",
+    "CEEValuation",
 ]
 

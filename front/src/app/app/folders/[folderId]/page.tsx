@@ -48,6 +48,7 @@ import { getProperty, type Property } from "@/lib/api/properties";
 import { getModuleById } from "@/lib/modules";
 import { SizingDialog } from "@/components/sizing/sizing-dialog";
 import { RecommendationsSheet } from "@/components/recommendations";
+import { getRecommendation, type InstallationRecommendation } from "@/lib/api/recommendations";
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const PropertyMap = dynamic(
@@ -464,6 +465,7 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [sizingDialogOpen, setSizingDialogOpen] = useState(false);
   const [recommendationsSheetOpen, setRecommendationsSheetOpen] = useState(false);
+  const [recommendation, setRecommendation] = useState<InstallationRecommendation | null>(null);
 
   // Load folder data
   useEffect(() => {
@@ -475,14 +477,16 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
         const folderData = await getFolder(folderId);
         setFolder(folderData);
 
-        // Load client and property in parallel
-        const [clientData, propertyData] = await Promise.all([
+        // Load client, property and recommendations in parallel
+        const [clientData, propertyData, recommendationData] = await Promise.all([
           folderData.client_id ? getClient(folderData.client_id) : null,
           folderData.property_id ? getProperty(folderData.property_id) : null,
+          getRecommendation(folderId).catch(() => null), // Ignore errors if no recommendation exists
         ]);
 
         setClient(clientData);
         setProperty(propertyData);
+        setRecommendation(recommendationData);
       } catch (err) {
         console.error("Erreur lors du chargement du dossier:", err);
         setError("Dossier introuvable");
@@ -599,7 +603,11 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
             </Button>
             <Button
               variant="outline"
-              className="h-auto py-4 flex flex-col gap-2"
+              className={`h-auto py-4 flex flex-col gap-2 ${
+                recommendation
+                  ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900"
+                  : ""
+              }`}
               onClick={handleInstallationRecommendations}
             >
               <Settings className="h-6 w-6" />
@@ -1089,6 +1097,9 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
         open={recommendationsSheetOpen}
         onOpenChange={setRecommendationsSheetOpen}
         folderId={folderId}
+        onRecommendationUpdate={(updatedRecommendation) => {
+          setRecommendation(updatedRecommendation);
+        }}
       />
     </div>
   );
