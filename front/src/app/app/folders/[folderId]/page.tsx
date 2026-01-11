@@ -47,6 +47,7 @@ import { getClient, type Client } from "@/lib/api/clients";
 import { getProperty, type Property } from "@/lib/api/properties";
 import { getModuleById } from "@/lib/modules";
 import { SizingDialog } from "@/components/sizing/sizing-dialog";
+import { RecommendationsSheet } from "@/components/recommendations";
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const PropertyMap = dynamic(
@@ -462,6 +463,7 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sizingDialogOpen, setSizingDialogOpen] = useState(false);
+  const [recommendationsSheetOpen, setRecommendationsSheetOpen] = useState(false);
 
   // Load folder data
   useEffect(() => {
@@ -506,7 +508,7 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
   };
 
   const handleInstallationRecommendations = () => {
-    toast.info("Fonctionnalite 'Preconisations d'installations' a venir");
+    setRecommendationsSheetOpen(true);
   };
 
   const handleSizingNote = () => {
@@ -1081,6 +1083,13 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
             setFolder(updatedFolder);
           }}
         />
+
+      {/* Sheet des preconisations */}
+      <RecommendationsSheet
+        open={recommendationsSheetOpen}
+        onOpenChange={setRecommendationsSheetOpen}
+        folderId={folderId}
+      />
     </div>
   );
 }

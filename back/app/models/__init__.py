@@ -9,6 +9,7 @@ from .folder import Folder, FolderStatus
 from .climate_zone import ClimateZone
 from .base_temperature import BaseTemperature
 from .product import Product, ProductCategory, PowerSupply, ProductHeatPump, ProductThermostat, ProductCompatibility
+from .installation_recommendation import InstallationRecommendation
 
 __all__ = [
     "Tenant",
@@ -32,5 +33,6 @@ __all__ = [
     "ProductHeatPump",
     "ProductThermostat",
     "ProductCompatibility",
+    "InstallationRecommendation",
 ]
 

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from app.models.tenant import Tenant
     from app.models.client import Client
     from app.models.property import Property
+    from app.models.installation_recommendation import InstallationRecommendation
 
 
 class FolderStatus(str, Enum):
@@ -107,6 +108,11 @@ class Folder(Base):
     tenant: Mapped["Tenant"] = relationship(back_populates="folders")
     client: Mapped["Client"] = relationship(back_populates="folders")
     property: Mapped["Property | None"] = relationship(back_populates="folders")
+    installation_recommendation: Mapped["InstallationRecommendation | None"] = relationship(
+        back_populates="folder",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
     __table_args__ = (
         Index("idx_folders_tenant_module", "tenant_id", "module_code"),

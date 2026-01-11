@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.module_draft import ModuleDraft
     from app.models.folder import Folder
     from app.models.product import Product
+    from app.models.installation_recommendation import InstallationRecommendation
 
 
 class Tenant(Base):
@@ -73,4 +74,5 @@ class Tenant(Base):
     module_drafts: Mapped[list["ModuleDraft"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     folders: Mapped[list["Folder"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     products: Mapped[List["Product"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
+    installation_recommendations: Mapped[List["InstallationRecommendation"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
 
