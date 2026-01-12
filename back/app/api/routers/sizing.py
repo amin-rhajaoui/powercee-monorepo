@@ -19,6 +19,8 @@ from app.services.sizing_service import dimensionner_pac_simplifie
 from app.services.pdf_service import create_sizing_note_pdf
 from app.services.s3_service import upload_bytes_to_s3
 from app.services.pac_compatibility_service import get_compatible_pacs
+from app.services import cee_calculator_service
+from app.core.exceptions import ValuationMissingError
 from app.schemas.sizing import SizingRequest, SizingResponse, SizingPdfRequest, CompatiblePacResponse, CompatiblePacsResponse
 
 router = APIRouter(prefix="/folders", tags=["Sizing"])
@@ -599,12 +601,14 @@ async def get_compatible_pacs_for_folder(
 ) -> CompatiblePacsResponse:
     """
     Récupère les pompes à chaleur compatibles avec le dimensionnement d'un dossier.
-    
+
     Les critères de compatibilité sont basés sur :
     - Puissance requise (entre 80% et 130% de la puissance préconisée)
     - Régime de température (Basse température ou Moyenne/Haute température)
     - Solution souhaitée (Chauffage Seul ou Chauffage + ECS)
     - Type d'alimentation (Monophasé ou Triphasé)
+
+    Inclut également le calcul de la prime CEE BAR-TH-171 pour chaque PAC.
     """
     # Récupérer le folder avec vérification tenant_id
     folder = await folder_service.get_folder(db, current_user, folder_id)
@@ -613,7 +617,7 @@ async def get_compatible_pacs_for_folder(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Dossier introuvable.",
         )
-    
+
     # Vérifier que le dimensionnement est validé
     folder_data = folder.data or {}
     if not folder_data.get("sizing_validated"):
@@ -621,7 +625,7 @@ async def get_compatible_pacs_for_folder(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Le dimensionnement doit être validé avant de consulter les PAC compatibles.",
         )
-    
+
     # Récupérer la puissance requise
     required_power = folder_data.get("sizing_recommended_power_kw")
     if not required_power:
@@ -629,27 +633,47 @@ async def get_compatible_pacs_for_folder(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Puissance préconisée non disponible. Veuillez valider le dimensionnement.",
         )
-    
+
+    # Récupérer la property pour le calcul CEE (type de logement et surface)
+    property_obj = None
+    if folder.property_id:
+        result = await db.execute(
+            select(Property).where(
+                and_(
+                    Property.id == folder.property_id,
+                    Property.tenant_id == current_user.tenant_id,
+                )
+            )
+        )
+        property_obj = result.scalar_one_or_none()
+
+    # Préparer les paramètres pour le calcul CEE
+    property_type = property_obj.type.value if property_obj and property_obj.type else "MAISON"
+    surface = property_obj.surface_m2 if property_obj and property_obj.surface_m2 else 100.0
+    zone_climatique = folder.zone_climatique
+    mpr_color = folder.mpr_color
+    emitter_type = folder.emitter_type
+
     # Déterminer le régime de température
     if folder.emitter_type == "BASSE_TEMPERATURE":
         regime_temperature = "Basse température"
     else:
         regime_temperature = "Moyenne/Haute température"
-    
+
     # Déterminer la solution souhaitée (Chauffage Seul ou Chauffage + ECS)
     is_water_heating_linked = folder_data.get("is_water_heating_linked", False)
     if is_water_heating_linked:
         solution_souhaitee = "Chauffage + ECS"
     else:
         solution_souhaitee = "Chauffage Seul"
-    
+
     # Déterminer le type d'alimentation
     electrical_phase = folder_data.get("electrical_phase", "")
     if "tri" in electrical_phase.lower() or "3" in electrical_phase:
         type_alimentation = "Triphasé"
     else:
         type_alimentation = "Monophasé"
-    
+
     # Récupérer les PAC compatibles
     compatible_products = await get_compatible_pacs(
         db=db,
@@ -659,21 +683,43 @@ async def get_compatible_pacs_for_folder(
         solution_souhaitee=solution_souhaitee,
         type_alimentation=type_alimentation,
     )
-    
-    # Convertir les produits en réponse
+
+    # Convertir les produits en réponse avec calcul CEE
     pacs_response = []
     for product in compatible_products:
         hp_details = product.heat_pump_details
         if not hp_details:
             continue
-        
+
         # Déterminer l'usage
         usage = "Chauffage + ECS" if hp_details.is_duo else "Chauffage Seul"
-        
+
         # Déterminer l'alimentation
         from app.models.product import PowerSupply
         alimentation = "Triphasé" if hp_details.power_supply == PowerSupply.TRIPHASE else "Monophasé"
-        
+
+        # Calculer la prime CEE
+        estimated_cee_prime = None
+        cee_error = None
+
+        try:
+            estimated_cee_prime = await cee_calculator_service.calculate_prime(
+                db=db,
+                tenant_id=current_user.tenant_id,
+                property_type=property_type,
+                surface=surface,
+                zone_climatique=zone_climatique,
+                mpr_color=mpr_color,
+                emitter_type=emitter_type,
+                etas_35=hp_details.etas_35,
+                etas_55=hp_details.etas_55,
+            )
+        except ValuationMissingError:
+            cee_error = "MISSING_VALUATION"
+        except Exception:
+            # En cas d'erreur inattendue, on ne bloque pas l'affichage des PAC
+            cee_error = "MISSING_VALUATION"
+
         pac_response = CompatiblePacResponse(
             id=str(product.id),
             name=product.name,
@@ -689,7 +735,9 @@ async def get_compatible_pacs_for_folder(
             class_regulator=hp_details.class_regulator,
             refrigerant_type=hp_details.refrigerant_type,
             noise_level=hp_details.noise_level,
+            estimated_cee_prime=estimated_cee_prime,
+            cee_error=cee_error,
         )
         pacs_response.append(pac_response)
-    
+
     return CompatiblePacsResponse(pacs=pacs_response, total=len(pacs_response))

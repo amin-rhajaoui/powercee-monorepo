@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import { useModuleDraft } from "../_hooks/use-module-draft";
 import { getClient, type Client } from "@/lib/api/clients";
 import { getProperty, type Property } from "@/lib/api/properties";
+import { isEligibleForMPR } from "@/lib/utils/mpr-eligibility";
 import Link from "next/link";
 
 // Import dynamique de la carte pour éviter les erreurs SSR
@@ -194,6 +195,15 @@ export function Step5ClientSheet({
     loadData();
   }, [draft]);
 
+  // Calculate MPR eligibility
+  const isEligibleMPR = useMemo(() => {
+    return isEligibleForMPR(
+      draft?.occupation_status || null,
+      draft?.is_principal_residence ?? null,
+      property?.construction_year ?? null
+    );
+  }, [draft?.occupation_status, draft?.is_principal_residence, property?.construction_year]);
+
   // Action button handlers (placeholders)
   const handleAddPhotos = () => {
     toast.info("Fonctionnalite 'Ajouter photos' a venir");
@@ -329,6 +339,16 @@ export function Step5ClientSheet({
                   />
                   <InfoRow label="Statut d'occupation" value={draft?.occupation_status ? OCCUPATION_STATUS_LABELS[draft.occupation_status] : null} />
                   <InfoRow label="Residence principale" value={draft?.is_principal_residence ? "Oui" : draft?.is_principal_residence === false ? "Non" : null} />
+                  {isEligibleMPR && (
+                    <InfoRow 
+                      label="Éligibilité MPR" 
+                      value={
+                        <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                          Éligible MPR
+                        </Badge>
+                      } 
+                    />
+                  )}
                 </div>
               ) : (
                 <p className="text-muted-foreground pl-7">Aucun client selectionne</p>

@@ -5,6 +5,10 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 
+# Type pour les erreurs CEE
+CeeErrorType = Literal["MISSING_VALUATION"]
+
+
 class SizingRequest(BaseModel):
     """Requête de calcul de dimensionnement avec possibilité d'override des valeurs."""
 
@@ -81,6 +85,9 @@ class CompatiblePacResponse(BaseModel):
     class_regulator: str | None = Field(None, description="Classe régulateur")
     refrigerant_type: str | None = Field(None, description="Type de réfrigérant")
     noise_level: float | None = Field(None, description="Niveau sonore en dB")
+    # Champs Prime CEE
+    estimated_cee_prime: float | None = Field(None, description="Prime CEE estimée en EUR")
+    cee_error: CeeErrorType | None = Field(None, description="Code erreur CEE si calcul impossible")
 
 
 class CompatiblePacsResponse(BaseModel):

@@ -112,6 +112,9 @@ export async function saveSizingPdf(
 // Compatible PACs Types
 // ============================================================================
 
+// Type pour les erreurs CEE
+export type CeeErrorType = "MISSING_VALUATION";
+
 export type CompatiblePac = {
   id: string;
   name: string;
@@ -127,6 +130,9 @@ export type CompatiblePac = {
   class_regulator: string | null;
   refrigerant_type: string | null;
   noise_level: number | null;
+  // Champs Prime CEE
+  estimated_cee_prime: number | null;
+  cee_error: CeeErrorType | null;
 };
 
 export type CompatiblePacsResponse = {

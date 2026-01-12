@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useMemo } from "react";
 import React from "react";
 import { notFound } from "next/navigation";
 import {
@@ -46,9 +46,16 @@ import { getFolder, type Folder } from "@/lib/api/folders";
 import { getClient, type Client } from "@/lib/api/clients";
 import { getProperty, type Property } from "@/lib/api/properties";
 import { getModuleById } from "@/lib/modules";
+import { isEligibleForMPR } from "@/lib/utils/mpr-eligibility";
 import { SizingDialog } from "@/components/sizing/sizing-dialog";
 import { RecommendationsSheet } from "@/components/recommendations";
 import { getRecommendation, type InstallationRecommendation } from "@/lib/api/recommendations";
+import { TechnicalSurveySheet } from "@/components/folders/technical-survey-sheet";
+import {
+  getTechnicalSurvey,
+  isTechnicalSurveyComplete,
+  type TechnicalSurvey,
+} from "@/lib/api/technical-surveys";
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const PropertyMap = dynamic(
@@ -466,6 +473,8 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
   const [sizingDialogOpen, setSizingDialogOpen] = useState(false);
   const [recommendationsSheetOpen, setRecommendationsSheetOpen] = useState(false);
   const [recommendation, setRecommendation] = useState<InstallationRecommendation | null>(null);
+  const [technicalSurveySheetOpen, setTechnicalSurveySheetOpen] = useState(false);
+  const [technicalSurvey, setTechnicalSurvey] = useState<TechnicalSurvey | null>(null);
 
   // Load folder data
   useEffect(() => {
@@ -477,16 +486,18 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
         const folderData = await getFolder(folderId);
         setFolder(folderData);
 
-        // Load client, property and recommendations in parallel
-        const [clientData, propertyData, recommendationData] = await Promise.all([
+        // Load client, property, recommendations and technical survey in parallel
+        const [clientData, propertyData, recommendationData, surveyData] = await Promise.all([
           folderData.client_id ? getClient(folderData.client_id) : null,
           folderData.property_id ? getProperty(folderData.property_id) : null,
           getRecommendation(folderId).catch(() => null), // Ignore errors if no recommendation exists
+          getTechnicalSurvey(folderId).catch(() => null), // Ignore errors if no survey exists
         ]);
 
         setClient(clientData);
         setProperty(propertyData);
         setRecommendation(recommendationData);
+        setTechnicalSurvey(surveyData);
       } catch (err) {
         console.error("Erreur lors du chargement du dossier:", err);
         setError("Dossier introuvable");
@@ -506,9 +517,18 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
   // Extract data from folder
   const data: Record<string, unknown> = folder?.data || {};
 
-  // Action button handlers (placeholders)
+  // Calculate MPR eligibility
+  const isEligibleMPR = useMemo(() => {
+    return isEligibleForMPR(
+      (data.occupation_status as string) || null,
+      (data.is_principal_residence as boolean) ?? null,
+      property?.construction_year ?? null
+    );
+  }, [data.occupation_status, data.is_principal_residence, property?.construction_year]);
+
+  // Action button handlers
   const handleAddPhotos = () => {
-    toast.info("Fonctionnalite 'Ajouter photos' a venir");
+    setTechnicalSurveySheetOpen(true);
   };
 
   const handleInstallationRecommendations = () => {
@@ -594,35 +614,63 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
           {/* Action Buttons */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Button
-              variant="outline"
-              className="h-auto py-4 flex flex-col gap-2"
+              variant={
+                isTechnicalSurveyComplete(technicalSurvey)
+                  ? "default"
+                  : "outline"
+              }
+              className={`h-auto py-4 flex flex-col gap-2 ${
+                isTechnicalSurveyComplete(technicalSurvey)
+                  ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                  : ""
+              }`}
               onClick={handleAddPhotos}
             >
-              <Camera className="h-6 w-6" />
-              <span className="text-sm">Ajouter photos</span>
+              {isTechnicalSurveyComplete(technicalSurvey) ? (
+                <CheckCircle2 className="h-6 w-6" />
+              ) : (
+                <Camera className="h-6 w-6" />
+              )}
+              <span className="text-sm">Photos techniques</span>
             </Button>
             <Button
-              variant="outline"
+              variant={
+                recommendation
+                  ? "default"
+                  : "outline"
+              }
               className={`h-auto py-4 flex flex-col gap-2 ${
                 recommendation
-                  ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900"
+                  ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
                   : ""
               }`}
               onClick={handleInstallationRecommendations}
             >
-              <Settings className="h-6 w-6" />
+              {recommendation ? (
+                <CheckCircle2 className="h-6 w-6" />
+              ) : (
+                <Settings className="h-6 w-6" />
+              )}
               <span className="text-sm">Preconisations</span>
             </Button>
             <Button
-              variant="outline"
+              variant={
+                folderData.data?.sizing_validated
+                  ? "default"
+                  : "outline"
+              }
               className={`h-auto py-4 flex flex-col gap-2 ${
                 folderData.data?.sizing_validated
-                  ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900"
+                  ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
                   : ""
               }`}
               onClick={handleSizingNote}
             >
-              <Calculator className="h-6 w-6" />
+              {folderData.data?.sizing_validated ? (
+                <CheckCircle2 className="h-6 w-6" />
+              ) : (
+                <Calculator className="h-6 w-6" />
+              )}
               <span className="text-sm">Dimensionnement</span>
             </Button>
             <Button
@@ -717,6 +765,16 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                           : null
                       }
                     />
+                    {isEligibleMPR && (
+                      <InfoRow 
+                        label="Éligibilité MPR" 
+                        value={
+                          <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                            Éligible MPR
+                          </Badge>
+                        } 
+                      />
+                    )}
                     <MprColorBadge color={folderData.mpr_color} />
                   </div>
                 ) : (
@@ -1099,6 +1157,16 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
         folderId={folderId}
         onRecommendationUpdate={(updatedRecommendation) => {
           setRecommendation(updatedRecommendation);
+        }}
+      />
+
+      {/* Sheet des photos techniques */}
+      <TechnicalSurveySheet
+        open={technicalSurveySheetOpen}
+        onOpenChange={setTechnicalSurveySheetOpen}
+        folderId={folderId}
+        onSurveyUpdate={(updatedSurvey) => {
+          setTechnicalSurvey(updatedSurvey);
         }}
       />
     </div>

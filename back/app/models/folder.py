@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.models.client import Client
     from app.models.property import Property
     from app.models.installation_recommendation import InstallationRecommendation
+    from app.models.technical_survey import TechnicalSurvey
 
 
 class FolderStatus(str, Enum):
@@ -109,6 +110,11 @@ class Folder(Base):
     client: Mapped["Client"] = relationship(back_populates="folders")
     property: Mapped["Property | None"] = relationship(back_populates="folders")
     installation_recommendation: Mapped["InstallationRecommendation | None"] = relationship(
+        back_populates="folder",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    technical_survey: Mapped["TechnicalSurvey | None"] = relationship(
         back_populates="folder",
         uselist=False,
         cascade="all, delete-orphan",

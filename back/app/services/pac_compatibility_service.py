@@ -28,7 +28,7 @@ async def get_compatible_pacs(
     Récupère une liste de PAC compatibles avec une puissance requise.
     
     La compatibilité est définie comme étant entre 80% et 130% de la puissance requise.
-    Filtre sur l'ETAS, l'usage (si 'Chauffage + ECS' est demandé, inclut aussi 'Chauffage Seul') et l'alimentation.
+    Filtre sur l'ETAS, l'usage (si 'Chauffage + ECS' est demandé, n'affiche que les PAC Chauffage + ECS) et l'alimentation.
     
     Args:
         db: Session de base de données
@@ -82,13 +82,8 @@ async def get_compatible_pacs(
     
     # Filtre sur l'usage
     if solution_souhaitee == "Chauffage + ECS":
-        # Si "Chauffage + ECS" est demandé, inclut aussi "Chauffage Seul"
-        query = query.where(
-            or_(
-                ProductHeatPump.is_duo == True,  # Chauffage + ECS
-                ProductHeatPump.is_duo == False,  # Chauffage Seul
-            )
-        )
+        # Si "Chauffage + ECS" est demandé, n'afficher que les PAC qui font Chauffage + ECS
+        query = query.where(ProductHeatPump.is_duo == True)
     else:  # "Chauffage Seul"
         query = query.where(ProductHeatPump.is_duo == False)
     
