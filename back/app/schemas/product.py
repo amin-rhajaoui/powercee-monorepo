@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.product import ProductCategory, PowerSupply
+from app.models.product import ProductCategory, ProductType, PowerSupply
 
 
 # ========== Heat Pump Details ==========
@@ -58,7 +58,9 @@ class ProductBase(BaseModel):
     brand: str = Field(..., min_length=1, max_length=255, description="Marque")
     reference: str = Field(..., min_length=1, max_length=255, description="Reference produit")
     price_ht: float = Field(..., ge=0, description="Prix HT en euros")
+    buying_price_ht: float | None = Field(None, ge=0, description="Prix d'achat HT (pour marge)")
     category: ProductCategory = Field(..., description="Categorie du produit")
+    product_type: ProductType = Field(ProductType.MATERIAL, description="Type de produit")
     module_codes: List[str] | None = Field(None, description="Codes modules CEE")
     image_url: str | None = Field(None, max_length=500, description="URL S3 de l'image")
     description: str | None = Field(None, description="Description du produit")
@@ -78,7 +80,9 @@ class ProductUpdate(BaseModel):
     brand: str | None = Field(None, min_length=1, max_length=255)
     reference: str | None = Field(None, min_length=1, max_length=255)
     price_ht: float | None = Field(None, ge=0)
+    buying_price_ht: float | None = Field(None, ge=0)
     category: ProductCategory | None = None
+    product_type: ProductType | None = None
     module_codes: List[str] | None = None
     image_url: str | None = Field(None, max_length=500)
     description: str | None = None
@@ -109,7 +113,9 @@ class ProductListItem(BaseModel):
     brand: str
     reference: str
     price_ht: float
+    buying_price_ht: float | None = None
     category: ProductCategory
+    product_type: ProductType
     module_codes: List[str] | None = None
     image_url: str | None = None
     is_active: bool

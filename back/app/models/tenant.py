@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from app.models.installation_recommendation import InstallationRecommendation
     from app.models.technical_survey import TechnicalSurvey
     from app.models.cee_valuation import CEEValuation
+    from app.models.module_settings import ModuleSettings
 
 
 class Tenant(Base):
@@ -79,4 +80,5 @@ class Tenant(Base):
     installation_recommendations: Mapped[List["InstallationRecommendation"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     technical_surveys: Mapped[List["TechnicalSurvey"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     cee_valuations: Mapped[List["CEEValuation"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
+    module_settings: Mapped[List["ModuleSettings"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
 

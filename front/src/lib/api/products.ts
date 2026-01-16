@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 
 export type ProductCategory = "HEAT_PUMP" | "THERMOSTAT" | "OTHER";
+export type ProductType = "MATERIAL" | "LABOR" | "SERVICE";
 export type PowerSupply = "MONOPHASE" | "TRIPHASE";
 
 export type HeatPumpDetails = {
@@ -47,7 +48,9 @@ export type ProductListItem = {
   brand: string;
   reference: string;
   price_ht: number;
+  buying_price_ht?: number | null;
   category: ProductCategory;
+  product_type: ProductType;
   module_codes?: string[] | null;
   image_url?: string | null;
   is_active: boolean;

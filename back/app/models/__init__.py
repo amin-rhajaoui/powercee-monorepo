@@ -8,7 +8,8 @@ from .module_draft import ModuleDraft
 from .folder import Folder, FolderStatus
 from .climate_zone import ClimateZone
 from .base_temperature import BaseTemperature
-from .product import Product, ProductCategory, PowerSupply, ProductHeatPump, ProductThermostat, ProductCompatibility
+from .product import Product, ProductCategory, ProductType, PowerSupply, ProductHeatPump, ProductThermostat, ProductCompatibility
+from .module_settings import ModuleSettings, RoundingMode
 from .installation_recommendation import InstallationRecommendation
 from .technical_survey import TechnicalSurvey
 from .cee_valuation import CEEValuation
@@ -31,6 +32,7 @@ __all__ = [
     "BaseTemperature",
     "Product",
     "ProductCategory",
+    "ProductType",
     "PowerSupply",
     "ProductHeatPump",
     "ProductThermostat",
@@ -38,5 +40,7 @@ __all__ = [
     "InstallationRecommendation",
     "TechnicalSurvey",
     "CEEValuation",
+    "ModuleSettings",
+    "RoundingMode",
 ]
 

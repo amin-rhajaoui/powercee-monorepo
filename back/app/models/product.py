@@ -20,6 +20,13 @@ class ProductCategory(str, Enum):
     OTHER = "OTHER"
 
 
+class ProductType(str, Enum):
+    """Type de produit pour la tarification."""
+    MATERIAL = "MATERIAL"
+    LABOR = "LABOR"
+    SERVICE = "SERVICE"
+
+
 class PowerSupply(str, Enum):
     """Type d'alimentation pour les PAC."""
     MONOPHASE = "MONOPHASE"
@@ -70,6 +77,19 @@ class Product(Base):
         SQLEnum(ProductCategory, name="product_category"),
         nullable=False,
         doc="Categorie du produit.",
+    )
+    product_type: Mapped[ProductType] = mapped_column(
+        SQLEnum(ProductType, name="product_type_enum", create_type=False),
+        default=ProductType.MATERIAL,
+        nullable=False,
+        doc="Type de produit pour la tarification (MATERIAL, LABOR, SERVICE).",
+    )
+
+    # Prix d'achat (pour calcul de marge)
+    buying_price_ht: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        doc="Prix d'achat HT en euros (pour calcul de marge).",
     )
     module_codes: Mapped[List[str] | None] = mapped_column(
         JSONB,
