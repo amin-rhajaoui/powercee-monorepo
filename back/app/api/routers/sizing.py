@@ -39,6 +39,9 @@ def _extract_sizing_params_from_folder(folder: Folder, property_obj: Property | 
     """
     data = folder.data or {}
     
+    # Extraire step4_data pour compatibilité avec la nouvelle structure
+    step4_data = data.get("step4", {}) if isinstance(data.get("step4"), dict) else {}
+    
     # Données depuis Property
     surface_chauffee = property_obj.surface_m2 if property_obj and property_obj.surface_m2 else None
     annee_construction = property_obj.construction_year if property_obj else None
@@ -47,21 +50,29 @@ def _extract_sizing_params_from_folder(folder: Folder, property_obj: Property | 
     altitude = property_obj.altitude if property_obj else None
     
     # Données depuis folder.data (visite technique)
-    hauteur_plafond = data.get("avg_ceiling_height")
-    temperature_consigne = data.get("target_temperature", 19.0)
+    # Chercher d'abord à plat, puis dans step4 pour compatibilité
+    hauteur_plafond = data.get("avg_ceiling_height") or step4_data.get("avg_ceiling_height")
+    temperature_consigne = data.get("target_temperature") or step4_data.get("target_temperature") or 19.0
     
     # Type d'émetteur
     type_emetteur = "BT" if folder.emitter_type == "BASSE_TEMPERATURE" else "MT_HT"
     
     # Données d'isolation depuis folder.data
+    # Chercher d'abord à plat, puis dans step4 pour compatibilité
     combles_isole = data.get("is_attic_isolated")
-    combles_annee = data.get("attic_isolation_year")
+    if combles_isole is None:
+        combles_isole = step4_data.get("is_attic_isolated")
+    
+    combles_annee = data.get("attic_isolation_year") or step4_data.get("attic_isolation_year")
     plancher_isole = data.get("is_floor_isolated")
-    plancher_annee = data.get("floor_isolation_year")
-    murs_type = data.get("wall_isolation_type")
-    murs_annee_interieur = data.get("wall_isolation_year_interior")
-    murs_annee_exterieur = data.get("wall_isolation_year_exterior")
-    menuiserie_type = data.get("joinery_type")
+    if plancher_isole is None:
+        plancher_isole = step4_data.get("is_floor_isolated")
+    
+    plancher_annee = data.get("floor_isolation_year") or step4_data.get("floor_isolation_year")
+    murs_type = data.get("wall_isolation_type") or step4_data.get("wall_isolation_type")
+    murs_annee_interieur = data.get("wall_isolation_year_interior") or step4_data.get("wall_isolation_year_interior")
+    murs_annee_exterieur = data.get("wall_isolation_year_exterior") or step4_data.get("wall_isolation_year_exterior")
+    menuiserie_type = data.get("joinery_type") or step4_data.get("joinery_type")
     
     return {
         "surface_chauffee": surface_chauffee,

@@ -97,49 +97,98 @@ async def create_folder_from_draft(
     if not draft.client_id:
         return None
 
+    # Rafraîchir le draft pour s'assurer d'avoir les dernières données
+    await db.refresh(draft)
+
     # Construire les données complètes du dossier depuis le draft
+    # Toutes les données métier sont maintenant dans draft.data
+    step2_data = draft.data.get("step2", {}) if isinstance(draft.data, dict) else {}
+    step3_data = draft.data.get("step3", {}) if isinstance(draft.data, dict) else {}
+    step4_data = draft.data.get("step4", {}) if isinstance(draft.data, dict) else {}
+    
+    # Logger pour debug
+    logger.info(f"Données du draft pour création du dossier: step4_data={step4_data}")
+    
+    # Construire draft_data en ne copiant que les valeurs non-None
     draft_data = {
         "module_code": draft.module_code,
         "current_step": draft.current_step,
-        # Champs BAR-TH-171 - Étape 2
-        "is_principal_residence": draft.is_principal_residence,
-        "occupation_status": draft.occupation_status,
-        "heating_system": draft.heating_system,
-        "old_boiler_brand": draft.old_boiler_brand,
-        "is_water_heating_linked": draft.is_water_heating_linked,
-        "water_heating_type": draft.water_heating_type,
-        "usage_mode": draft.usage_mode,
-        "electrical_phase": draft.electrical_phase,
-        "power_kva": draft.power_kva,
-        # Champs BAR-TH-171 - Étape 3
-        "tax_notice_url": draft.tax_notice_url,
-        "address_proof_url": draft.address_proof_url,
-        "property_proof_url": draft.property_proof_url,
-        "energy_bill_url": draft.energy_bill_url,
-        "reference_tax_income": draft.reference_tax_income,
-        "household_size": draft.household_size,
-        # Champs BAR-TH-171 - Étape 4
-        "nb_levels": draft.nb_levels,
-        "avg_ceiling_height": draft.avg_ceiling_height,
-        "target_temperature": draft.target_temperature,
-        "attic_type": draft.attic_type,
-        "is_attic_isolated": draft.is_attic_isolated,
-        "attic_isolation_year": draft.attic_isolation_year,
-        "floor_type": draft.floor_type,
-        "is_floor_isolated": draft.is_floor_isolated,
-        "floor_isolation_year": draft.floor_isolation_year,
-        "wall_isolation_type": draft.wall_isolation_type,
-        "wall_isolation_year_interior": draft.wall_isolation_year_interior,
-        "wall_isolation_year_exterior": draft.wall_isolation_year_exterior,
-        "joinery_type": draft.joinery_type,
-        "emitters_configuration": draft.emitters_configuration,
-        # Données additionnelles du draft
-        **draft.data,
     }
+    
+    # Ajouter les champs BAR-TH-171 - Étape 2 (depuis draft.data.step2) seulement si présents
+    if step2_data.get("is_principal_residence") is not None:
+        draft_data["is_principal_residence"] = step2_data.get("is_principal_residence")
+    if step2_data.get("occupation_status") is not None:
+        draft_data["occupation_status"] = step2_data.get("occupation_status")
+    if step2_data.get("heating_system") is not None:
+        draft_data["heating_system"] = step2_data.get("heating_system")
+    if step2_data.get("old_boiler_brand") is not None:
+        draft_data["old_boiler_brand"] = step2_data.get("old_boiler_brand")
+    if step2_data.get("is_water_heating_linked") is not None:
+        draft_data["is_water_heating_linked"] = step2_data.get("is_water_heating_linked")
+    if step2_data.get("water_heating_type") is not None:
+        draft_data["water_heating_type"] = step2_data.get("water_heating_type")
+    if step2_data.get("usage_mode") is not None:
+        draft_data["usage_mode"] = step2_data.get("usage_mode")
+    if step2_data.get("electrical_phase") is not None:
+        draft_data["electrical_phase"] = step2_data.get("electrical_phase")
+    if step2_data.get("power_kva") is not None:
+        draft_data["power_kva"] = step2_data.get("power_kva")
+    
+    # Ajouter les champs BAR-TH-171 - Étape 3 (depuis draft.data.step3) seulement si présents
+    if step3_data.get("tax_notice_url") is not None:
+        draft_data["tax_notice_url"] = step3_data.get("tax_notice_url")
+    if step3_data.get("address_proof_url") is not None:
+        draft_data["address_proof_url"] = step3_data.get("address_proof_url")
+    if step3_data.get("property_proof_url") is not None:
+        draft_data["property_proof_url"] = step3_data.get("property_proof_url")
+    if step3_data.get("energy_bill_url") is not None:
+        draft_data["energy_bill_url"] = step3_data.get("energy_bill_url")
+    if step3_data.get("reference_tax_income") is not None:
+        draft_data["reference_tax_income"] = step3_data.get("reference_tax_income")
+    if step3_data.get("household_size") is not None:
+        draft_data["household_size"] = step3_data.get("household_size")
+    
+    # Ajouter les champs BAR-TH-171 - Étape 4 (depuis draft.data.step4) seulement si présents
+    if step4_data.get("nb_levels") is not None:
+        draft_data["nb_levels"] = step4_data.get("nb_levels")
+    if step4_data.get("avg_ceiling_height") is not None:
+        draft_data["avg_ceiling_height"] = step4_data.get("avg_ceiling_height")
+    if step4_data.get("target_temperature") is not None:
+        draft_data["target_temperature"] = step4_data.get("target_temperature")
+    if step4_data.get("attic_type") is not None:
+        draft_data["attic_type"] = step4_data.get("attic_type")
+    if step4_data.get("is_attic_isolated") is not None:
+        draft_data["is_attic_isolated"] = step4_data.get("is_attic_isolated")
+    if step4_data.get("attic_isolation_year") is not None:
+        draft_data["attic_isolation_year"] = step4_data.get("attic_isolation_year")
+    if step4_data.get("floor_type") is not None:
+        draft_data["floor_type"] = step4_data.get("floor_type")
+    if step4_data.get("is_floor_isolated") is not None:
+        draft_data["is_floor_isolated"] = step4_data.get("is_floor_isolated")
+    if step4_data.get("floor_isolation_year") is not None:
+        draft_data["floor_isolation_year"] = step4_data.get("floor_isolation_year")
+    if step4_data.get("wall_isolation_type") is not None:
+        draft_data["wall_isolation_type"] = step4_data.get("wall_isolation_type")
+    if step4_data.get("wall_isolation_year_interior") is not None:
+        draft_data["wall_isolation_year_interior"] = step4_data.get("wall_isolation_year_interior")
+    if step4_data.get("wall_isolation_year_exterior") is not None:
+        draft_data["wall_isolation_year_exterior"] = step4_data.get("wall_isolation_year_exterior")
+    if step4_data.get("joinery_type") is not None:
+        draft_data["joinery_type"] = step4_data.get("joinery_type")
+    if step4_data.get("emitters_configuration") is not None:
+        draft_data["emitters_configuration"] = step4_data.get("emitters_configuration")
+    
+    # Ajouter les données additionnelles du draft (conserver toute la structure data)
+    # Cela permet de conserver step1, step2, step3, step4 si présents
+    if isinstance(draft.data, dict):
+        draft_data.update(draft.data)
 
     # Calculer la couleur MPR
     mpr_color = None
-    if draft.reference_tax_income is not None and draft.household_size is not None:
+    reference_tax_income = step3_data.get("reference_tax_income")
+    household_size = step3_data.get("household_size")
+    if reference_tax_income is not None and household_size is not None:
         # Récupérer le code postal depuis la Property si disponible
         postal_code = None
         property_obj = None
@@ -160,11 +209,11 @@ async def create_folder_from_draft(
         if postal_code:
             try:
                 mpr_color = calculate_mpr_color(
-                    rfr=float(draft.reference_tax_income),
-                    household_size=draft.household_size,
+                    rfr=float(reference_tax_income),
+                    household_size=household_size,
                     postal_code=postal_code
                 )
-                logger.info(f"Couleur MPR calculée: {mpr_color} pour RFR={draft.reference_tax_income}, household_size={draft.household_size}, postal_code={postal_code}")
+                logger.info(f"Couleur MPR calculée: {mpr_color} pour RFR={reference_tax_income}, household_size={household_size}, postal_code={postal_code}")
             except Exception as e:
                 logger.error(f"Erreur lors du calcul de la couleur MPR: {e}")
         else:
@@ -173,7 +222,8 @@ async def create_folder_from_draft(
         logger.warning("RFR ou household_size manquant pour calculer la couleur MPR")
 
     # Déterminer le type d'émetteur
-    emitter_type = determine_emitter_type(draft.emitters_configuration)
+    emitters_configuration = step4_data.get("emitters_configuration")
+    emitter_type = determine_emitter_type(emitters_configuration)
     if emitter_type:
         logger.info(f"Type d'émetteur déterminé: {emitter_type}")
 

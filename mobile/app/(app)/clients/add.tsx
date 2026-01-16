@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { View, ScrollView, KeyboardAvoidingView, Platform, Alert, StyleSheet } from 'react-native';
-import { Text, ActivityIndicator } from 'react-native';
+import { View, ScrollView, KeyboardAvoidingView, Platform, Alert, Text } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Select } from '@/components/ui/Select';
-import { Card } from '@/components/ui/Card';
+import { RadioGroup } from '@/components/ui/Select';
 import { clientCreateSchema, clientTypeOptions, type ClientFormValues } from '@/lib/schemas/client';
 import { createClient } from '@/lib/api/clients';
-import { lightColors } from '@/lib/colors';
 
 export default function AddClientPage() {
   const router = useRouter();
@@ -50,7 +48,7 @@ export default function AddClientPage() {
         phone: values.phone || undefined,
         agency_id: null,
       });
-      
+
       Alert.alert('Succès', 'Client créé avec succès', [
         {
           text: 'OK',
@@ -68,40 +66,40 @@ export default function AddClientPage() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Nouveau client</Text>
-          <Text style={styles.subtitle}>
-            Ajoutez un nouveau client à votre base de données.
-          </Text>
-        </View>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, padding: 24, paddingBottom: 100 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="mb-8">
+            <Text className="text-3xl font-bold text-foreground mb-2">Nouveau client</Text>
+            <Text className="text-base text-muted-foreground">
+              Ajoutez un nouveau client à votre base de données.
+            </Text>
+          </View>
 
-        <Card>
-          <View>
+          <View className="gap-6">
             <Controller
               control={control}
               name="type"
               render={({ field: { onChange, value } }) => (
-                <Select
+                <RadioGroup
                   label="Type de client"
                   value={value}
                   options={clientTypeOptions}
                   onValueChange={onChange}
-                  error={errors.type?.message}
+                  className="mb-2"
                 />
               )}
             />
 
-            {clientType === 'PARTICULIER' && (
-              <>
+            {clientType === 'PARTICULIER' ? (
+              <View className="gap-6">
                 <Controller
                   control={control}
                   name="first_name"
@@ -131,11 +129,9 @@ export default function AddClientPage() {
                     />
                   )}
                 />
-              </>
-            )}
-
-            {clientType === 'PROFESSIONNEL' && (
-              <>
+              </View>
+            ) : (
+              <View className="gap-6">
                 <Controller
                   control={control}
                   name="company_name"
@@ -166,7 +162,7 @@ export default function AddClientPage() {
                     />
                   )}
                 />
-              </>
+              </View>
             )}
 
             <Controller
@@ -201,63 +197,26 @@ export default function AddClientPage() {
               )}
             />
 
-            <View style={styles.actions}>
+            <View className="flex-row gap-4 mt-4">
               <Button
-                variant="outlined"
+                variant="outline"
+                className="flex-1"
                 onPress={() => router.back()}
                 disabled={isSubmitting}
-                style={styles.cancelButton}
-              >
-                Annuler
-              </Button>
+                label="Annuler"
+              />
               <Button
-                variant="contained"
+                variant="default"
+                className="flex-1"
                 onPress={handleSubmit(onSubmit)}
                 disabled={isSubmitting}
                 loading={isSubmitting}
-                style={styles.submitButton}
-              >
-                Créer le client
-              </Button>
+                label="Créer"
+              />
             </View>
           </View>
-        </Card>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: lightColors.background,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: lightColors.foreground,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: lightColors.mutedForeground,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  cancelButton: {
-    flex: 1,
-  },
-  submitButton: {
-    flex: 1,
-  },
-});

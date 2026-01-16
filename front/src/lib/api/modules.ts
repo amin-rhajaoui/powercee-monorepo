@@ -52,38 +52,6 @@ export type ModuleDraft = {
   archived_at: string | null;
   created_at: string;
   updated_at: string;
-  // Champs spécifiques BAR-TH-171 - Étape 2
-  is_principal_residence: boolean | null;
-  occupation_status: OccupationStatus | null;
-  heating_system: HeatingSystem | null;
-  old_boiler_brand: string | null;
-  is_water_heating_linked: boolean | null;
-  water_heating_type: WaterHeatingType | null;
-  usage_mode: UsageMode | null;
-  electrical_phase: ElectricalPhase | null;
-  power_kva: number | null;
-  // Champs spécifiques BAR-TH-171 - Étape 3 : Documents administratifs
-  tax_notice_url: string | null;
-  address_proof_url: string | null;
-  property_proof_url: string | null;
-  energy_bill_url: string | null;
-  reference_tax_income: number | null;
-  household_size: number | null;
-  // Champs spécifiques BAR-TH-171 - Étape 4 : Visite Technique
-  nb_levels: number | null;
-  avg_ceiling_height: number | null;
-  target_temperature: number | null;
-  attic_type: AtticType | null;
-  is_attic_isolated: boolean | null;
-  attic_isolation_year: number | null;
-  floor_type: FloorType | null;
-  is_floor_isolated: boolean | null;
-  floor_isolation_year: number | null;
-  wall_isolation_type: WallIsolationType | null;
-  wall_isolation_year_interior: number | null;
-  wall_isolation_year_exterior: number | null;
-  joinery_type: JoineryType | null;
-  emitters_configuration: LevelEmitters[] | null;
 };
 
 export type ModuleDraftCreate = {
@@ -99,38 +67,6 @@ export type ModuleDraftUpdate = {
   property_id?: string | null;
   current_step?: number;
   data?: Record<string, unknown>;
-  // Champs spécifiques BAR-TH-171 - Étape 2
-  is_principal_residence?: boolean | null;
-  occupation_status?: OccupationStatus | null;
-  heating_system?: HeatingSystem | null;
-  old_boiler_brand?: string | null;
-  is_water_heating_linked?: boolean | null;
-  water_heating_type?: WaterHeatingType | null;
-  usage_mode?: UsageMode | null;
-  electrical_phase?: ElectricalPhase | null;
-  power_kva?: number | null;
-  // Champs spécifiques BAR-TH-171 - Étape 3 : Documents administratifs
-  tax_notice_url?: string | null;
-  address_proof_url?: string | null;
-  property_proof_url?: string | null;
-  energy_bill_url?: string | null;
-  reference_tax_income?: number | null;
-  household_size?: number | null;
-  // Champs spécifiques BAR-TH-171 - Étape 4 : Visite Technique
-  nb_levels?: number | null;
-  avg_ceiling_height?: number | null;
-  target_temperature?: number | null;
-  attic_type?: AtticType | null;
-  is_attic_isolated?: boolean | null;
-  attic_isolation_year?: number | null;
-  floor_type?: FloorType | null;
-  is_floor_isolated?: boolean | null;
-  floor_isolation_year?: number | null;
-  wall_isolation_type?: WallIsolationType | null;
-  wall_isolation_year_interior?: number | null;
-  wall_isolation_year_exterior?: number | null;
-  joinery_type?: JoineryType | null;
-  emitters_configuration?: LevelEmitters[] | null;
 };
 
 export type PaginatedModuleDrafts = {

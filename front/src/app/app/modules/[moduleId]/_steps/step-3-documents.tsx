@@ -83,37 +83,37 @@ export function Step3Documents({
   const [propertyProofFile, setPropertyProofFile] = useState<File | null>(null);
   const [energyBillFile, setEnergyBillFile] = useState<File | null>(null);
 
-  // Récupérer le statut d'occupation depuis le draft (étape 2)
-  const occupationStatus = draft?.occupation_status;
+  // Récupérer le statut d'occupation depuis draftData.step2
+  const occupationStatus = draftData.step2?.occupation_status;
 
   const form = useForm<BarTh171Step3Values>({
     resolver: zodResolver(barTh171Step3Schema),
     defaultValues: {
-      tax_notice_url: draft?.tax_notice_url ?? undefined,
+      tax_notice_url: draftData.step3?.tax_notice_url ?? undefined,
       is_address_same_as_works: draftData.step3?.is_address_same_as_works ?? undefined,
-      address_proof_url: draft?.address_proof_url ?? undefined,
-      property_proof_url: draft?.property_proof_url ?? undefined,
-      energy_bill_url: draft?.energy_bill_url ?? undefined,
-      reference_tax_income: draft?.reference_tax_income ?? undefined,
-      household_size: draft?.household_size ?? undefined,
+      address_proof_url: draftData.step3?.address_proof_url ?? undefined,
+      property_proof_url: draftData.step3?.property_proof_url ?? undefined,
+      energy_bill_url: draftData.step3?.energy_bill_url ?? undefined,
+      reference_tax_income: draftData.step3?.reference_tax_income ?? undefined,
+      household_size: draftData.step3?.household_size ?? undefined,
     },
     mode: "onChange",
   });
 
   // Recharger les valeurs quand le draft change
   useEffect(() => {
-    if (draft) {
+    if (draftData.step3) {
       form.reset({
-        tax_notice_url: draft.tax_notice_url ?? undefined,
-        is_address_same_as_works: draftData.step3?.is_address_same_as_works ?? undefined,
-        address_proof_url: draft.address_proof_url ?? undefined,
-        property_proof_url: draft.property_proof_url ?? undefined,
-        energy_bill_url: draft.energy_bill_url ?? undefined,
-        reference_tax_income: draft.reference_tax_income ?? undefined,
-        household_size: draft.household_size ?? undefined,
+        tax_notice_url: draftData.step3.tax_notice_url ?? undefined,
+        is_address_same_as_works: draftData.step3.is_address_same_as_works ?? undefined,
+        address_proof_url: draftData.step3.address_proof_url ?? undefined,
+        property_proof_url: draftData.step3.property_proof_url ?? undefined,
+        energy_bill_url: draftData.step3.energy_bill_url ?? undefined,
+        reference_tax_income: draftData.step3.reference_tax_income ?? undefined,
+        household_size: draftData.step3.household_size ?? undefined,
       });
     }
-  }, [draft, draftData.step3?.is_address_same_as_works, form]);
+  }, [draftData.step3, form]);
 
   const isAddressSameAsWorks = form.watch("is_address_same_as_works");
 
@@ -150,18 +150,16 @@ export function Step3Documents({
         {
           step3: {
             is_address_same_as_works: values.is_address_same_as_works,
+            tax_notice_url: uploadedUrls.tax_notice_url || values.tax_notice_url || null,
+            address_proof_url: uploadedUrls.address_proof_url || values.address_proof_url || null,
+            property_proof_url: uploadedUrls.property_proof_url || values.property_proof_url || null,
+            energy_bill_url: uploadedUrls.energy_bill_url || values.energy_bill_url || null,
+            reference_tax_income: values.reference_tax_income || null,
+            household_size: values.household_size || null,
           },
         },
         4,
-        undefined,
-        {
-          tax_notice_url: uploadedUrls.tax_notice_url || values.tax_notice_url || null,
-          address_proof_url: uploadedUrls.address_proof_url || values.address_proof_url || null,
-          property_proof_url: uploadedUrls.property_proof_url || values.property_proof_url || null,
-          energy_bill_url: uploadedUrls.energy_bill_url || values.energy_bill_url || null,
-          reference_tax_income: values.reference_tax_income || null,
-          household_size: values.household_size || null,
-        }
+        undefined
       );
       onNext();
     } catch (error) {
@@ -194,18 +192,16 @@ export function Step3Documents({
         {
           step3: {
             is_address_same_as_works: values.is_address_same_as_works,
+            tax_notice_url: uploadedUrls.tax_notice_url || values.tax_notice_url || null,
+            address_proof_url: uploadedUrls.address_proof_url || values.address_proof_url || null,
+            property_proof_url: uploadedUrls.property_proof_url || values.property_proof_url || null,
+            energy_bill_url: uploadedUrls.energy_bill_url || values.energy_bill_url || null,
+            reference_tax_income: values.reference_tax_income || null,
+            household_size: values.household_size || null,
           },
         },
         4,
-        undefined,
-        {
-          tax_notice_url: uploadedUrls.tax_notice_url || values.tax_notice_url || null,
-          address_proof_url: uploadedUrls.address_proof_url || values.address_proof_url || null,
-          property_proof_url: uploadedUrls.property_proof_url || values.property_proof_url || null,
-          energy_bill_url: uploadedUrls.energy_bill_url || values.energy_bill_url || null,
-          reference_tax_income: values.reference_tax_income || null,
-          household_size: values.household_size || null,
-        }
+        undefined
       );
       onNext();
     } catch (error) {

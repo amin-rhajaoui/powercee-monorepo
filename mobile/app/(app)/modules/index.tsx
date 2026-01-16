@@ -1,40 +1,47 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { Text } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Card } from '@/components/ui/Card';
 import { getModulesByCategory, type Module } from '@/lib/modules';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { lightColors } from '@/lib/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { cn } from '@/lib/utils';
 
 function ModuleCard({ module }: { module: Module }) {
   const router = useRouter();
 
-  const iconMap: Record<string, string> = {
-    thermometer: 'thermometer',
-    wrench: 'wrench',
-    home: 'home',
-    building: 'office-building',
+  const iconMap: Record<string, any> = {
+    thermometer: { lib: Ionicons, name: 'thermometer-outline' },
+    wrench: { lib: Ionicons, name: 'build-outline' },
+    home: { lib: Ionicons, name: 'home-outline' },
+    building: { lib: Ionicons, name: 'business-outline' },
   };
 
-  const iconName = iconMap[module.icon] || 'package-variant';
+  const iconData = iconMap[module.icon] || { lib: MaterialCommunityIcons, name: 'package-variant' };
+  const IconLib = iconData.lib;
 
   return (
     <TouchableOpacity
       onPress={() => router.push(`/modules/${module.id}` as any)}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
+      className="mb-4"
     >
-      <Card style={styles.moduleCard}>
-        <View style={styles.cardContent}>
-          <View style={styles.iconContainer}>
-            <Icon name={iconName} size={24} color={lightColors.primary} />
-          </View>
-          <View style={styles.textContainer}>
-            <Text style={styles.moduleTitle}>{module.title}</Text>
-            <Text style={styles.moduleCode}>{module.code}</Text>
+      <View className="flex-row items-center bg-card rounded-2xl border border-border p-4 shadow-sm active:bg-accent/50">
+        <View className="h-14 w-14 items-center justify-center rounded-xl bg-primary/10 mr-4">
+          <IconLib name={iconData.name} size={28} color={lightColors.primary} />
+        </View>
+        <View className="flex-1 gap-1">
+          <Text className="text-lg font-semibold text-foreground">
+            {module.title}
+          </Text>
+          <View className="flex-row items-center">
+            <Text className="text-xs font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded uppercase tracking-wider">
+              {module.code}
+            </Text>
           </View>
         </View>
-      </Card>
+        <Ionicons name="chevron-forward" size={20} color="#64748B" />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -44,156 +51,56 @@ export default function ModulesPage() {
   const professionnelModules = getModulesByCategory('PROFESSIONNEL');
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>Modules</Text>
-        <Text style={styles.subtitle}>
-          Accédez aux différents modules de calcul pour la rénovation énergétique.
-        </Text>
-      </View>
-
-      {particulierModules.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}>
-              <Icon name="home" size={20} color={lightColors.primary} />
-            </View>
-            <View>
-              <Text style={styles.sectionTitle}>Particulier</Text>
-              <Text style={styles.sectionDescription}>
-                Modules destinés aux particuliers
-              </Text>
-            </View>
-          </View>
-          <View>
-            {particulierModules.map((module) => (
-              <ModuleCard key={module.id} module={module} />
-            ))}
-          </View>
-        </View>
-      )}
-
-      {professionnelModules.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}>
-              <Icon name="office-building" size={20} color={lightColors.primary} />
-            </View>
-            <View>
-              <Text style={styles.sectionTitle}>Professionnel</Text>
-              <Text style={styles.sectionDescription}>
-                Modules destinés aux professionnels
-              </Text>
-            </View>
-          </View>
-          <View>
-            {professionnelModules.map((module) => (
-              <ModuleCard key={module.id} module={module} />
-            ))}
-          </View>
-        </View>
-      )}
-
-      {particulierModules.length === 0 && professionnelModules.length === 0 && (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>
-            Aucun module disponible pour le moment.
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+      <ScrollView
+        className="flex-1 px-6"
+        contentContainerStyle={{ paddingBottom: 100, paddingTop: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="mb-8">
+          <Text className="text-3xl font-bold text-foreground mb-2">Tableau de bord</Text>
+          <Text className="text-base text-muted-foreground leading-relaxed">
+            Sélectionnez un module pour commencer{'\n'}votre étude énergétique.
           </Text>
         </View>
-      )}
-    </ScrollView>
+
+        {particulierModules.length > 0 && (
+          <View className="mb-10">
+            <View className="flex-row items-center gap-2 mb-4">
+              <View className="h-8 w-1 bg-primary rounded-full" />
+              <Text className="text-xl font-bold text-foreground">Particulier</Text>
+            </View>
+            <View>
+              {particulierModules.map((module) => (
+                <ModuleCard key={module.id} module={module} />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {professionnelModules.length > 0 && (
+          <View className="mb-10">
+            <View className="flex-row items-center gap-2 mb-4">
+              <View className="h-8 w-1 bg-[#2D3748] rounded-full" />
+              <Text className="text-xl font-bold text-foreground">Professionnel</Text>
+            </View>
+            <View>
+              {professionnelModules.map((module) => (
+                <ModuleCard key={module.id} module={module} />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {particulierModules.length === 0 && professionnelModules.length === 0 && (
+          <View className="items-center py-20 bg-card rounded-3xl border border-dashed border-border gap-4">
+            <Ionicons name="folder-open-outline" size={64} color={lightColors.mutedForeground} />
+            <Text className="text-base text-muted-foreground text-center px-10">
+              Aucun module n'a été configuré pour votre compte.
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: lightColors.background,
-  },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: lightColors.foreground,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: lightColors.mutedForeground,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
-  sectionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: `${lightColors.primary}1A`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: lightColors.foreground,
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: lightColors.mutedForeground,
-    marginTop: 2,
-  },
-  moduleCard: {
-    marginBottom: 12,
-  },
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: `${lightColors.primary}1A`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textContainer: {
-    flex: 1,
-  },
-  moduleTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: lightColors.cardForeground,
-    marginBottom: 4,
-  },
-  moduleCode: {
-    fontSize: 12,
-    color: lightColors.mutedForeground,
-    fontFamily: 'monospace',
-  },
-  emptyState: {
-    paddingVertical: 48,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: lightColors.mutedForeground,
-    textAlign: 'center',
-  },
-});

@@ -1,15 +1,16 @@
 import React from 'react';
-import { View, TouchableOpacity, Platform, StyleSheet } from 'react-native';
-import { Text } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Ionicons } from '@expo/vector-icons';
 import { lightColors } from '@/lib/colors';
+import { cn } from '@/lib/utils';
 
 interface TabItem {
   name: string;
   label: string;
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  activeIcon: keyof typeof Ionicons.glyphMap;
   route: string;
 }
 
@@ -17,19 +18,22 @@ const tabs: TabItem[] = [
   {
     name: 'modules',
     label: 'Modules',
-    icon: 'package-variant',
+    icon: 'grid-outline',
+    activeIcon: 'grid',
     route: '/(app)/modules',
   },
   {
     name: 'add-client',
-    label: 'Ajouter client',
-    icon: 'account-plus',
+    label: 'Client',
+    icon: 'person-add-outline',
+    activeIcon: 'person-add',
     route: '/(app)/clients/add',
   },
   {
     name: 'settings',
     label: 'Réglages',
-    icon: 'cog',
+    icon: 'settings-outline',
+    activeIcon: 'settings',
     route: '/(app)/settings',
   },
 ];
@@ -43,27 +47,13 @@ export function BottomTabs() {
     return pathname === route || pathname?.startsWith(route + '/');
   };
 
-  const safeAreaBottom = Math.max(insets.bottom, 0);
-  const baseHeight = 56; // Hauteur de base pour la barre
-  const paddingTop = 8;
-  const totalHeight = baseHeight + paddingTop + safeAreaBottom;
-
   return (
     <View
-      style={[
-        styles.container,
-        {
-          paddingBottom: safeAreaBottom,
-          paddingTop: paddingTop,
-          minHeight: totalHeight,
-        },
-        Platform.OS === 'ios' && {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-        },
-      ]}
+      className="flex-row border-t border-border bg-card shadow-lg"
+      style={{
+        paddingBottom: Math.max(insets.bottom, 12),
+        paddingTop: 12,
+      }}
     >
       {tabs.map((tab) => {
         const active = isActive(tab.route);
@@ -71,54 +61,27 @@ export function BottomTabs() {
           <TouchableOpacity
             key={tab.name}
             onPress={() => router.push(tab.route as any)}
-            style={styles.tab}
+            className="flex-1 items-center justify-center gap-1"
             activeOpacity={0.7}
           >
-            <Icon
-              name={tab.icon}
+            <Ionicons
+              name={active ? tab.activeIcon : tab.icon}
               size={24}
-              color={active ? lightColors.primary : lightColors.mutedForeground}
+              color={active ? lightColors.primary : '#64748B'} // muted-foreground
             />
             <Text
-              style={[
-                styles.label,
-                { color: active ? lightColors.primary : lightColors.mutedForeground },
-                active && styles.labelActive,
-              ]}
+              className={cn(
+                "text-[10px] font-medium",
+                active ? "text-primary font-bold" : "text-muted-foreground"
+              )}
               numberOfLines={1}
-              ellipsizeMode="tail"
             >
               {tab.label}
             </Text>
+            {active && <View className="h-1 w-1 rounded-full bg-primary mt-0.5" />}
           </TouchableOpacity>
         );
       })}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: lightColors.border,
-    backgroundColor: lightColors.card,
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 4,
-    minHeight: 56,
-  },
-  label: {
-    marginTop: 4,
-    fontSize: 11,
-    fontWeight: '400',
-    textAlign: 'center',
-    maxWidth: '100%',
-  },
-  labelActive: {
-    fontWeight: '500',
-  },
-});

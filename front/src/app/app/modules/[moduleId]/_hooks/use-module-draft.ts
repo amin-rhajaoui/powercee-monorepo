@@ -124,15 +124,13 @@ export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraft
   );
 
   // Sauvegarder le brouillon (uniquement lors du passage d'une étape à l'autre)
-  // extraFields permet d'envoyer des champs au premier niveau (colonnes dédiées)
   const saveDraft = useCallback(
     async (
       data: Partial<BarTh171Draft>,
       step?: number,
-      clientId?: string,
-      extraFields?: Partial<ModuleDraftUpdate>
+      clientId?: string
     ): Promise<void> => {
-      console.log("saveDraft appelé", { data, step, clientId, extraFields, draftId: draft?.id });
+      console.log("saveDraft appelé", { data, step, clientId, draftId: draft?.id });
 
       let draftIdToUse = draft?.id;
       let currentDraft = draft;
@@ -163,8 +161,6 @@ export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraft
       try {
         const updatePayload: ModuleDraftUpdate = {
           data: newData,
-          // Inclure les champs supplémentaires au premier niveau
-          ...extraFields,
         };
         if (step !== undefined) {
           updatePayload.current_step = step;

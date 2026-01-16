@@ -146,7 +146,7 @@ export function Step4TechnicalVisit({
   onPrevious,
 }: Step4TechnicalVisitProps) {
   const router = useRouter();
-  const { draft, saveDraft } = useModuleDraft({
+  const { draft, draftData, saveDraft } = useModuleDraft({
     moduleId,
     moduleCode,
     draftId,
@@ -189,31 +189,31 @@ export function Step4TechnicalVisit({
 
   // Initialize form with draft data when it loads
   useEffect(() => {
-    if (draft) {
+    if (draftData.step4) {
       form.reset({
-        nb_levels: draft.nb_levels ?? undefined,
-        avg_ceiling_height: draft.avg_ceiling_height ?? undefined,
-        target_temperature: draft.target_temperature ?? 19,
-        attic_type: draft.attic_type ?? undefined,
-        is_attic_isolated: draft.is_attic_isolated ?? undefined,
-        attic_isolation_year: draft.attic_isolation_year ?? undefined,
-        floor_type: draft.floor_type ?? undefined,
-        is_floor_isolated: draft.is_floor_isolated ?? undefined,
-        floor_isolation_year: draft.floor_isolation_year ?? undefined,
-        wall_isolation_type: draft.wall_isolation_type ?? undefined,
-        wall_isolation_year_interior: draft.wall_isolation_year_interior ?? undefined,
-        wall_isolation_year_exterior: draft.wall_isolation_year_exterior ?? undefined,
-        wall_same_year: draft.wall_isolation_year_interior === draft.wall_isolation_year_exterior && draft.wall_isolation_type === "DOUBLE",
-        joinery_type: draft.joinery_type ?? undefined,
-        emitters_configuration: draft.emitters_configuration ?? [],
+        nb_levels: draftData.step4.nb_levels ?? undefined,
+        avg_ceiling_height: draftData.step4.avg_ceiling_height ?? undefined,
+        target_temperature: draftData.step4.target_temperature ?? 19,
+        attic_type: draftData.step4.attic_type ?? undefined,
+        is_attic_isolated: draftData.step4.is_attic_isolated ?? undefined,
+        attic_isolation_year: draftData.step4.attic_isolation_year ?? undefined,
+        floor_type: draftData.step4.floor_type ?? undefined,
+        is_floor_isolated: draftData.step4.is_floor_isolated ?? undefined,
+        floor_isolation_year: draftData.step4.floor_isolation_year ?? undefined,
+        wall_isolation_type: draftData.step4.wall_isolation_type ?? undefined,
+        wall_isolation_year_interior: draftData.step4.wall_isolation_year_interior ?? undefined,
+        wall_isolation_year_exterior: draftData.step4.wall_isolation_year_exterior ?? undefined,
+        wall_same_year: draftData.step4.wall_isolation_year_interior === draftData.step4.wall_isolation_year_exterior && draftData.step4.wall_isolation_type === "DOUBLE",
+        joinery_type: draftData.step4.joinery_type ?? undefined,
+        emitters_configuration: draftData.step4.emitters_configuration ?? [],
       });
 
-      // Initialize emitters config from draft
-      if (draft.emitters_configuration) {
-        setEmittersConfig(draft.emitters_configuration as LevelEmitters[]);
+      // Initialize emitters config from draftData
+      if (draftData.step4.emitters_configuration) {
+        setEmittersConfig(draftData.step4.emitters_configuration as LevelEmitters[]);
       }
     }
-  }, [draft, form]);
+  }, [draftData.step4, form]);
 
   // Update emitters config when nb_levels changes
   useEffect(() => {
@@ -272,25 +272,26 @@ export function Step4TechnicalVisit({
 
       // Sauvegarder d'abord les données de l'étape 4
       await saveDraft(
-        {},
-        4,
-        undefined,
         {
-          nb_levels: values.nb_levels ?? null,
-          avg_ceiling_height: values.avg_ceiling_height ?? null,
-          target_temperature: values.target_temperature ?? null,
-          attic_type: values.attic_type ?? null,
-          is_attic_isolated: values.is_attic_isolated ?? null,
-          attic_isolation_year: values.attic_isolation_year ?? null,
-          floor_type: values.floor_type ?? null,
-          is_floor_isolated: values.is_floor_isolated ?? null,
-          floor_isolation_year: values.floor_isolation_year ?? null,
-          wall_isolation_type: values.wall_isolation_type ?? null,
-          wall_isolation_year_interior: values.wall_isolation_year_interior ?? null,
-          wall_isolation_year_exterior: wallYearExterior ?? null,
-          joinery_type: values.joinery_type ?? null,
-          emitters_configuration: values.emitters_configuration ?? null,
-        }
+          step4: {
+            nb_levels: values.nb_levels ?? null,
+            avg_ceiling_height: values.avg_ceiling_height ?? null,
+            target_temperature: values.target_temperature ?? null,
+            attic_type: values.attic_type ?? null,
+            is_attic_isolated: values.is_attic_isolated ?? null,
+            attic_isolation_year: values.attic_isolation_year ?? null,
+            floor_type: values.floor_type ?? null,
+            is_floor_isolated: values.is_floor_isolated ?? null,
+            floor_isolation_year: values.floor_isolation_year ?? null,
+            wall_isolation_type: values.wall_isolation_type ?? null,
+            wall_isolation_year_interior: values.wall_isolation_year_interior ?? null,
+            wall_isolation_year_exterior: wallYearExterior ?? null,
+            joinery_type: values.joinery_type ?? null,
+            emitters_configuration: values.emitters_configuration ?? null,
+          },
+        },
+        4,
+        undefined
       );
 
       // Créer le dossier à partir du brouillon

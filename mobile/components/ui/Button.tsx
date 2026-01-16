@@ -1,105 +1,96 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { lightColors } from '@/lib/colors';
+import { TouchableOpacity, Text, TouchableOpacityProps, ActivityIndicator, View } from 'react-native';
+import { cn } from '@/lib/utils';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-export interface ButtonProps {
-  variant?: 'contained' | 'outlined' | 'text';
-  size?: 'small' | 'medium' | 'large';
-  children: React.ReactNode;
-  onPress?: () => void;
-  disabled?: boolean;
+const buttonVariants = cva(
+  "flex-row items-center justify-center rounded-xl disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary shadow-sm",
+        destructive: "bg-destructive shadow-sm",
+        outline: "border border-input bg-background shadow-sm active:bg-accent",
+        secondary: "bg-secondary shadow-sm",
+        ghost: "active:bg-accent",
+        link: "text-primary underline-offset-4",
+      },
+      size: {
+        default: "h-[50px] w-full px-4 py-2",
+        sm: "h-9 rounded-lg px-3",
+        lg: "h-14 rounded-xl px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+const textVariants = cva(
+  "text-base font-semibold",
+  {
+    variants: {
+      variant: {
+        default: "text-primary-foreground",
+        destructive: "text-destructive-foreground",
+        outline: "text-foreground",
+        secondary: "text-secondary-foreground",
+        ghost: "text-foreground",
+        link: "text-primary underline",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+);
+
+export interface ButtonProps
+  extends TouchableOpacityProps,
+  VariantProps<typeof buttonVariants> {
+  label?: string;
   loading?: boolean;
-  fullWidth?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
 }
 
 export function Button({
+  className,
+  variant,
+  size,
+  label,
   children,
-  variant = 'contained',
-  size = 'medium',
-  onPress,
-  disabled = false,
   loading = false,
-  fullWidth = false,
-  style,
-  textStyle,
+  disabled,
+  ...props
 }: ButtonProps) {
-  const getButtonStyle = (): ViewStyle => {
-    const base: ViewStyle = {
-      borderRadius: 10,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      opacity: disabled || loading ? 0.5 : 1,
-    };
-
-    if (variant === 'contained') {
-      base.backgroundColor = lightColors.primary;
-    } else if (variant === 'outlined') {
-      base.borderWidth = 1;
-      base.borderColor = lightColors.primary;
-      base.backgroundColor = 'transparent';
-    } else {
-      base.backgroundColor = 'transparent';
-    }
-
-    if (size === 'small') {
-      base.paddingHorizontal = 12;
-      base.paddingVertical = 6;
-    } else if (size === 'large') {
-      base.paddingHorizontal = 24;
-      base.paddingVertical = 12;
-    } else {
-      base.paddingHorizontal = 16;
-      base.paddingVertical = 8;
-    }
-
-    if (fullWidth) {
-      base.width = '100%';
-    }
-
-    return base;
-  };
-
-  const getTextStyle = (): TextStyle => {
-    const base: TextStyle = {
-      fontWeight: '500',
-    };
-
-    if (variant === 'contained') {
-      base.color = lightColors.primaryForeground;
-    } else {
-      base.color = lightColors.primary;
-    }
-
-    if (size === 'small') {
-      base.fontSize = 12;
-    } else if (size === 'large') {
-      base.fontSize = 16;
-    } else {
-      base.fontSize = 14;
-    }
-
-    return base;
-  };
-
   return (
     <TouchableOpacity
-      onPress={onPress}
+      className={cn(buttonVariants({ variant, size, className }))}
       disabled={disabled || loading}
-      style={[getButtonStyle(), style]}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
+      {...props}
     >
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'contained' ? lightColors.primaryForeground : lightColors.primary}
+          color={variant === 'outline' || variant === 'ghost' ? '#1A1F2E' : '#FFFFFF'}
         />
       ) : (
-        <Text style={[getTextStyle(), textStyle]}>
-          {children}
-        </Text>
+        <>
+          {label ? (
+            <Text className={cn(textVariants({ variant }))}>{label}</Text>
+          ) : (
+            // Handle raw text children by wrapping them, but pass through components
+            React.Children.map(children, (child) => {
+              if (typeof child === 'string') {
+                return <Text className={cn(textVariants({ variant }))}>{child}</Text>;
+              }
+              return child;
+            })
+          )}
+        </>
       )}
     </TouchableOpacity>
   );

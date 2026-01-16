@@ -1,20 +1,19 @@
 import React from 'react';
-import { TextInput, Text, View, TextInputProps, ViewStyle, StyleSheet } from 'react-native';
-import { lightColors } from '@/lib/colors';
+import { TextInput, Text, View, TextInputProps } from 'react-native';
+import { cn } from '@/lib/utils';
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string | boolean;
   helperText?: string;
-  containerStyle?: ViewStyle;
-  className?: string;
+  containerClassName?: string;
 }
 
 export function Input({
   label,
   error,
   helperText,
-  containerStyle,
+  containerClassName,
   className,
   style,
   ...props
@@ -22,27 +21,29 @@ export function Input({
   const hasError = Boolean(error);
 
   return (
-    <View style={[containerStyle, styles.container]}>
+    <View className={cn("mb-4 w-full", containerClassName)}>
       {label && (
-        <Text style={styles.label}>
+        <Text className="mb-2 text-sm font-medium text-foreground">
           {label}
         </Text>
       )}
       <TextInput
-        style={[
-          styles.input,
-          hasError && styles.inputError,
-          style,
-        ]}
-        placeholderTextColor={lightColors.mutedForeground}
+        className={cn(
+          "h-14 w-full rounded-xl border border-input bg-background px-4 text-base text-foreground placeholder:text-muted-foreground",
+          "focus:border-primary focus:ring-1 focus:ring-primary",
+          hasError && "border-destructive focus:border-destructive focus:ring-destructive",
+          className
+        )}
+        placeholderTextColor="#64748B" // muted-foreground
+        style={style}
         {...props}
       />
       {(hasError || helperText) && (
         <Text
-          style={[
-            styles.helperText,
-            hasError ? styles.errorText : styles.infoText,
-          ]}
+          className={cn(
+            "mt-1 px-1 text-xs",
+            hasError ? "text-destructive" : "text-muted-foreground"
+          )}
         >
           {hasError ? (typeof error === 'string' ? error : '') : helperText}
         </Text>
@@ -50,40 +51,3 @@ export function Input({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: lightColors.foreground,
-    marginBottom: 8,
-  },
-  input: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: lightColors.input,
-    backgroundColor: lightColors.background,
-    color: lightColors.foreground,
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  inputError: {
-    borderColor: lightColors.destructive,
-  },
-  helperText: {
-    fontSize: 12,
-    marginTop: 4,
-    paddingHorizontal: 4,
-  },
-  errorText: {
-    color: lightColors.destructive,
-  },
-  infoText: {
-    color: lightColors.mutedForeground,
-  },
-});

@@ -161,7 +161,7 @@ export function Step5ClientSheet({
   draftId,
   onPrevious,
 }: Step5ClientSheetProps) {
-  const { draft, isLoading: isDraftLoading } = useModuleDraft({
+  const { draft, draftData, isLoading: isDraftLoading } = useModuleDraft({
     moduleId,
     moduleCode,
     draftId,
@@ -198,11 +198,11 @@ export function Step5ClientSheet({
   // Calculate MPR eligibility
   const isEligibleMPR = useMemo(() => {
     return isEligibleForMPR(
-      draft?.occupation_status || null,
-      draft?.is_principal_residence ?? null,
+      draftData.step2?.occupation_status || null,
+      draftData.step2?.is_principal_residence ?? null,
       property?.construction_year ?? null
     );
-  }, [draft?.occupation_status, draft?.is_principal_residence, property?.construction_year]);
+  }, [draftData.step2?.occupation_status, draftData.step2?.is_principal_residence, property?.construction_year]);
 
   // Action button handlers (placeholders)
   const handleAddPhotos = () => {
@@ -337,8 +337,8 @@ export function Step5ClientSheet({
                       ) : undefined
                     }
                   />
-                  <InfoRow label="Statut d'occupation" value={draft?.occupation_status ? OCCUPATION_STATUS_LABELS[draft.occupation_status] : null} />
-                  <InfoRow label="Residence principale" value={draft?.is_principal_residence ? "Oui" : draft?.is_principal_residence === false ? "Non" : null} />
+                  <InfoRow label="Statut d'occupation" value={draftData.step2?.occupation_status ? OCCUPATION_STATUS_LABELS[draftData.step2.occupation_status] : null} />
+                  <InfoRow label="Residence principale" value={draftData.step2?.is_principal_residence ? "Oui" : draftData.step2?.is_principal_residence === false ? "Non" : null} />
                   {isEligibleMPR && (
                     <InfoRow 
                       label="Éligibilité MPR" 
@@ -400,14 +400,14 @@ export function Step5ClientSheet({
                   <Separator />
                   <div className="space-y-2">
                     <h4 className="font-medium">Systeme de chauffage</h4>
-                    <InfoRow label="Type de chauffage" value={draft?.heating_system ? HEATING_SYSTEM_LABELS[draft.heating_system] : null} />
-                    <InfoRow label="Marque ancienne chaudiere" value={draft?.old_boiler_brand} />
-                    <InfoRow label="Eau chaude liee au chauffage" value={draft?.is_water_heating_linked ? "Oui" : draft?.is_water_heating_linked === false ? "Non" : null} />
-                    {draft?.is_water_heating_linked === false && (
-                      <InfoRow label="Type d'eau chaude" value={draft?.water_heating_type ? WATER_HEATING_TYPE_LABELS[draft.water_heating_type] : null} />
+                    <InfoRow label="Type de chauffage" value={draftData.step2?.heating_system ? HEATING_SYSTEM_LABELS[draftData.step2.heating_system] : null} />
+                    <InfoRow label="Marque ancienne chaudiere" value={draftData.step2?.old_boiler_brand} />
+                    <InfoRow label="Eau chaude liee au chauffage" value={draftData.step2?.is_water_heating_linked ? "Oui" : draftData.step2?.is_water_heating_linked === false ? "Non" : null} />
+                    {draftData.step2?.is_water_heating_linked === false && (
+                      <InfoRow label="Type d'eau chaude" value={draftData.step2?.water_heating_type ? WATER_HEATING_TYPE_LABELS[draftData.step2.water_heating_type] : null} />
                     )}
-                    <InfoRow label="Phase electrique" value={draft?.electrical_phase} />
-                    <InfoRow label="Puissance" value={draft?.power_kva ? `${draft.power_kva} kVA` : null} />
+                    <InfoRow label="Phase electrique" value={draftData.step2?.electrical_phase} />
+                    <InfoRow label="Puissance" value={draftData.step2?.power_kva ? `${draftData.step2.power_kva} kVA` : null} />
                   </div>
                 </div>
               ) : (
@@ -428,11 +428,11 @@ export function Step5ClientSheet({
               <div className="space-y-2 pl-7">
                 <InfoRow 
                   label="Avis d'imposition" 
-                  value={draft?.tax_notice_url ? "Televerse" : "Non fourni"}
+                  value={draftData.step3?.tax_notice_url ? "Televerse" : "Non fourni"}
                   actionButton={
-                    draft?.tax_notice_url ? (
+                    draftData.step3?.tax_notice_url ? (
                       <DownloadButton
-                        href={draft.tax_notice_url}
+                        href={draftData.step3.tax_notice_url}
                         label="Télécharger l'avis d'imposition"
                       />
                     ) : undefined
@@ -440,11 +440,11 @@ export function Step5ClientSheet({
                 />
                 <InfoRow 
                   label="Justificatif de domicile" 
-                  value={draft?.address_proof_url ? "Televerse" : "Non fourni"}
+                  value={draftData.step3?.address_proof_url ? "Televerse" : "Non fourni"}
                   actionButton={
-                    draft?.address_proof_url ? (
+                    draftData.step3?.address_proof_url ? (
                       <DownloadButton
-                        href={draft.address_proof_url}
+                        href={draftData.step3.address_proof_url}
                         label="Télécharger le justificatif de domicile"
                       />
                     ) : undefined
@@ -452,11 +452,11 @@ export function Step5ClientSheet({
                 />
                 <InfoRow 
                   label="Taxe fonciere / Acte de propriete" 
-                  value={draft?.property_proof_url ? "Televerse" : "Non fourni"}
+                  value={draftData.step3?.property_proof_url ? "Televerse" : "Non fourni"}
                   actionButton={
-                    draft?.property_proof_url ? (
+                    draftData.step3?.property_proof_url ? (
                       <DownloadButton
-                        href={draft.property_proof_url}
+                        href={draftData.step3.property_proof_url}
                         label="Télécharger la taxe foncière ou l'acte de propriété"
                       />
                     ) : undefined
@@ -464,18 +464,18 @@ export function Step5ClientSheet({
                 />
                 <InfoRow 
                   label="Facture d'energie" 
-                  value={draft?.energy_bill_url ? "Televerse" : "Non fourni"}
+                  value={draftData.step3?.energy_bill_url ? "Televerse" : "Non fourni"}
                   actionButton={
-                    draft?.energy_bill_url ? (
+                    draftData.step3?.energy_bill_url ? (
                       <DownloadButton
-                        href={draft.energy_bill_url}
+                        href={draftData.step3.energy_bill_url}
                         label="Télécharger la facture d'énergie"
                       />
                     ) : undefined
                   }
                 />
-                <InfoRow label="Revenu fiscal de reference" value={draft?.reference_tax_income ? `${draft.reference_tax_income.toLocaleString()} €` : null} />
-                <InfoRow label="Personnes dans le foyer" value={draft?.household_size} />
+                <InfoRow label="Revenu fiscal de reference" value={draftData.step3?.reference_tax_income ? `${draftData.step3.reference_tax_income.toLocaleString()} €` : null} />
+                <InfoRow label="Personnes dans le foyer" value={draftData.step3?.household_size} />
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -493,16 +493,16 @@ export function Step5ClientSheet({
                 {/* Chauffage */}
                 <div className="space-y-2">
                   <h4 className="font-medium">Chauffage</h4>
-                  <InfoRow label="Nombre de niveaux" value={draft?.nb_levels} />
-                  <InfoRow label="Hauteur sous plafond" value={draft?.avg_ceiling_height ? `${draft.avg_ceiling_height} m` : null} />
-                  <InfoRow label="Temperature cible" value={draft?.target_temperature ? `${draft.target_temperature}°C` : null} />
+                  <InfoRow label="Nombre de niveaux" value={draftData.step4?.nb_levels} />
+                  <InfoRow label="Hauteur sous plafond" value={draftData.step4?.avg_ceiling_height ? `${draftData.step4.avg_ceiling_height} m` : null} />
+                  <InfoRow label="Temperature cible" value={draftData.step4?.target_temperature ? `${draftData.step4.target_temperature}°C` : null} />
 
                   {/* Emitters by level */}
-                  {draft?.emitters_configuration && Array.isArray(draft.emitters_configuration) && draft.emitters_configuration.length > 0 && (
+                  {draftData.step4?.emitters_configuration && Array.isArray(draftData.step4.emitters_configuration) && draftData.step4.emitters_configuration.length > 0 && (
                     <div className="mt-2">
                       <span className="text-muted-foreground">Emetteurs par niveau:</span>
                       <div className="mt-1 space-y-1">
-                        {draft.emitters_configuration.map((config: { level: number; emitters: string[] }) => (
+                        {draftData.step4.emitters_configuration.map((config: { level: number; emitters: string[] }) => (
                           <div key={config.level} className="flex gap-2 text-sm">
                             <span className="font-medium">{LEVEL_LABELS[config.level]}:</span>
                             <span>{config.emitters.map(e => EMITTER_TYPE_LABELS[e] || e).join(", ") || "Aucun"}</span>
@@ -522,35 +522,35 @@ export function Step5ClientSheet({
                   {/* Combles */}
                   <div className="text-sm">
                     <span className="text-muted-foreground">Combles: </span>
-                    <span>{draft?.attic_type ? ATTIC_TYPE_LABELS[draft.attic_type] : "Non renseigne"}</span>
-                    {draft?.is_attic_isolated !== null && draft?.is_attic_isolated !== undefined && (
-                      <span> - {draft.is_attic_isolated ? `Isole (${draft.attic_isolation_year || "annee inconnue"})` : "Non isole"}</span>
+                    <span>{draftData.step4?.attic_type ? ATTIC_TYPE_LABELS[draftData.step4.attic_type] : "Non renseigne"}</span>
+                    {draftData.step4?.is_attic_isolated !== null && draftData.step4?.is_attic_isolated !== undefined && (
+                      <span> - {draftData.step4.is_attic_isolated ? `Isole (${draftData.step4.attic_isolation_year || "annee inconnue"})` : "Non isole"}</span>
                     )}
                   </div>
 
                   {/* Plancher bas */}
                   <div className="text-sm">
                     <span className="text-muted-foreground">Plancher bas: </span>
-                    <span>{draft?.floor_type ? FLOOR_TYPE_LABELS[draft.floor_type] : "Non renseigne"}</span>
-                    {draft?.is_floor_isolated !== null && draft?.is_floor_isolated !== undefined && (
-                      <span> - {draft.is_floor_isolated ? `Isole (${draft.floor_isolation_year || "annee inconnue"})` : "Non isole"}</span>
+                    <span>{draftData.step4?.floor_type ? FLOOR_TYPE_LABELS[draftData.step4.floor_type] : "Non renseigne"}</span>
+                    {draftData.step4?.is_floor_isolated !== null && draftData.step4?.is_floor_isolated !== undefined && (
+                      <span> - {draftData.step4.is_floor_isolated ? `Isole (${draftData.step4.floor_isolation_year || "annee inconnue"})` : "Non isole"}</span>
                     )}
                   </div>
 
                   {/* Murs */}
                   <div className="text-sm">
                     <span className="text-muted-foreground">Murs: </span>
-                    <span>{draft?.wall_isolation_type ? WALL_ISOLATION_TYPE_LABELS[draft.wall_isolation_type] : "Non renseigne"}</span>
-                    {draft?.wall_isolation_type === "INTERIEUR" && draft?.wall_isolation_year_interior && (
-                      <span> ({draft.wall_isolation_year_interior})</span>
+                    <span>{draftData.step4?.wall_isolation_type ? WALL_ISOLATION_TYPE_LABELS[draftData.step4.wall_isolation_type] : "Non renseigne"}</span>
+                    {draftData.step4?.wall_isolation_type === "INTERIEUR" && draftData.step4?.wall_isolation_year_interior && (
+                      <span> ({draftData.step4.wall_isolation_year_interior})</span>
                     )}
-                    {draft?.wall_isolation_type === "EXTERIEUR" && draft?.wall_isolation_year_exterior && (
-                      <span> ({draft.wall_isolation_year_exterior})</span>
+                    {draftData.step4?.wall_isolation_type === "EXTERIEUR" && draftData.step4?.wall_isolation_year_exterior && (
+                      <span> ({draftData.step4.wall_isolation_year_exterior})</span>
                     )}
-                    {draft?.wall_isolation_type === "DOUBLE" && (
+                    {draftData.step4?.wall_isolation_type === "DOUBLE" && (
                       <span>
-                        {draft.wall_isolation_year_interior && ` ITI: ${draft.wall_isolation_year_interior}`}
-                        {draft.wall_isolation_year_exterior && ` ITE: ${draft.wall_isolation_year_exterior}`}
+                        {draftData.step4.wall_isolation_year_interior && ` ITI: ${draftData.step4.wall_isolation_year_interior}`}
+                        {draftData.step4.wall_isolation_year_exterior && ` ITE: ${draftData.step4.wall_isolation_year_exterior}`}
                       </span>
                     )}
                   </div>
@@ -561,7 +561,7 @@ export function Step5ClientSheet({
                 {/* Menuiseries */}
                 <div className="space-y-2">
                   <h4 className="font-medium">Menuiseries</h4>
-                  <InfoRow label="Type de vitrage" value={draft?.joinery_type ? JOINERY_TYPE_LABELS[draft.joinery_type] : null} />
+                  <InfoRow label="Type de vitrage" value={draftData.step4?.joinery_type ? JOINERY_TYPE_LABELS[draftData.step4.joinery_type] : null} />
                 </div>
               </div>
             </AccordionContent>

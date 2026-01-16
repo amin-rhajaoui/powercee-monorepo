@@ -468,42 +468,42 @@ export function Step2Property({
     resolver: zodResolver(schema),
     defaultValues: {
       property_id: draftData.step2?.property_id || draft?.property_id || "",
-      // Charger les valeurs depuis le draft (colonnes dédiées)
-      is_principal_residence: draft?.is_principal_residence ?? undefined,
-      occupation_status: draft?.occupation_status ?? undefined,
-      heating_system: draft?.heating_system ?? undefined,
-      old_boiler_brand: draft?.old_boiler_brand ?? undefined,
-      is_water_heating_linked: draft?.is_water_heating_linked ?? undefined,
-      water_heating_type: draft?.water_heating_type ?? undefined,
-      usage_mode: draft?.usage_mode ?? undefined,
-      electrical_phase: draft?.electrical_phase ?? undefined,
-      power_kva: draft?.power_kva != null ? draft.power_kva : undefined,
+      // Charger les valeurs depuis draftData.step2
+      is_principal_residence: draftData.step2?.is_principal_residence ?? undefined,
+      occupation_status: draftData.step2?.occupation_status ?? undefined,
+      heating_system: draftData.step2?.heating_system ?? undefined,
+      old_boiler_brand: draftData.step2?.old_boiler_brand ?? undefined,
+      is_water_heating_linked: draftData.step2?.is_water_heating_linked ?? undefined,
+      water_heating_type: draftData.step2?.water_heating_type ?? undefined,
+      usage_mode: draftData.step2?.usage_mode ?? undefined,
+      electrical_phase: draftData.step2?.electrical_phase ?? undefined,
+      power_kva: draftData.step2?.power_kva != null ? draftData.step2.power_kva : undefined,
     },
     mode: "onChange",
   });
 
   // Recharger les valeurs quand le draft change
   useEffect(() => {
-    if (draft) {
+    if (draftData.step2) {
       const resetValues = {
-        property_id: draftData.step2?.property_id || draft.property_id || "",
-        is_principal_residence: draft.is_principal_residence ?? undefined,
-        occupation_status: draft.occupation_status ?? undefined,
-        heating_system: draft.heating_system ?? undefined,
-        old_boiler_brand: draft.old_boiler_brand ?? undefined,
-        is_water_heating_linked: draft.is_water_heating_linked ?? undefined,
-        water_heating_type: draft.water_heating_type ?? undefined,
-        usage_mode: draft.usage_mode ?? undefined,
-        electrical_phase: draft.electrical_phase ?? undefined,
-        power_kva: draft.power_kva != null ? draft.power_kva : undefined,
+        property_id: draftData.step2?.property_id || draft?.property_id || "",
+        is_principal_residence: draftData.step2.is_principal_residence ?? undefined,
+        occupation_status: draftData.step2.occupation_status ?? undefined,
+        heating_system: draftData.step2.heating_system ?? undefined,
+        old_boiler_brand: draftData.step2.old_boiler_brand ?? undefined,
+        is_water_heating_linked: draftData.step2.is_water_heating_linked ?? undefined,
+        water_heating_type: draftData.step2.water_heating_type ?? undefined,
+        usage_mode: draftData.step2.usage_mode ?? undefined,
+        electrical_phase: draftData.step2.electrical_phase ?? undefined,
+        power_kva: draftData.step2.power_kva != null ? draftData.step2.power_kva : undefined,
       };
       form.reset(resetValues);
       // Forcer la mise à jour du champ power_kva pour les inputs numériques
-      if (draft.power_kva != null) {
-        form.setValue("power_kva", draft.power_kva, { shouldValidate: false, shouldDirty: false });
+      if (draftData.step2.power_kva != null) {
+        form.setValue("power_kva", draftData.step2.power_kva, { shouldValidate: false, shouldDirty: false });
       }
     }
-  }, [draft, draftData.step2?.property_id, form]);
+  }, [draft, draftData.step2, form]);
 
   // Utiliser useWatch pour garantir la synchronisation
   const propertyId = useWatch({ control: form.control, name: "property_id" });
@@ -606,27 +606,24 @@ export function Step2Property({
     try {
       const values = form.getValues();
 
-      // Envoyer les données au premier niveau (colonnes dédiées)
-      // et non dans data.step2
+      // Envoyer toutes les données dans data.step2
       await saveDraft(
         {
-          step2: { property_id: values.property_id },
+          step2: {
+            property_id: values.property_id,
+            is_principal_residence: values.is_principal_residence,
+            occupation_status: values.occupation_status,
+            heating_system: values.heating_system,
+            old_boiler_brand: values.old_boiler_brand || null,
+            is_water_heating_linked: values.is_water_heating_linked,
+            water_heating_type: values.water_heating_type,
+            usage_mode: values.usage_mode,
+            electrical_phase: values.electrical_phase,
+            power_kva: values.power_kva,
+          },
         },
         3,
-        undefined,
-        // Champs BAR-TH-171 au premier niveau
-        {
-          property_id: values.property_id,
-          is_principal_residence: values.is_principal_residence,
-          occupation_status: values.occupation_status,
-          heating_system: values.heating_system,
-          old_boiler_brand: values.old_boiler_brand || null,
-          is_water_heating_linked: values.is_water_heating_linked,
-          water_heating_type: values.water_heating_type,
-          usage_mode: values.usage_mode,
-          electrical_phase: values.electrical_phase,
-          power_kva: values.power_kva,
-        }
+        undefined
       );
       console.log("Sauvegarde réussie, navigation vers étape 3");
       // Appeler onNext après la sauvegarde pour naviguer vers l'étape suivante

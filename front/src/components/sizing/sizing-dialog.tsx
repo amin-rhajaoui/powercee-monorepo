@@ -63,9 +63,28 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
   // Initialiser les valeurs depuis folder/property
   useEffect(() => {
     if (open && folder && property) {
-      setSurfaceChauffee(property.surface_m2 || null);
-      setHauteurPlafond((folder.data?.avg_ceiling_height as number) || null);
-      setTemperatureConsigne((folder.data?.target_temperature as number) || 19.0);
+      console.log("SizingDialog - Initialisation avec folder.data:", folder.data);
+      console.log("SizingDialog - folder.data.step4:", folder.data?.step4);
+      
+      setSurfaceChauffee(property.surface_m2 ?? null);
+      
+      // Chercher avg_ceiling_height à plat ou dans step4
+      // Utiliser != null pour vérifier à la fois null et undefined
+      const avgCeilingHeightFlat = folder.data?.avg_ceiling_height as number | null | undefined;
+      const avgCeilingHeightStep4 = (folder.data?.step4 as any)?.avg_ceiling_height as number | null | undefined;
+      console.log("SizingDialog - avg_ceiling_height flat:", avgCeilingHeightFlat, "step4:", avgCeilingHeightStep4);
+      
+      // Prendre la première valeur non-null/undefined trouvée
+      const avgCeilingHeight = avgCeilingHeightFlat ?? avgCeilingHeightStep4 ?? null;
+      console.log("SizingDialog - avg_ceiling_height final:", avgCeilingHeight);
+      setHauteurPlafond(avgCeilingHeight);
+      
+      // Chercher target_temperature à plat ou dans step4
+      const targetTemperatureFlat = folder.data?.target_temperature as number | null | undefined;
+      const targetTemperatureStep4 = (folder.data?.step4 as any)?.target_temperature as number | null | undefined;
+      const targetTemperature = targetTemperatureFlat ?? targetTemperatureStep4 ?? 19.0;
+      console.log("SizingDialog - target_temperature final:", targetTemperature);
+      setTemperatureConsigne(targetTemperature);
       
       // Type d'émetteur depuis folder
       if (folder.emitter_type === "BASSE_TEMPERATURE") {
