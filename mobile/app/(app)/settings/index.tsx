@@ -4,7 +4,7 @@ import { Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/Card';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { lightColors } from '@/lib/colors';
 
 export default function SettingsPage() {
@@ -48,7 +48,7 @@ export default function SettingsPage() {
       {/* Section Profil */}
       <Card style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
-          <Icon name="account" size={24} color={lightColors.primary} />
+          <MaterialCommunityIcons name="account" size={24} color={lightColors.primary} />
           <Text style={styles.sectionTitle}>Profil</Text>
         </View>
         <View style={styles.divider} />
@@ -77,7 +77,7 @@ export default function SettingsPage() {
       {/* Section Apparence */}
       <Card style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
-          <Icon name="palette" size={24} color={lightColors.primary} />
+          <MaterialCommunityIcons name="palette" size={24} color={lightColors.primary} />
           <Text style={styles.sectionTitle}>Apparence</Text>
         </View>
         <View style={styles.divider} />
@@ -100,7 +100,7 @@ export default function SettingsPage() {
       {/* Section Compte */}
       <Card style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
-          <Icon name="cog" size={24} color={lightColors.primary} />
+          <MaterialCommunityIcons name="cog" size={24} color={lightColors.primary} />
           <Text style={styles.sectionTitle}>Compte</Text>
         </View>
         <View style={styles.divider} />
@@ -108,7 +108,7 @@ export default function SettingsPage() {
           onPress={handleLogout}
           style={styles.logoutButton}
         >
-          <Icon name="logout" size={20} color={lightColors.destructive} />
+          <MaterialCommunityIcons name="logout" size={20} color={lightColors.destructive} />
           <Text style={styles.logoutText}>Déconnexion</Text>
         </TouchableOpacity>
       </Card>

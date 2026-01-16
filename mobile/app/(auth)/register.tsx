@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { lightColors } from '@/lib/colors';
 
@@ -146,7 +146,7 @@ export default function RegisterScreen() {
                         onPress={() => setShowPassword(!showPassword)}
                         style={styles.eyeIcon}
                       >
-                        <Icon
+                        <MaterialCommunityIcons
                           name={showPassword ? 'eye-off' : 'eye'}
                           size={20}
                           color={lightColors.mutedForeground}
