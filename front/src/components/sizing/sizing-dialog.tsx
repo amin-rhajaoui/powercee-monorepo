@@ -60,6 +60,10 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
   const [typeEmetteur, setTypeEmetteur] = useState<"BT" | "MT_HT" | null>(null);
   const [typeIsolationOverride, setTypeIsolationOverride] = useState<"faible" | "bonne" | "tres_bonne" | null>(null);
 
+  // Nouveaux paramètres pour le dimensionnement
+  const [anneeConstruction, setAnneeConstruction] = useState<number | null>(null);
+  const [zoneClimatique, setZoneClimatique] = useState<string | null>(null);
+
   // Initialiser les valeurs depuis folder/property
   useEffect(() => {
     if (open && folder && property) {
@@ -92,17 +96,21 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
       } else if (folder.emitter_type === "MOYENNE_HAUTE_TEMPERATURE") {
         setTypeEmetteur("MT_HT");
       }
-      
+
       setTypeIsolationOverride(null);
+
+      // Initialiser année de construction et zone climatique
+      setAnneeConstruction(property?.construction_year ?? null);
+      setZoneClimatique(folder.zone_climatique ?? null);
     }
   }, [open, folder, property]);
 
   // Calcul automatique avec debounce
   const performCalculation = useCallback(async () => {
     if (!folder?.id) return;
-    
+
     // Vérifier que les paramètres minimums sont fournis
-    if (surfaceChauffee === null || hauteurPlafond === null || !property?.construction_year || !folder.zone_climatique) {
+    if (surfaceChauffee === null || hauteurPlafond === null || anneeConstruction === null || zoneClimatique === null) {
       return;
     }
 
@@ -114,6 +122,8 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
         temperature_consigne: temperatureConsigne,
         type_emetteur_override: typeEmetteur || null,
         type_isolation_override: typeIsolationOverride || null,
+        annee_construction: anneeConstruction,
+        zone_climatique: zoneClimatique as "h1" | "h2" | "h3" | null,
       };
 
       const result = await calculateSizing(folder.id, params);
@@ -125,7 +135,7 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
     } finally {
       setLoading(false);
     }
-  }, [folder, property, surfaceChauffee, hauteurPlafond, temperatureConsigne, typeEmetteur, typeIsolationOverride]);
+  }, [folder, property, surfaceChauffee, hauteurPlafond, temperatureConsigne, typeEmetteur, typeIsolationOverride, anneeConstruction, zoneClimatique]);
 
   // Debounce pour éviter trop de calculs
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -147,7 +157,7 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [open, surfaceChauffee, hauteurPlafond, temperatureConsigne, typeEmetteur, typeIsolationOverride, performCalculation]);
+  }, [open, surfaceChauffee, hauteurPlafond, temperatureConsigne, typeEmetteur, typeIsolationOverride, anneeConstruction, zoneClimatique, performCalculation]);
 
   // Génération PDF
   const handleGeneratePdf = async () => {
@@ -164,6 +174,8 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
         temperature_consigne: temperatureConsigne,
         type_emetteur_override: typeEmetteur || null,
         type_isolation_override: typeIsolationOverride || null,
+        annee_construction: anneeConstruction,
+        zone_climatique: zoneClimatique as "h1" | "h2" | "h3" | null,
       };
 
       const blob = await generateSizingPdf(folder.id, {
@@ -205,6 +217,8 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
         temperature_consigne: temperatureConsigne,
         type_emetteur_override: typeEmetteur || null,
         type_isolation_override: typeIsolationOverride || null,
+        annee_construction: anneeConstruction,
+        zone_climatique: zoneClimatique as "h1" | "h2" | "h3" | null,
       };
 
       await saveSizingPdf(folder.id, {
@@ -231,7 +245,7 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
   };
 
   // Vérifier si les paramètres sont valides
-  const isValidParams = surfaceChauffee !== null && hauteurPlafond !== null && property?.construction_year && folder.zone_climatique;
+  const isValidParams = surfaceChauffee !== null && hauteurPlafond !== null && anneeConstruction !== null && zoneClimatique !== null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -429,33 +443,78 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
                   </p>
                 </div>
 
-                {/* Info sur le logement */}
-                <div className="space-y-3 p-4 md:p-5 rounded-lg border-2 border-dashed bg-muted/30">
-                  <Label className="text-sm font-semibold flex items-center gap-2">
-                    <Info className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">Informations logement</span>
+                {/* Année de construction */}
+                <div className="space-y-2.5">
+                  <Label htmlFor="anneeConstruction" className="flex items-center gap-1.5 text-sm font-medium">
+                    <span className="truncate">Année de construction</span>
                   </Label>
-                  <div className="space-y-2 text-xs text-muted-foreground">
-                    {property?.construction_year && (
-                      <div className="break-words">
-                        <span className="font-medium">Construction:</span>{" "}
-                        <span className="truncate">{property.construction_year}</span>
-                      </div>
-                    )}
-                    {folder.zone_climatique && (
-                      <div className="break-words">
-                        <span className="font-medium">Zone climatique:</span>{" "}
-                        <span className="truncate">{folder.zone_climatique.toUpperCase()}</span>
-                      </div>
-                    )}
-                    {property?.base_temperature !== null && property?.base_temperature !== undefined && (
-                      <div className="break-words">
-                        <span className="font-medium">Temp. base:</span>{" "}
-                        <span className="truncate">{property.base_temperature}°C</span>
-                      </div>
-                    )}
-                  </div>
+                  <Input
+                    id="anneeConstruction"
+                    type="number"
+                    min="1900"
+                    max={new Date().getFullYear()}
+                    value={anneeConstruction ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value ? parseInt(e.target.value) : null;
+                      setAnneeConstruction(val);
+                    }}
+                    placeholder="Ex: 1985"
+                    className="w-full"
+                  />
+                  {property?.construction_year && (
+                    <p className="text-xs text-muted-foreground truncate" title={`Depuis le logement: ${property.construction_year}`}>
+                      Depuis le logement: {property.construction_year}
+                    </p>
+                  )}
                 </div>
+
+                {/* Zone climatique */}
+                <div className="space-y-2.5">
+                  <Label htmlFor="zoneClimatique" className="text-sm font-medium">Zone climatique</Label>
+                  <Select
+                    value={zoneClimatique || ""}
+                    onValueChange={(value) => setZoneClimatique(value || null)}
+                  >
+                    <SelectTrigger id="zoneClimatique" className="w-full">
+                      <SelectValue placeholder="Sélectionner" className="truncate" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="h1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="h-2 w-2 rounded-full bg-blue-600 flex-shrink-0" />
+                          <span className="truncate">H1 - Nord / Nord-Est</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="h2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="h-2 w-2 rounded-full bg-green-500 flex-shrink-0" />
+                          <span className="truncate">H2 - Ouest / Centre</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="h3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="h-2 w-2 rounded-full bg-orange-500 flex-shrink-0" />
+                          <span className="truncate">H3 - Sud / Méditerranée</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {folder.zone_climatique && (
+                    <p className="text-xs text-muted-foreground truncate" title={`Depuis le dossier: ${folder.zone_climatique.toUpperCase()}`}>
+                      Depuis le dossier: {folder.zone_climatique.toUpperCase()}
+                    </p>
+                  )}
+                </div>
+
+                {/* Info température de base */}
+                {property?.base_temperature !== null && property?.base_temperature !== undefined && (
+                  <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Info className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>Température de base: {property.base_temperature}°C</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -635,29 +694,28 @@ export function SizingDialog({ open, onOpenChange, folder, property, onFolderUpd
                 <AlertCircle className="h-12 w-12 mx-auto mb-4 text-amber-600 flex-shrink-0" />
                 <p className="text-lg font-medium break-words text-center">Paramètres incomplets</p>
                 <p className="text-sm text-muted-foreground mt-2 text-center max-w-md break-words leading-relaxed">
-                  Veuillez renseigner au minimum la surface chauffée et la hauteur sous plafond
-                  pour effectuer le calcul.
+                  Veuillez renseigner tous les paramètres ci-dessus pour effectuer le calcul.
                 </p>
                 <ul className="mt-5 text-sm text-left space-y-2 text-muted-foreground w-full max-w-md">
-                  {!surfaceChauffee && (
+                  {surfaceChauffee === null && (
                     <li className="flex items-start gap-2">
                       <AlertCircle className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
                       <span className="break-words">Surface chauffée requise</span>
                     </li>
                   )}
-                  {!hauteurPlafond && (
+                  {hauteurPlafond === null && (
                     <li className="flex items-start gap-2">
                       <AlertCircle className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
                       <span className="break-words">Hauteur sous plafond requise</span>
                     </li>
                   )}
-                  {!property?.construction_year && (
+                  {anneeConstruction === null && (
                     <li className="flex items-start gap-2">
                       <AlertCircle className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <span className="break-words">Année de construction requise (dans le logement)</span>
+                      <span className="break-words">Année de construction requise</span>
                     </li>
                   )}
-                  {!folder.zone_climatique && (
+                  {zoneClimatique === null && (
                     <li className="flex items-start gap-2">
                       <AlertCircle className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
                       <span className="break-words">Zone climatique requise</span>

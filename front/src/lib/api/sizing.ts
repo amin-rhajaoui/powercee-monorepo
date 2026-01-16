@@ -18,6 +18,9 @@ export type SizingRequest = {
   murs_annee_interieur?: number | null;
   murs_annee_exterieur?: number | null;
   menuiserie_type?: "SIMPLE" | "DOUBLE_OLD" | "DOUBLE_RECENT" | null;
+  // Nouveaux paramètres pour override année/zone
+  annee_construction?: number | null;
+  zone_climatique?: "h1" | "h2" | "h3" | null;
 };
 
 export type SizingResponse = {

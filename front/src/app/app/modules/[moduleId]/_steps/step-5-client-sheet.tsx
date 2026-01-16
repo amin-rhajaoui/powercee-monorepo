@@ -340,14 +340,12 @@ export function Step5ClientSheet({
                   <InfoRow label="Statut d'occupation" value={draftData.step2?.occupation_status ? OCCUPATION_STATUS_LABELS[draftData.step2.occupation_status] : null} />
                   <InfoRow label="Residence principale" value={draftData.step2?.is_principal_residence ? "Oui" : draftData.step2?.is_principal_residence === false ? "Non" : null} />
                   {isEligibleMPR && (
-                    <InfoRow 
-                      label="Éligibilité MPR" 
-                      value={
-                        <Badge variant="default" className="bg-green-600 hover:bg-green-700">
-                          Éligible MPR
-                        </Badge>
-                      } 
-                    />
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-muted-foreground text-sm">Éligibilité MPR</span>
+                      <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                        Éligible MPR
+                      </Badge>
+                    </div>
                   )}
                 </div>
               ) : (

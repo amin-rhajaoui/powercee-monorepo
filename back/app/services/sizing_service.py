@@ -57,6 +57,14 @@ async def dimensionner_pac_simplifie(
     :return: Un dictionnaire avec la puissance estimée et les paramètres utilisés.
     """
     
+    # --- Validation des paramètres obligatoires ---
+    if surface_chauffee is None:
+        raise ValueError("La surface chauffée est requise pour le calcul de dimensionnement")
+    if hauteur_plafond is None:
+        raise ValueError("La hauteur sous plafond est requise pour le calcul de dimensionnement")
+    if zone_climatique is None:
+        raise ValueError("La zone climatique est requise pour le calcul de dimensionnement")
+
     # --- Détermination du type_isolation ---
     type_isolation: str
     facteur_isolation: float
@@ -98,6 +106,9 @@ async def dimensionner_pac_simplifie(
 
     # --- 1. Détermination du Coefficient de Déperdition Volumique (G) ---
     # Valeurs indicatives basées sur l'âge (pré-RT, RT2005, RT2012...)
+    # Protection contre les valeurs None
+    if annee_construction is None:
+        raise ValueError("L'année de construction est requise pour le calcul de dimensionnement")
     if annee_construction < 1975:
         g_base = 1.3
     elif 1975 <= annee_construction < 1989:

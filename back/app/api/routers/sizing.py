@@ -139,7 +139,11 @@ async def calculate_sizing(
         base_params["temperature_consigne"] = sizing_request.temperature_consigne
     if sizing_request.type_emetteur_override:
         base_params["type_emetteur"] = sizing_request.type_emetteur_override
-    
+    if sizing_request.annee_construction is not None:
+        base_params["annee_construction"] = sizing_request.annee_construction
+    if sizing_request.zone_climatique is not None:
+        base_params["zone_climatique"] = sizing_request.zone_climatique
+
     # Vérifier les paramètres obligatoires
     if base_params["surface_chauffee"] is None:
         raise HTTPException(
@@ -273,7 +277,11 @@ async def generate_sizing_pdf(
             base_params["temperature_consigne"] = pdf_request.sizing_params.temperature_consigne
         if pdf_request.sizing_params.type_emetteur_override:
             base_params["type_emetteur"] = pdf_request.sizing_params.type_emetteur_override
-        
+        if pdf_request.sizing_params.annee_construction is not None:
+            base_params["annee_construction"] = pdf_request.sizing_params.annee_construction
+        if pdf_request.sizing_params.zone_climatique is not None:
+            base_params["zone_climatique"] = pdf_request.sizing_params.zone_climatique
+
         # Isolation params
         isolation_params = {}
         if pdf_request.sizing_params.combles_isole is not None:
@@ -464,7 +472,11 @@ async def save_sizing_pdf(
             base_params["temperature_consigne"] = pdf_request.sizing_params.temperature_consigne
         if pdf_request.sizing_params.type_emetteur_override:
             base_params["type_emetteur"] = pdf_request.sizing_params.type_emetteur_override
-        
+        if pdf_request.sizing_params.annee_construction is not None:
+            base_params["annee_construction"] = pdf_request.sizing_params.annee_construction
+        if pdf_request.sizing_params.zone_climatique is not None:
+            base_params["zone_climatique"] = pdf_request.sizing_params.zone_climatique
+
         isolation_params = {}
         if pdf_request.sizing_params.combles_isole is not None:
             isolation_params["combles_isole"] = pdf_request.sizing_params.combles_isole

@@ -205,7 +205,7 @@ export type LevelEmitters = z.infer<typeof levelEmittersSchema>;
 export const barTh171Step4Schema = z.object({
   // Chauffage
   nb_levels: z.number().int().min(1).max(5).optional(),
-  avg_ceiling_height: z.number().min(1.5).max(6).optional(),
+  avg_ceiling_height: z.number({ message: "La hauteur sous plafond est requise pour le dimensionnement" }).min(1.5, "Minimum 1.5m").max(6, "Maximum 6m"),
   target_temperature: z.number().int().min(15).max(25).optional(),
   emitters_configuration: z.array(levelEmittersSchema).optional(),
 

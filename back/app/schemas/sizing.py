@@ -23,6 +23,10 @@ class SizingRequest(BaseModel):
         None, description="Override direct du type d'isolation"
     )
 
+    # Nouveaux paramètres pour override année/zone (pour dossiers incomplets)
+    annee_construction: int | None = Field(None, description="Année de construction du logement", ge=1900, le=2030)
+    zone_climatique: Literal["h1", "h2", "h3"] | None = Field(None, description="Zone climatique (h1, h2, h3)")
+
     # Paramètres d'isolation pour calcul automatique (optionnels)
     combles_isole: bool | None = Field(None, description="True si les combles sont isolés")
     combles_annee: int | None = Field(None, description="Année d'isolation des combles", ge=1900, le=2030)

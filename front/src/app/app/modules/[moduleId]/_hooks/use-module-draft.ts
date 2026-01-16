@@ -168,6 +168,10 @@ export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraft
         if (clientId !== undefined) {
           updatePayload.client_id = clientId;
         }
+        // Extraire property_id de step2 si présent pour le sauvegarder directement sur le draft
+        if (newData.step2?.property_id) {
+          updatePayload.property_id = newData.step2.property_id;
+        }
 
         console.log("Payload de mise à jour:", updatePayload);
         const updatedDraft = await updateModuleDraft(draftIdToUse, updatePayload);

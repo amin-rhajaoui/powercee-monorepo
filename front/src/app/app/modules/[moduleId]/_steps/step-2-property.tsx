@@ -614,7 +614,7 @@ export function Step2Property({
             is_principal_residence: values.is_principal_residence,
             occupation_status: values.occupation_status,
             heating_system: values.heating_system,
-            old_boiler_brand: values.old_boiler_brand || null,
+            old_boiler_brand: values.old_boiler_brand || undefined,
             is_water_heating_linked: values.is_water_heating_linked,
             water_heating_type: values.water_heating_type,
             usage_mode: values.usage_mode,
