@@ -17,16 +17,26 @@ npm install
 ```
 
 2. Configurer les variables d'environnement :
-```bash
-cp .env.example .env
+
+Créez un fichier `.env` à la racine du dossier `mobile` avec :
+```
+EXPO_PUBLIC_API_URL=http://192.168.1.10:8000
 ```
 
-Puis éditer `.env` et définir :
-```
-EXPO_PUBLIC_API_URL=http://localhost:8000
-```
+**⚠️ IMPORTANT pour le développement mobile :**
+- Vous **NE POUVEZ PAS** utiliser `http://localhost:8000` car sur un appareil mobile, `localhost` fait référence à l'appareil lui-même, pas à votre ordinateur de développement.
+- Vous devez utiliser l'adresse IP de votre ordinateur sur le réseau local (ex: `http://192.168.1.10:8000`).
 
-Pour la production, utiliser l'URL de votre API backend.
+Pour trouver votre adresse IP :
+- **macOS/Linux** : `ifconfig | grep "inet " | grep -v 127.0.0.1`
+- **Windows** : `ipconfig` (cherchez "IPv4 Address")
+
+Assurez-vous que :
+1. Votre backend est démarré sur le port 8000
+2. Votre ordinateur et votre appareil mobile sont sur le même réseau Wi-Fi
+3. Votre pare-feu autorise les connexions entrantes sur le port 8000
+
+Pour la production, utilisez l'URL publique de votre API backend.
 
 ## Développement
 
@@ -75,11 +85,13 @@ L'application utilise des tokens Bearer pour l'authentification. Le token est st
 
 ## Configuration de l'API
 
-L'URL de l'API backend est configurée via la variable d'environnement `EXPO_PUBLIC_API_URL`.
+L'URL de l'API backend est configurée via la variable d'environnement `EXPO_PUBLIC_API_URL` dans le fichier `.env`.
 
-Pour le développement local, assurez-vous que :
-- Le backend FastAPI tourne sur `http://localhost:8000`
-- Les CORS sont configurés pour accepter les requêtes depuis l'app mobile
+**Pour le développement local :**
+- Le backend FastAPI doit tourner sur votre ordinateur (ex: `http://192.168.1.10:8000`)
+- Utilisez l'adresse IP de votre ordinateur, **pas** `localhost`
+- Les CORS sont configurés dans le backend pour accepter les requêtes
+- Note : Les applications React Native n'envoient pas d'origin header, donc elles ne sont pas affectées par CORS de la même manière que les applications web
 
 ## Build pour production
 

@@ -4,21 +4,35 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Login() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      setError('Veuillez remplir tous les champs');
+      return;
+    }
+
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      // Navigate to app
+    setError(null);
+
+    try {
+      await login(email, password);
       router.replace('/(app)');
-    }, 1500);
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.detail || err.message || 'Une erreur est survenue lors de la connexion.';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,6 +61,12 @@ export default function Login() {
 
             {/* Form Area using VStack (gap-6) */}
             <View className="gap-6 bg-card p-6 rounded-2xl border border-border shadow-sm">
+              {error && (
+                <View className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                  <Text className="text-destructive text-sm">{error}</Text>
+                </View>
+              )}
+
               <Input
                 label="Email"
                 placeholder="technicien@powercee.fr"

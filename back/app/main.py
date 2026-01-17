@@ -12,11 +12,15 @@ app = FastAPI(
 
 # Configuration CORS
 # SECURITY: Explicit origins only
+# Note: Les applications mobiles React Native n'envoient pas d'origin header,
+# donc elles ne sont pas affectées par CORS. On liste ici les origines web uniquement.
 origins = [
     settings.FRONTEND_URL,
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://192.168.1.10:3000",
+    # Ajoutez ici d'autres adresses IP si nécessaire pour le développement mobile
+    # Les requêtes depuis l'app mobile React Native ne nécessitent pas d'être listées ici
 ]
 
 app.add_middleware(
