@@ -50,7 +50,7 @@ export async function updateTechnicalSurvey(
   folderId: string,
   payload: TechnicalSurveyUpdate
 ): Promise<TechnicalSurvey> {
-  const res = await api.put(`/folders/${folderId}/technical-survey`, payload);
+  const res = await api.put(`/folders/${folderId}/technical-survey`, payload as any);
   return res.json();
 }
 

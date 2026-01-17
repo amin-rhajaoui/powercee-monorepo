@@ -77,7 +77,7 @@ export type PaginatedModuleDrafts = {
 };
 
 export async function createModuleDraft(payload: ModuleDraftCreate): Promise<ModuleDraft> {
-  const res = await api.post("/module-drafts", payload);
+  const res = await api.post("/module-drafts", payload as any);
   return res.json();
 }
 
@@ -87,7 +87,7 @@ export async function getModuleDraft(draftId: string): Promise<ModuleDraft> {
 }
 
 export async function updateModuleDraft(draftId: string, payload: ModuleDraftUpdate): Promise<ModuleDraft> {
-  const res = await api.put(`/module-drafts/${draftId}`, payload);
+  const res = await api.put(`/module-drafts/${draftId}`, payload as any);
   return res.json();
 }
 

@@ -50,7 +50,7 @@ export async function createRecommendation(
   folderId: string,
   payload: InstallationRecommendationCreate
 ): Promise<InstallationRecommendation> {
-  const res = await api.post(`/recommendations/folder/${folderId}`, payload);
+  const res = await api.post(`/recommendations/folder/${folderId}`, payload as any);
   return res.json();
 }
 
@@ -61,7 +61,7 @@ export async function updateRecommendation(
   folderId: string,
   payload: InstallationRecommendationUpdate
 ): Promise<InstallationRecommendation> {
-  const res = await api.put(`/recommendations/folder/${folderId}`, payload);
+  const res = await api.put(`/recommendations/folder/${folderId}`, payload as any);
   return res.json();
 }
 
@@ -80,6 +80,6 @@ export async function saveRecommendation(
   folderId: string,
   payload: InstallationRecommendationUpdate
 ): Promise<InstallationRecommendation> {
-  const res = await api.put(`/recommendations/folder/${folderId}`, payload);
+  const res = await api.put(`/recommendations/folder/${folderId}`, payload as any);
   return res.json();
 }

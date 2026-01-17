@@ -41,6 +41,6 @@ export async function simulateQuote(
   moduleCode: string,
   request: SimulateQuoteRequest
 ): Promise<QuotePreview> {
-  const res = await api.post(`/quote/modules/${moduleCode}/simulate`, request);
+  const res = await api.post(`/quote/modules/${moduleCode}/simulate`, request as any);
   return res.json();
 }

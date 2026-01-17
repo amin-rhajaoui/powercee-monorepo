@@ -76,7 +76,7 @@ const fixedLineItemSchema = z.object({
   description: z.string().min(1, "Description requise"),
   quantity: z.number().int().positive("Quantite positive requise"),
   unit_price_ht: z.number().nonnegative("Prix HT positif requis"),
-  tva_rate: z.number().default(5.5),
+  tva_rate: z.number(),
 });
 
 const legacyGridRuleSchema = z.object({
@@ -269,12 +269,12 @@ export default function ModuleSettingsPage({
           <h1 className="text-3xl font-bold tracking-tight">
             Configuration Module
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Parametres de tarification pour le module{" "}
-            <Badge variant="outline" className="ml-1 font-mono">
+          <div className="text-muted-foreground mt-1 flex items-center gap-1">
+            Parametres de tarification pour le module
+            <Badge variant="outline" className="font-mono">
               {moduleCode}
             </Badge>
-          </p>
+          </div>
         </div>
         <Button onClick={form.handleSubmit(onSubmit)} disabled={saving}>
           {saving ? (

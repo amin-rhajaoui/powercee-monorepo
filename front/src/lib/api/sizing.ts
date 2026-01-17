@@ -78,7 +78,7 @@ export async function calculateSizing(
   folderId: string,
   params: SizingRequest
 ): Promise<SizingResponse> {
-  const res = await api.post(`/folders/${folderId}/sizing/calculate`, params);
+  const res = await api.post(`/folders/${folderId}/sizing/calculate`, params as any);
   return res.json();
 }
 
@@ -86,7 +86,7 @@ export async function generateSizingPdf(
   folderId: string,
   params: SizingPdfRequest
 ): Promise<Blob> {
-  const res = await api.post(`/folders/${folderId}/sizing/generate-pdf`, params, {
+  const res = await api.post(`/folders/${folderId}/sizing/generate-pdf`, params as any, {
     // Important: pour recevoir un blob (PDF)
     headers: {
       Accept: "application/pdf",
@@ -107,7 +107,7 @@ export async function saveSizingPdf(
   folderId: string,
   params: SizingPdfRequest
 ): Promise<SaveSizingPdfResponse> {
-  const res = await api.post(`/folders/${folderId}/sizing/save-pdf`, params);
+  const res = await api.post(`/folders/${folderId}/sizing/save-pdf`, params as any);
   return res.json();
 }
 

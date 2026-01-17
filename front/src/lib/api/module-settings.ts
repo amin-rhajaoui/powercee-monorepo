@@ -61,7 +61,7 @@ export async function updateModuleSettings(
   moduleCode: string,
   data: ModuleSettingsUpdate
 ): Promise<ModuleSettings> {
-  const res = await api.put(`/module-settings/${moduleCode}`, data);
+  const res = await api.put(`/module-settings/${moduleCode}`, data as any);
   return res.json();
 }
 
@@ -69,6 +69,6 @@ export async function patchModuleSettings(
   moduleCode: string,
   data: Partial<ModuleSettingsUpdate>
 ): Promise<ModuleSettings> {
-  const res = await api.patch(`/module-settings/${moduleCode}`, data);
+  const res = await api.patch(`/module-settings/${moduleCode}`, data as any);
   return res.json();
 }

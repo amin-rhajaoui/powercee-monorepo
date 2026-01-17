@@ -69,22 +69,22 @@ export async function getClient(clientId: string): Promise<Client> {
 }
 
 export async function createClient(payload: ClientPayload): Promise<Client> {
-  const res = await api.post("/clients", payload);
+  const res = await api.post("/clients", payload as any);
   return res.json();
 }
 
 export async function updateClient(clientId: string, payload: ClientUpdatePayload): Promise<Client> {
-  const res = await api.put(`/clients/${clientId}`, payload);
+  const res = await api.put(`/clients/${clientId}`, payload as any);
   return res.json();
 }
 
 export async function archiveClient(clientId: string): Promise<Client> {
-  const res = await api.post(`/clients/${clientId}/archive`, {});
+  const res = await api.post(`/clients/${clientId}/archive`, {} as any);
   return res.json();
 }
 
 export async function restoreClient(clientId: string): Promise<Client> {
-  const res = await api.post(`/clients/${clientId}/restore`, {});
+  const res = await api.post(`/clients/${clientId}/restore`, {} as any);
   return res.json();
 }
 

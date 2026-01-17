@@ -80,22 +80,22 @@ export async function getProperty(propertyId: string): Promise<Property> {
 }
 
 export async function createProperty(payload: PropertyPayload): Promise<Property> {
-  const res = await api.post("/properties", payload);
+  const res = await api.post("/properties", payload as any);
   return res.json();
 }
 
 export async function updateProperty(propertyId: string, payload: PropertyUpdatePayload): Promise<Property> {
-  const res = await api.put(`/properties/${propertyId}`, payload);
+  const res = await api.put(`/properties/${propertyId}`, payload as any);
   return res.json();
 }
 
 export async function archiveProperty(propertyId: string): Promise<Property> {
-  const res = await api.post(`/properties/${propertyId}/archive`, {});
+  const res = await api.post(`/properties/${propertyId}/archive`, {} as any);
   return res.json();
 }
 
 export async function restoreProperty(propertyId: string): Promise<Property> {
-  const res = await api.post(`/properties/${propertyId}/restore`, {});
+  const res = await api.post(`/properties/${propertyId}/restore`, {} as any);
   return res.json();
 }
 
