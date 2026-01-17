@@ -15,28 +15,12 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
-<<<<<<< HEAD
-    if (!email || !password) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
-=======
     if (!email.trim() || !password.trim()) {
       setError('Veuillez remplir tous les champs');
->>>>>>> 1ae86f45af3843e9e873799975078a7a68a5093b
       return;
     }
 
     setLoading(true);
-<<<<<<< HEAD
-    try {
-      await login(email, password);
-      router.replace('/(app)');
-    } catch (error: any) {
-      console.error('Login error:', error);
-      Alert.alert(
-        'Erreur de connexion',
-        error.response?.data?.detail || 'Email ou mot de passe incorrect'
-      );
-=======
     setError(null);
 
     try {
@@ -46,7 +30,6 @@ export default function Login() {
       const errorMessage =
         err.response?.data?.detail || err.message || 'Une erreur est survenue lors de la connexion.';
       setError(errorMessage);
->>>>>>> 1ae86f45af3843e9e873799975078a7a68a5093b
     } finally {
       setLoading(false);
     }
