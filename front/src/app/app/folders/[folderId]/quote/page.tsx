@@ -12,6 +12,8 @@ import { getFolder, type Folder } from "@/lib/api/folders";
 import { getProperty, type Property } from "@/lib/api/properties";
 import { isEligibleForMPR } from "@/lib/utils/mpr-eligibility";
 import { toast } from "sonner";
+import { QuoteSimulationModal } from "@/components/quote/quote-simulation-modal";
+import type { QuotePreview } from "@/lib/api/quote";
 
 type QuotePageProps = {
   params: Promise<{ folderId: string }>;
@@ -24,6 +26,21 @@ function QuotePageContent({ folderId }: { folderId: string }) {
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Quote simulation modal state
+  const [simulationOpen, setSimulationOpen] = useState(false);
+  const [selectedPacId, setSelectedPacId] = useState<string | null>(null);
+
+  const handleContinueWithoutMPR = (pacId: string) => {
+    setSelectedPacId(pacId);
+    setSimulationOpen(true);
+  };
+
+  const handleQuoteConfirm = (quote: QuotePreview) => {
+    console.log("Quote confirmed:", quote);
+    toast.success("Devis genere avec succes");
+    // TODO: Navigate to quote PDF generation or save quote
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -169,10 +186,27 @@ function QuotePageContent({ folderId }: { folderId: string }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pacs.map((pac) => (
-              <HeatPumpCard key={pac.id} pac={pac} isEligibleForMPR={isEligibleMPR} />
+              <HeatPumpCard
+                key={pac.id}
+                pac={pac}
+                isEligibleForMPR={isEligibleMPR}
+                onContinueWithoutMPR={() => handleContinueWithoutMPR(pac.id)}
+              />
             ))}
           </div>
         </>
+      )}
+
+      {/* Quote Simulation Modal */}
+      {selectedPacId && (
+        <QuoteSimulationModal
+          open={simulationOpen}
+          onOpenChange={setSimulationOpen}
+          moduleCode={folder?.module_code || "BAR-TH-171"}
+          folderId={folderId}
+          productIds={[selectedPacId]}
+          onConfirm={handleQuoteConfirm}
+        />
       )}
     </div>
   );

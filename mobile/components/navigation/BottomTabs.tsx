@@ -23,11 +23,11 @@ const tabs: TabItem[] = [
     route: '/(app)/modules',
   },
   {
-    name: 'add-client',
-    label: 'Client',
-    icon: 'person-add-outline',
-    activeIcon: 'person-add',
-    route: '/(app)/clients/add',
+    name: 'clients',
+    label: 'Clients',
+    icon: 'people-outline',
+    activeIcon: 'people',
+    route: '/(app)/clients',
   },
   {
     name: 'settings',

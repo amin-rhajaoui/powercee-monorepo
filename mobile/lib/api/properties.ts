@@ -1,81 +1,80 @@
-/**
- * Properties API Service
- * Operations for properties (logements)
- */
-
 import { api } from '../api';
 
-// ============================================================================
-// Types
-// ============================================================================
+export type PropertyType = 'MAISON' | 'APPARTEMENT' | 'LOCAL_COMMERCIAL' | 'BATIMENT_TERTIAIRE' | 'AUTRE';
 
-export type PropertyType = 'MAISON' | 'APPARTEMENT';
+export type PropertyStatus = 'ACTIF' | 'ARCHIVE';
 
 export interface Property {
-    id: string;
-    client_id: string;
-    type: PropertyType;
-    address: string;
-    postal_code: string;
-    city: string;
-    living_area: number | null;
-    construction_year: number | null;
-    tenant_id: string;
-    created_at: string;
-    updated_at: string;
+  id: string;
+  label: string;
+  type: PropertyType;
+  address: string;
+  city: string;
+  postal_code?: string | null;
+  client_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface PropertyCreate {
-    client_id: string;
-    type: PropertyType;
-    address: string;
-    postal_code: string;
-    city: string;
-    living_area?: number;
-    construction_year?: number;
+export interface PropertyPayload {
+  label: string;
+  type: PropertyType;
+  address: string;
+  city: string;
+  postal_code?: string | null;
+  client_id: string;
+  latitude: number;
+  longitude: number;
+  country?: string | null;
+  surface_m2?: number | null;
+  construction_year?: number | null;
 }
 
-export interface PaginatedProperties {
-    items: Property[];
-    total: number;
+export async function createProperty(payload: PropertyPayload): Promise<Property> {
+  return api.post<Property>('/properties', payload);
 }
 
-// ============================================================================
-// API Functions
-// ============================================================================
-
-/**
- * List properties for a client
- */
-export async function listProperties(clientId: string): Promise<Property[]> {
-    const result = await api.get<PaginatedProperties | Property[]>(`/properties?client_id=${clientId}`);
-    // Handle both paginated and array response
-    if (Array.isArray(result)) {
-        return result;
-    }
-    return result.items;
+export async function updateProperty(propertyId: string, payload: Partial<PropertyPayload>): Promise<Property> {
+  return api.put<Property>(`/properties/${propertyId}`, payload);
 }
 
-/**
- * Get a single property by ID
- */
-export async function getProperty(id: string): Promise<Property> {
-    return api.get<Property>(`/properties/${id}`);
+export interface PaginatedPropertiesResponse {
+  items: Property[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
-/**
- * Create a new property
- */
-export async function createProperty(data: PropertyCreate): Promise<Property> {
-    return api.post<Property>('/properties', data);
+export interface ListPropertiesParams {
+  client_id?: string;
+  search?: string;
+  type?: PropertyType;
+  is_active?: boolean;
+  page?: number;
+  page_size?: number;
+  sort_by?: string;
+  sort_dir?: 'asc' | 'desc';
 }
 
-/**
- * Update a property
- */
-export async function updateProperty(
-    id: string,
-    data: Partial<PropertyCreate>
-): Promise<Property> {
-    return api.put<Property>(`/properties/${id}`, data);
+export async function listProperties(params?: ListPropertiesParams): Promise<PaginatedPropertiesResponse> {
+  const queryParams = new URLSearchParams();
+  
+  if (params?.client_id) queryParams.append('client_id', params.client_id);
+  if (params?.search) queryParams.append('search', params.search);
+  if (params?.type) queryParams.append('type', params.type);
+  if (params?.is_active !== undefined) queryParams.append('is_active', params.is_active.toString());
+  if (params?.page) queryParams.append('page', params.page.toString());
+  if (params?.page_size) queryParams.append('page_size', params.page_size.toString());
+  if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+  if (params?.sort_dir) queryParams.append('sort_dir', params.sort_dir);
+
+  const query = queryParams.toString();
+  const url = `/properties${query ? `?${query}` : ''}`;
+  
+  return api.get<PaginatedPropertiesResponse>(url);
+}
+
+export async function getProperty(propertyId: string): Promise<Property> {
+  return api.get<Property>(`/properties/${propertyId}`);
 }

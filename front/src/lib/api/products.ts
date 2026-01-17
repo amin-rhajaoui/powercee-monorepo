@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 
 export type ProductCategory = "HEAT_PUMP" | "THERMOSTAT" | "OTHER";
+export type ProductType = "MATERIAL" | "LABOR" | "SERVICE";
 export type PowerSupply = "MONOPHASE" | "TRIPHASE";
 
 export type HeatPumpDetails = {
@@ -47,7 +48,9 @@ export type ProductListItem = {
   brand: string;
   reference: string;
   price_ht: number;
+  buying_price_ht?: number | null;
   category: ProductCategory;
+  product_type: ProductType;
   module_codes?: string[] | null;
   image_url?: string | null;
   is_active: boolean;
@@ -130,12 +133,12 @@ export async function getProduct(productId: string): Promise<Product> {
 }
 
 export async function createProduct(payload: ProductCreatePayload): Promise<Product> {
-  const res = await api.post("/products", payload);
+  const res = await api.post("/products", payload as any);
   return res.json();
 }
 
 export async function updateProduct(productId: string, payload: ProductUpdatePayload): Promise<Product> {
-  const res = await api.put(`/products/${productId}`, payload);
+  const res = await api.put(`/products/${productId}`, payload as any);
   return res.json();
 }
 
@@ -145,14 +148,14 @@ export async function deleteProduct(productId: string): Promise<Product> {
 }
 
 export async function restoreProduct(productId: string): Promise<Product> {
-  const res = await api.post(`/products/${productId}/restore`, {});
+  const res = await api.post(`/products/${productId}/restore`, {} as any);
   return res.json();
 }
 
 export async function uploadProductImage(productId: string, file: File): Promise<Product> {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await api.post(`/products/${productId}/image`, formData);
+  const res = await api.post(`/products/${productId}/image`, formData as any);
   return res.json();
 }
 
@@ -162,7 +165,7 @@ export async function getUniqueBrands(): Promise<BrandsResponse> {
 }
 
 export async function addCompatibility(sourceProductId: string, targetProductId: string): Promise<void> {
-  await api.post(`/products/${sourceProductId}/compatibility/${targetProductId}`, {});
+  await api.post(`/products/${sourceProductId}/compatibility/${targetProductId}`, {} as any);
 }
 
 export async function removeCompatibility(sourceProductId: string, targetProductId: string): Promise<void> {

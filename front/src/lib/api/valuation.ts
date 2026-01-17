@@ -68,7 +68,7 @@ export async function getValuations(): Promise<CEEValuationsListResponse> {
 export async function saveValuations(
   payload: CEEValuationsBulkUpdate
 ): Promise<CEEValuation[]> {
-  const res = await api.post("/valuation", payload);
+  const res = await api.post("/valuation", payload as any);
   return res.json();
 }
 

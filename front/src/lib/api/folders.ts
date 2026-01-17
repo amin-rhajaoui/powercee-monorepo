@@ -46,12 +46,12 @@ export type PaginatedFolders = {
 // ============================================================================
 
 export async function createFolderFromDraft(draftId: string): Promise<Folder> {
-  const res = await api.post(`/folders/from-draft/${draftId}`, {});
+  const res = await api.post(`/folders/from-draft/${draftId}`, {} as any);
   return res.json();
 }
 
 export async function createFolder(payload: FolderCreate): Promise<Folder> {
-  const res = await api.post("/folders", payload);
+  const res = await api.post("/folders", payload as any);
   return res.json();
 }
 
@@ -61,7 +61,7 @@ export async function getFolder(folderId: string): Promise<Folder> {
 }
 
 export async function updateFolder(folderId: string, payload: FolderUpdate): Promise<Folder> {
-  const res = await api.put(`/folders/${folderId}`, payload);
+  const res = await api.put(`/folders/${folderId}`, payload as any);
   return res.json();
 }
 

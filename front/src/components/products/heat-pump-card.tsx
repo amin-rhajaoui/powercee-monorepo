@@ -14,9 +14,14 @@ import { s3UrlToProxyUrl } from "@/lib/api";
 interface HeatPumpCardProps {
   pac: CompatiblePac;
   isEligibleForMPR?: boolean;
+  onContinueWithoutMPR?: () => void;
 }
 
-export function HeatPumpCard({ pac, isEligibleForMPR = false }: HeatPumpCardProps) {
+export function HeatPumpCard({
+  pac,
+  isEligibleForMPR = false,
+  onContinueWithoutMPR,
+}: HeatPumpCardProps) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader>
@@ -135,7 +140,11 @@ export function HeatPumpCard({ pac, isEligibleForMPR = false }: HeatPumpCardProp
         <div className="flex flex-col gap-2 pt-2">
           {isEligibleForMPR ? (
             <>
-              <Button variant="outline" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={onContinueWithoutMPR}
+              >
                 Continuer sans MPR
               </Button>
               <Button variant="default" className="w-full">
@@ -143,8 +152,12 @@ export function HeatPumpCard({ pac, isEligibleForMPR = false }: HeatPumpCardProp
               </Button>
             </>
           ) : (
-            <Button variant="default" className="w-full">
-              Continuer
+            <Button
+              variant="default"
+              className="w-full"
+              onClick={onContinueWithoutMPR}
+            >
+              Continuer (CEE uniquement)
             </Button>
           )}
         </div>

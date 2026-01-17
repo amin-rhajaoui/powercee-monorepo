@@ -3,7 +3,17 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuration de l'API
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+// IMPORTANT: Pour une application mobile, vous ne pouvez PAS utiliser 'localhost'
+// car cela fait référence à l'appareil mobile lui-même, pas à votre ordinateur de développement.
+// Vous devez utiliser l'adresse IP de votre ordinateur sur le réseau local.
+// Exemple: 'http://192.168.1.100:8000' (remplacez par votre IP réelle)
+// 
+// Pour trouver votre IP:
+// - macOS/Linux: ifconfig | grep "inet " | grep -v 127.0.0.1
+// - Windows: ipconfig (cherchez "IPv4 Address")
+//
+// Configurez EXPO_PUBLIC_API_URL dans un fichier .env à la racine du dossier mobile
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.10:8000';
 
 // Clés de stockage
 const REFRESH_TOKEN_KEY = 'refresh_token';
