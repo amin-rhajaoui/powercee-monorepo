@@ -20,28 +20,65 @@ function ModuleCard({ module }: { module: Module }) {
   const iconData = iconMap[module.icon] || { lib: MaterialCommunityIcons, name: 'package-variant' };
   const IconLib = iconData.lib;
 
+  // Route mapping for implemented modules
+  const getModuleRoute = (id: string) => {
+    const routes: Record<string, string> = {
+      'bar-th-171': '/bar-th-171',
+    };
+    return routes[id] || `/modules/${id}`;
+  };
+
+  const handlePress = () => {
+    const route = getModuleRoute(module.id);
+    router.push(route as any);
+  };
+
   return (
     <TouchableOpacity
-      onPress={() => router.push(`/modules/${module.id}` as any)}
-      activeOpacity={0.8}
-      className="mb-4"
+      onPress={handlePress}
+      activeOpacity={0.7}
+      style={{
+        marginBottom: 16,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+      }}
     >
-      <View className="flex-row items-center bg-card rounded-2xl border border-border p-4 shadow-sm active:bg-accent/50">
-        <View className="h-14 w-14 items-center justify-center rounded-xl bg-primary/10 mr-4">
-          <IconLib name={iconData.name} size={28} color={lightColors.primary} />
-        </View>
-        <View className="flex-1 gap-1">
-          <Text className="text-lg font-semibold text-foreground">
-            {module.title}
-          </Text>
-          <View className="flex-row items-center">
-            <Text className="text-xs font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded uppercase tracking-wider">
-              {module.code}
-            </Text>
-          </View>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color="#64748B" />
+      <View style={{
+        height: 56,
+        width: 56,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 12,
+        backgroundColor: 'rgba(139, 26, 43, 0.1)',
+        marginRight: 16,
+      }}>
+        <IconLib name={iconData.name} size={28} color={lightColors.primary} />
       </View>
+      <View style={{ flex: 1, gap: 4 }}>
+        <Text style={{ fontSize: 18, fontWeight: '600', color: '#1a1f2e' }}>
+          {module.title}
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{
+            fontSize: 12,
+            fontWeight: 'bold',
+            color: '#64748b',
+            backgroundColor: '#f1f5f9',
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+            borderRadius: 4,
+            textTransform: 'uppercase',
+          }}>
+            {module.code}
+          </Text>
+        </View>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#64748B" />
     </TouchableOpacity>
   );
 }

@@ -184,28 +184,28 @@ async def create_folder_from_draft(
     if isinstance(draft.data, dict):
         draft_data.update(draft.data)
 
+    # Récupérer la Property associée si elle existe
+    property_obj = None
+    postal_code = None
+    
+    if draft.property_id:
+        property_result = await db.execute(
+            select(Property).where(
+                and_(
+                    Property.id == draft.property_id,
+                    Property.tenant_id == user.tenant_id,
+                )
+            )
+        )
+        property_obj = property_result.scalar_one_or_none()
+        if property_obj and property_obj.postal_code:
+            postal_code = property_obj.postal_code
+
     # Calculer la couleur MPR
     mpr_color = None
     reference_tax_income = step3_data.get("reference_tax_income")
     household_size = step3_data.get("household_size")
     if reference_tax_income is not None and household_size is not None:
-        # Récupérer le code postal depuis la Property si disponible
-        postal_code = None
-        property_obj = None
-        
-        if draft.property_id:
-            property_result = await db.execute(
-                select(Property).where(
-                    and_(
-                        Property.id == draft.property_id,
-                        Property.tenant_id == user.tenant_id,
-                    )
-                )
-            )
-            property_obj = property_result.scalar_one_or_none()
-            if property_obj and property_obj.postal_code:
-                postal_code = property_obj.postal_code
-        
         if postal_code:
             try:
                 mpr_color = calculate_mpr_color(

@@ -12,7 +12,7 @@ interface Option {
 
 interface SelectProps {
   label?: string;
-  value?: string | number | boolean;
+  value?: string | number | boolean | null;
   options: Option[];
   onValueChange: (value: any) => void;
   placeholder?: string;

@@ -1,24 +1,37 @@
-import { View, Text, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import { View, Text, KeyboardAvoidingView, Platform, ScrollView, Image, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Login() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      return;
+    }
+
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      // Navigate to app
+    try {
+      await login(email, password);
       router.replace('/(app)');
-    }, 1500);
+    } catch (error: any) {
+      console.error('Login error:', error);
+      Alert.alert(
+        'Erreur de connexion',
+        error.response?.data?.detail || 'Email ou mot de passe incorrect'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

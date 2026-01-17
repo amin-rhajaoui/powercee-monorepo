@@ -31,6 +31,7 @@ export default function AppLayout() {
           <Stack.Screen name="modules" />
           <Stack.Screen name="clients" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="bar-th-171" />
         </Stack>
       </View>
       <BottomTabs />
