@@ -48,6 +48,21 @@ class Agency(Base):
         default=True,
         doc="Statut d'activité de l'agence"
     )
+    is_headquarters: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        doc="Indique si cette agence est le siège social"
+    )
+    siret: Mapped[str | None] = mapped_column(
+        String(14),
+        nullable=True,
+        doc="Numéro SIRET (uniquement pour le siège)"
+    )
+    vat_number: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        doc="Numéro de TVA intracommunautaire (optionnel)"
+    )
 
     # Isolation Multi-tenant
     tenant_id: Mapped[uuid.UUID] = mapped_column(

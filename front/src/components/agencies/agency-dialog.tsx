@@ -24,8 +24,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { api } from "@/lib/api";
 import { searchAddress, searchAddressSuggestions, type GeocodingResult } from "@/lib/geocoding";
 import { mergeRefs } from "@/lib/utils";
@@ -45,6 +47,14 @@ const agencySchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
   is_active: z.boolean(),
+  is_headquarters: z.boolean(),
+  ssiret: z.string()
+    .refine(val => val === '' || /^\d{14}$/.test(val), {
+      message: "Le SIRET doit contenir exactement 14 chiffres"
+    })
+    .optional()
+    .or(z.literal("")),
+  vat_number: z.string().max(50).optional().or(z.literal("")),
 });
 
 type AgencyFormValues = z.infer<typeof agencySchema>;
@@ -77,6 +87,9 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
       latitude: 48.8566, // Paris par défaut
       longitude: 2.3522,
       is_active: true,
+      is_headquarters: false,
+      siret: "",
+      vat_number: "",
     },
   });
 
@@ -88,6 +101,9 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
         latitude: agency.latitude || 48.8566,
         longitude: agency.longitude || 2.3522,
         is_active: agency.is_active,
+        is_headquarters: agency.is_headquarters || false,
+        siret: agency.siret || "",
+        vat_number: agency.vat_number || "",
       });
     } else {
       form.reset({
@@ -96,6 +112,9 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
         latitude: 48.8566,
         longitude: 2.3522,
         is_active: true,
+        is_headquarters: false,
+        siret: "",
+        vat_number: "",
       });
     }
     // Réinitialiser les suggestions quand le dialog s'ouvre/ferme
@@ -250,7 +269,7 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{agency ? "Modifier l'agence" : "Ajouter une agence"}</DialogTitle>
           <DialogDescription>
@@ -366,6 +385,85 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
                 Vous pouvez déplacer le marqueur pour affiner la position.
               </p>
             </div>
+
+            <FormField
+              control={form.control}
+              name="is_headquarters"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Cette agence est le siège social
+                    </FormLabel>
+                    <FormDescription>
+                      Cochez cette case si cette agence est le siège principal de votre entreprise
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {form.watch("is_headquarters") && (
+              <div className="space-y-4 rounded-md border p-4 bg-muted/30">
+                <p className="text-sm font-medium">Informations du siège</p>
+                
+                <FormField
+                  control={form.control}
+                  name="siret"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SIRET</FormLabel>
+                      <FormControl>
+                      <Input 
+                        placeholder="Ex: 12345678901234" 
+                        maxLength={14}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          // N'accepte que les chiffres, max 14
+                          const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 14);
+                          field.onChange(digitsOnly);
+                        }}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                      </FormControl>
+                      <FormDescription>
+                        Numéro SIRET à 14 chiffres (requis pour le siège)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="vat_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Numéro de TVA (optionnel)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Ex: FR12345678901" 
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Numéro de TVA intracommunautaire
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

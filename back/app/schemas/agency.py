@@ -10,6 +10,9 @@ class AgencyBase(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     is_active: bool = True
+    is_headquarters: bool = False
+    siret: str | None = Field(None, min_length=14, max_length=14, pattern=r'^\d{14}$')
+    vat_number: str | None = Field(None, max_length=50)
 
 class AgencyCreate(AgencyBase):
     """
@@ -26,6 +29,9 @@ class AgencyUpdate(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     is_active: bool | None = None
+    is_headquarters: bool | None = None
+    siret: str | None = Field(None, min_length=14, max_length=14, pattern=r'^\d{14}$')
+    vat_number: str | None = Field(None, max_length=50)
 
 class AgencyResponse(AgencyBase):
     """
