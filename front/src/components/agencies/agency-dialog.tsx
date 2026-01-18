@@ -48,7 +48,7 @@ const agencySchema = z.object({
   longitude: z.number(),
   is_active: z.boolean(),
   is_headquarters: z.boolean(),
-  ssiret: z.string()
+  siret: z.string()
     .refine(val => val === '' || /^\d{14}$/.test(val), {
       message: "Le SIRET doit contenir exactement 14 chiffres"
     })
