@@ -107,7 +107,8 @@ export default function Step2Property() {
         if (form.getValues('property_id')) {
             navigate(
                 () => saveDraft({ step2: { ...form.getValues() } as any }, 1),
-                (id) => `/(app)/bar-th-171?draftId=${id}`
+                (id) => `/(app)/bar-th-171?draftId=${id}`,
+                'replace'
             );
         } else {
             router.push(`/(app)/bar-th-171?draftId=${draftId}`);

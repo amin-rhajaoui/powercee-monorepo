@@ -12,13 +12,18 @@ export function useStepNavigation() {
      */
     const navigate = async <T extends { id: string }>(
         saveAction: () => Promise<T>,
-        routeBuilder: (draftId: string) => string
+        routeBuilder: (draftId: string) => string,
+        action: 'push' | 'replace' = 'push'
     ) => {
         setIsNavigating(true);
         try {
             const result = await saveAction();
             if (result && result.id) {
-                router.push(routeBuilder(result.id) as any);
+                if (action === 'replace') {
+                    router.replace(routeBuilder(result.id) as any);
+                } else {
+                    router.push(routeBuilder(result.id) as any);
+                }
             }
         } catch (error) {
             console.error('Navigation error:', error);
