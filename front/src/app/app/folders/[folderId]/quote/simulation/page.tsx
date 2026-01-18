@@ -54,37 +54,6 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load folder and initial simulation
-  useEffect(() => {
-    if (productIds.length === 0) {
-      setError("Aucun produit sélectionné");
-      setLoading(false);
-      return;
-    }
-
-    loadInitialData();
-  }, [productIds, loadInitialData]);
-
-  // Auto-save effect
-  useEffect(() => {
-    if (!hasUnsavedChanges || !quote) return;
-
-    // Clear existing timer
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
-    }
-
-    // Set new timer for 30 seconds
-    autoSaveTimerRef.current = setTimeout(() => {
-      handleAutoSave();
-    }, 30000);
-
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-      }
-    };
-  }, [hasUnsavedChanges, handleAutoSave, quote]);
-
   const loadInitialData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -116,6 +85,16 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
       setLoading(false);
     }
   }, [folderId, productIds]);
+
+  useEffect(() => {
+    if (productIds.length === 0) {
+      setError("Aucun produit sélectionné");
+      setLoading(false);
+      return;
+    }
+
+    loadInitialData();
+  }, [productIds, loadInitialData]);
 
   const loadDrafts = useCallback(async () => {
     try {
