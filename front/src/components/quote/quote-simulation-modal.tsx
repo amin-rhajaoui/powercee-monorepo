@@ -1,3 +1,7 @@
+/**
+ * @deprecated Ce composant est déprécié. Utilisez la page /quote/simulation à la place.
+ * Conservé temporairement pour compatibilité.
+ */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";

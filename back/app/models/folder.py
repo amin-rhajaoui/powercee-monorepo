@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import String, DateTime, ForeignKey, func, Index, Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.property import Property
     from app.models.installation_recommendation import InstallationRecommendation
     from app.models.technical_survey import TechnicalSurvey
+    from app.models.quote_draft import QuoteDraft
 
 
 class FolderStatus(str, Enum):
@@ -117,6 +118,10 @@ class Folder(Base):
     technical_survey: Mapped["TechnicalSurvey | None"] = relationship(
         back_populates="folder",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+    quote_drafts: Mapped[List["QuoteDraft"]] = relationship(
+        back_populates="folder",
         cascade="all, delete-orphan",
     )
 

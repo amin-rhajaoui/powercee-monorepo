@@ -13,6 +13,7 @@ from .module_settings import ModuleSettings, RoundingMode
 from .installation_recommendation import InstallationRecommendation
 from .technical_survey import TechnicalSurvey
 from .cee_valuation import CEEValuation
+from .quote_draft import QuoteDraft
 
 __all__ = [
     "Tenant",
@@ -42,5 +43,6 @@ __all__ = [
     "CEEValuation",
     "ModuleSettings",
     "RoundingMode",
+    "QuoteDraft",
 ]
 

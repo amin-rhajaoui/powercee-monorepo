@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from app.models.technical_survey import TechnicalSurvey
     from app.models.cee_valuation import CEEValuation
     from app.models.module_settings import ModuleSettings
+    from app.models.quote_draft import QuoteDraft
 
 
 class Tenant(Base):
@@ -81,4 +82,5 @@ class Tenant(Base):
     technical_surveys: Mapped[List["TechnicalSurvey"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     cee_valuations: Mapped[List["CEEValuation"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     module_settings: Mapped[List["ModuleSettings"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
+    quote_drafts: Mapped[List["QuoteDraft"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
 
