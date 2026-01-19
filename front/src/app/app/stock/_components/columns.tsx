@@ -27,6 +27,8 @@ const getCategoryBadgeVariant = (category: string) => {
       return "default";
     case "THERMOSTAT":
       return "secondary";
+    case "LABOR":
+      return "destructive";
     default:
       return "outline";
   }
@@ -37,9 +39,14 @@ export function getColumns(handlers: Handlers): ColumnDef<ProductListItem>[] {
     {
       accessorKey: "reference",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Reference" />,
-      cell: ({ row }) => (
-        <span className="font-mono text-sm text-foreground">{row.getValue("reference")}</span>
-      ),
+      cell: ({ row }) => {
+        const reference = row.getValue<string | null>("reference");
+        return (
+          <span className="font-mono text-sm text-foreground">
+            {reference || "-"}
+          </span>
+        );
+      },
       enableSorting: true,
     },
     {
@@ -72,9 +79,12 @@ export function getColumns(handlers: Handlers): ColumnDef<ProductListItem>[] {
     {
       accessorKey: "brand",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Marque" />,
-      cell: ({ row }) => (
-        <span className="text-sm text-foreground">{row.getValue("brand")}</span>
-      ),
+      cell: ({ row }) => {
+        const brand = row.getValue<string | null>("brand");
+        return (
+          <span className="text-sm text-foreground">{brand || "-"}</span>
+        );
+      },
       enableSorting: true,
     },
     {

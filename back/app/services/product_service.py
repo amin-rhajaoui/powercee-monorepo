@@ -41,8 +41,8 @@ async def list_products(
         pattern = f"%{search.lower()}%"
         query = query.where(
             func.lower(Product.name).ilike(pattern)
-            | func.lower(Product.brand).ilike(pattern)
-            | func.lower(Product.reference).ilike(pattern)
+            | func.coalesce(func.lower(Product.brand), "").ilike(pattern)
+            | func.coalesce(func.lower(Product.reference), "").ilike(pattern)
         )
 
     # Filtre par marque
@@ -313,6 +313,7 @@ async def get_unique_brands(
         select(distinct(Product.brand))
         .where(Product.tenant_id == current_user.tenant_id)
         .where(Product.is_active == True)
+        .where(Product.brand.isnot(None))
         .order_by(Product.brand)
     )
     result = await db.execute(query)

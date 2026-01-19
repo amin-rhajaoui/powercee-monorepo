@@ -17,6 +17,7 @@ class ProductCategory(str, Enum):
     """Categorie de produit."""
     HEAT_PUMP = "HEAT_PUMP"
     THERMOSTAT = "THERMOSTAT"
+    LABOR = "LABOR"
     OTHER = "OTHER"
 
 
@@ -56,15 +57,15 @@ class Product(Base):
         nullable=False,
         doc="Nom/modele du produit (ex: 'AEROLIA 8').",
     )
-    brand: Mapped[str] = mapped_column(
+    brand: Mapped[str | None] = mapped_column(
         String(255),
-        nullable=False,
-        doc="Marque (ex: 'Thermor', 'CLIVET').",
+        nullable=True,
+        doc="Marque (ex: 'Thermor', 'CLIVET'). Optionnel pour LABOR/OTHER.",
     )
-    reference: Mapped[str] = mapped_column(
+    reference: Mapped[str | None] = mapped_column(
         String(255),
-        nullable=False,
-        doc="Reference produit.",
+        nullable=True,
+        doc="Reference produit. Optionnel pour LABOR/OTHER.",
     )
     price_ht: Mapped[float] = mapped_column(
         Float,

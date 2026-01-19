@@ -79,12 +79,12 @@ async def update_module_settings(
         settings = ModuleSettings(
             tenant_id=current_user.tenant_id,
             module_code=module_code,
-            **data.model_dump()
+            **data.model_dump(mode='json')
         )
         db.add(settings)
     else:
         # Mettre a jour
-        update_data = data.model_dump()
+        update_data = data.model_dump(mode='json')
         for key, value in update_data.items():
             setattr(settings, key, value)
 
@@ -121,7 +121,7 @@ async def patch_module_settings(
         )
 
     # Mise a jour partielle (ignorer les champs None)
-    update_data = data.model_dump(exclude_unset=True)
+    update_data = data.model_dump(exclude_unset=True, mode='json')
     for key, value in update_data.items():
         if value is not None:
             setattr(settings, key, value)

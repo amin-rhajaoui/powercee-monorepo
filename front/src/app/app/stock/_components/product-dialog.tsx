@@ -77,6 +77,17 @@ export function ProductDialog({
   const category = form.watch("category");
   const selectedModuleCodes = form.watch("module_codes") || [];
 
+  // Helpers pour l'affichage conditionnel
+  const showBrandReference = category !== "LABOR";
+  const showTechnicalTab = category === "HEAT_PUMP" || category === "THERMOSTAT";
+
+  // Auto-set product_type to LABOR when category is LABOR
+  useEffect(() => {
+    if (category === "LABOR") {
+      form.setValue("product_type", "LABOR");
+    }
+  }, [category, form]);
+
   useEffect(() => {
     if (product) {
       form.reset({
@@ -139,6 +150,11 @@ export function ProductDialog({
       // Prepare payload based on category
       const payload = {
         ...parsedValues,
+        // Clear brand/reference for LABOR if empty
+        brand: parsedValues.category === "LABOR" ? (parsedValues.brand || null) : parsedValues.brand,
+        reference: parsedValues.category === "LABOR" ? (parsedValues.reference || null) : parsedValues.reference,
+        // Set product_type to LABOR for LABOR category
+        product_type: parsedValues.category === "LABOR" ? "LABOR" : parsedValues.product_type,
         heat_pump_details:
           parsedValues.category === "HEAT_PUMP" ? parsedValues.heat_pump_details : null,
         thermostat_details:
@@ -182,9 +198,9 @@ export function ProductDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className={`grid w-full ${showTechnicalTab ? "grid-cols-3" : "grid-cols-2"}`}>
                 <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="technical">Technique</TabsTrigger>
+                {showTechnicalTab && <TabsTrigger value="technical">Technique</TabsTrigger>}
                 <TabsTrigger value="modules">Modules</TabsTrigger>
               </TabsList>
 
@@ -195,49 +211,57 @@ export function ProductDialog({
                     control={form.control}
                     name="name"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className={!showBrandReference ? "sm:col-span-2" : ""}>
                         <FormLabel>Nom / Modele *</FormLabel>
                         <FormControl>
-                          <Input placeholder="AEROLIA 8" {...field} />
+                          <Input placeholder={showBrandReference ? "AEROLIA 8" : "Installation PAC"} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="brand"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Marque *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Thermor" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {showBrandReference && (
+                    <FormField
+                      control={form.control}
+                      name="brand"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Marque {(category === "HEAT_PUMP" || category === "THERMOSTAT") && "*"}
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="Thermor" {...field} value={field.value || ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="reference"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Reference *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="526 780" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {showBrandReference && (
+                    <FormField
+                      control={form.control}
+                      name="reference"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Reference {(category === "HEAT_PUMP" || category === "THERMOSTAT") && "*"}
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="526 780" {...field} value={field.value || ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   <FormField
                     control={form.control}
                     name="price_ht"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className={!showBrandReference ? "sm:col-span-2" : ""}>
                         <FormLabel>Prix HT (EUR) *</FormLabel>
                         <FormControl>
                           <Input
@@ -307,9 +331,6 @@ export function ProductDialog({
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormDescription>
-                          Choisissez LABOR pour la main d'oeuvre
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -620,7 +641,7 @@ export function ProductDialog({
                   />
                 )}
 
-                {category === "OTHER" && (
+                {(category === "OTHER" || category === "LABOR") && (
                   <div className="text-center py-8 text-muted-foreground">
                     Aucun champ technique specifique pour cette categorie.
                   </div>

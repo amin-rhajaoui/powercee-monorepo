@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.product import ProductCategory, ProductType, PowerSupply
 
@@ -55,8 +55,8 @@ class ThermostatDetailsResponse(ThermostatDetailsBase):
 class ProductBase(BaseModel):
     """Champs communs pour un produit."""
     name: str = Field(..., min_length=1, max_length=255, description="Nom/modele du produit")
-    brand: str = Field(..., min_length=1, max_length=255, description="Marque")
-    reference: str = Field(..., min_length=1, max_length=255, description="Reference produit")
+    brand: str | None = Field(None, max_length=255, description="Marque (requis pour HEAT_PUMP/THERMOSTAT)")
+    reference: str | None = Field(None, max_length=255, description="Reference (requis pour HEAT_PUMP/THERMOSTAT)")
     price_ht: float = Field(..., ge=0, description="Prix HT en euros")
     buying_price_ht: float | None = Field(None, ge=0, description="Prix d'achat HT (pour marge)")
     category: ProductCategory = Field(..., description="Categorie du produit")
@@ -72,6 +72,31 @@ class ProductCreate(ProductBase):
     heat_pump_details: HeatPumpDetailsCreate | None = Field(None, description="Details PAC")
     thermostat_details: ThermostatDetailsCreate | None = Field(None, description="Details thermostat")
     compatible_product_ids: List[UUID] | None = Field(None, description="IDs des produits compatibles")
+
+    @model_validator(mode="after")
+    def validate_by_category(self) -> "ProductCreate":
+        """Valide les champs requis selon la categorie."""
+        category = self.category
+
+        # HEAT_PUMP: brand, reference, heat_pump_details required
+        if category == ProductCategory.HEAT_PUMP:
+            if not self.brand or not self.brand.strip():
+                raise ValueError("La marque est requise pour les pompes a chaleur")
+            if not self.reference or not self.reference.strip():
+                raise ValueError("La reference est requise pour les pompes a chaleur")
+            if not self.heat_pump_details:
+                raise ValueError("Les details techniques PAC sont requis")
+
+        # THERMOSTAT: brand, reference required
+        elif category == ProductCategory.THERMOSTAT:
+            if not self.brand or not self.brand.strip():
+                raise ValueError("La marque est requise pour les thermostats")
+            if not self.reference or not self.reference.strip():
+                raise ValueError("La reference est requise pour les thermostats")
+
+        # LABOR and OTHER: brand, reference optional (no validation needed)
+
+        return self
 
 
 class ProductUpdate(BaseModel):
@@ -110,8 +135,8 @@ class ProductListItem(BaseModel):
     id: UUID
     tenant_id: UUID
     name: str
-    brand: str
-    reference: str
+    brand: str | None = None
+    reference: str | None = None
     price_ht: float
     buying_price_ht: float | None = None
     category: ProductCategory

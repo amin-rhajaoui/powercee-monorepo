@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 
-export type ProductCategory = "HEAT_PUMP" | "THERMOSTAT" | "OTHER";
+export type ProductCategory = "HEAT_PUMP" | "THERMOSTAT" | "LABOR" | "OTHER";
 export type ProductType = "MATERIAL" | "LABOR" | "SERVICE";
 export type PowerSupply = "MONOPHASE" | "TRIPHASE";
 
@@ -26,8 +26,8 @@ export type Product = {
   id: string;
   tenant_id: string;
   name: string;
-  brand: string;
-  reference: string;
+  brand: string | null;
+  reference: string | null;
   price_ht: number;
   category: ProductCategory;
   product_type: ProductType;
@@ -46,8 +46,8 @@ export type ProductListItem = {
   id: string;
   tenant_id: string;
   name: string;
-  brand: string;
-  reference: string;
+  brand: string | null;
+  reference: string | null;
   price_ht: number;
   buying_price_ht?: number | null;
   category: ProductCategory;
@@ -83,8 +83,8 @@ export type ThermostatDetailsPayload = {
 
 export type ProductCreatePayload = {
   name: string;
-  brand: string;
-  reference: string;
+  brand?: string | null;
+  reference?: string | null;
   price_ht: number;
   category: ProductCategory;
   product_type?: ProductType;
@@ -186,6 +186,7 @@ export const MODULE_CODES = [
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   HEAT_PUMP: "Pompe a chaleur",
   THERMOSTAT: "Thermostat",
+  LABOR: "Main d'oeuvre",
   OTHER: "Autre",
 };
 

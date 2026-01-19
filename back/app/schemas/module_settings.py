@@ -29,7 +29,7 @@ class LegacyGridRule(BaseModel):
     etas_min: int = Field(..., ge=100, le=300, description="ETAS minimum (%)")
     etas_max: int = Field(..., ge=100, le=300, description="ETAS maximum (%)")
     surface_min: int = Field(..., ge=0, description="Surface minimum (m2)")
-    surface_max: int = Field(..., ge=0, description="Surface maximum (m2)")
+    surface_max: int | None = Field(None, ge=0, description="Surface maximum (m2) - None pour illimite")
     mpr_profile: str = Field(..., description="Profil MPR (Bleu, Jaune, Violet, Rose)")
     rac_amount: float = Field(..., ge=0, description="Montant RAC fixe (EUR TTC)")
 

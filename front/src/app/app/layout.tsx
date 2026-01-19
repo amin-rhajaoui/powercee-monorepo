@@ -13,7 +13,7 @@ export default function DashboardLayout({
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <SidebarProvider>
-        <div className="flex h-screen w-full overflow-hidden bg-muted/20">
+        <div className="flex h-screen w-full overflow-hidden bg-background">
           <AppSidebar />
           <div className="flex flex-col flex-1 overflow-hidden">
             <AppHeader />

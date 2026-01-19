@@ -3,6 +3,7 @@ import { z } from "zod";
 export const categoryOptions = [
   { value: "HEAT_PUMP", label: "Pompe a chaleur" },
   { value: "THERMOSTAT", label: "Thermostat" },
+  { value: "LABOR", label: "Main d'oeuvre" },
   { value: "OTHER", label: "Autre" },
 ] as const;
 
@@ -42,22 +43,43 @@ export const thermostatDetailsSchema = z.object({
   class_rank: z.string().max(10).nullable().optional(),
 });
 
-// Main product schema
-export const productSchema = z.object({
-  name: z.string().min(1, "Le nom est requis").max(255),
-  brand: z.string().min(1, "La marque est requise").max(255),
-  reference: z.string().min(1, "La reference est requise").max(255),
-  price_ht: z.coerce.number().min(0, "Le prix doit etre positif"),
-  category: z.enum(["HEAT_PUMP", "THERMOSTAT", "OTHER"]),
-  product_type: z.enum(["MATERIAL", "LABOR", "SERVICE"]).default("MATERIAL"),
-  module_codes: z.array(z.string()).nullable().optional(),
-  image_url: z.string().max(500).nullable().optional(),
-  description: z.string().nullable().optional(),
-  is_active: z.boolean().default(true),
-  heat_pump_details: heatPumpDetailsSchema.nullable().optional(),
-  thermostat_details: thermostatDetailsSchema.nullable().optional(),
-  compatible_product_ids: z.array(z.string()).nullable().optional(),
-});
+// Main product schema with conditional validation
+export const productSchema = z
+  .object({
+    name: z.string().min(1, "Le nom est requis").max(255),
+    brand: z.string().max(255).nullable().optional(),
+    reference: z.string().max(255).nullable().optional(),
+    price_ht: z.coerce.number().min(0, "Le prix doit etre positif"),
+    category: z.enum(["HEAT_PUMP", "THERMOSTAT", "LABOR", "OTHER"]),
+    product_type: z.enum(["MATERIAL", "LABOR", "SERVICE"]).default("MATERIAL"),
+    module_codes: z.array(z.string()).nullable().optional(),
+    image_url: z.string().max(500).nullable().optional(),
+    description: z.string().nullable().optional(),
+    is_active: z.boolean().default(true),
+    heat_pump_details: heatPumpDetailsSchema.nullable().optional(),
+    thermostat_details: thermostatDetailsSchema.nullable().optional(),
+    compatible_product_ids: z.array(z.string()).nullable().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // Validation conditionnelle selon la categorie
+    if (data.category === "HEAT_PUMP" || data.category === "THERMOSTAT") {
+      if (!data.brand || data.brand.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La marque est requise",
+          path: ["brand"],
+        });
+      }
+      if (!data.reference || data.reference.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La reference est requise",
+          path: ["reference"],
+        });
+      }
+    }
+    // LABOR et OTHER: brand et reference optionnels
+  });
 
 export type ProductFormValues = z.input<typeof productSchema>;
 

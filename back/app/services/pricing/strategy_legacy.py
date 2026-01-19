@@ -172,8 +172,14 @@ class LegacyGridPricingStrategy(PricingStrategy):
 
             # Verifier la plage surface
             surface_min = rule.get("surface_min", 0)
-            surface_max = rule.get("surface_max", 9999)
-            if not (surface_min <= surface < surface_max):
+            surface_max = rule.get("surface_max")  # None = illimite
+            
+            # Verifier la borne inferieure
+            if surface < surface_min:
+                continue
+            
+            # Verifier la borne superieure (si definie)
+            if surface_max is not None and surface >= surface_max:
                 continue
 
             # Verifier le profil MPR

@@ -84,7 +84,7 @@ const legacyGridRuleSchema = z.object({
   etas_min: z.number().int().min(100, "ETAS min >= 100"),
   etas_max: z.number().int().max(300, "ETAS max <= 300"),
   surface_min: z.number().int().min(0, "Surface min >= 0"),
-  surface_max: z.number().int().max(9999, "Surface max <= 9999"),
+  surface_max: z.number().int().min(0, "Surface max >= 0").nullable().optional(),
   mpr_profile: z.string().min(1, "Profil MPR requis"),
   rac_amount: z.number().positive("RAC positif requis"),
 });
@@ -188,7 +188,7 @@ export default function ModuleSettingsPage({
       const heatPumps = productsResponse.items.filter(
         (p) => p.category === "HEAT_PUMP"
       );
-      const uniqueBrands = [...new Set(heatPumps.map((p) => p.brand))];
+      const uniqueBrands = [...new Set(heatPumps.map((p) => p.brand).filter((b): b is string => b !== null))];
       setBrands(uniqueBrands);
 
       // Set form values
@@ -246,7 +246,7 @@ export default function ModuleSettingsPage({
       etas_min: 111,
       etas_max: 140,
       surface_min: 70,
-      surface_max: 130,
+      surface_max: null,
       mpr_profile: "Bleu",
       rac_amount: 1990,
     });
@@ -728,11 +728,13 @@ export default function ModuleSettingsPage({
                                 render={({ field }) => (
                                   <Input
                                     type="number"
+                                    placeholder="Illimite"
                                     className="w-20"
-                                    {...field}
-                                    onChange={(e) =>
-                                      field.onChange(parseInt(e.target.value) || 9999)
-                                    }
+                                    value={field.value ?? ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      field.onChange(val === "" ? null : parseInt(val) || null);
+                                    }}
                                   />
                                 )}
                               />
