@@ -44,3 +44,8 @@ yarn-error.log*
 # --- Exceptions (Do NOT ignore) ---
 !.cursor/rules/
 !.cursorrules
+
+# --- External References ---
+/pacassistbot/
+
+CODING_STANDARDS.md

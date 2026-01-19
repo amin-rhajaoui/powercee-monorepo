@@ -94,6 +94,12 @@ class PricingService:
             property_type=property_data.type.value if property_data and property_data.type else "MAISON",
             emitter_type=folder.emitter_type,
             products=products,
+            # Extraire les infos de Step 2 qui sont dans folder.data['step2'] normalement
+            old_heating_system=folder.data.get('step2', {}).get('heating_system'),
+            old_boiler_brand=folder.data.get('step2', {}).get('old_boiler_brand'),
+            electrical_phase=folder.data.get('step2', {}).get('electrical_phase'),
+            usage_mode=folder.data.get('step2', {}).get('usage_mode'),
+            power_kva=folder.data.get('step2', {}).get('power_kva'),
         )
 
         # Extraire les valeurs ETAS du produit PAC

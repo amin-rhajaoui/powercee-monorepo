@@ -8,6 +8,7 @@ def round_to_x90(amount: float) -> float:
     Arrondit au X90 inferieur le plus proche (490, 990, 1490, 1990...).
 
     Algorithme:
+    - Si montant <= 100: retourne le montant tel quel (valeurs symboliques)
     - Si montant < 490: retourne 0
     - Sinon, trouve le palier X90 inferieur ou egal
 
@@ -19,6 +20,7 @@ def round_to_x90(amount: float) -> float:
         round_to_x90(2000) -> 1990
         round_to_x90(2490) -> 2490
         round_to_x90(400)  -> 0
+        round_to_x90(1)    -> 1 (valeur symbolique preservee)
 
     Args:
         amount: Montant a arrondir
@@ -26,6 +28,10 @@ def round_to_x90(amount: float) -> float:
     Returns:
         Montant arrondi au X90 inferieur
     """
+    # Preserver les valeurs symboliques (ex: 1€ dans les grilles)
+    if amount <= 100:
+        return amount
+    
     if amount < 490:
         return 0
 

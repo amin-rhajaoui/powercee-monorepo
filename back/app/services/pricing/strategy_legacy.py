@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from .base import PricingStrategy, PricingContext, QuoteLine, QuotePreview
 from .rounding import round_to_x90
+from .helpers import generate_product_description
 
 if TYPE_CHECKING:
     from app.models.module_settings import ModuleSettings
@@ -161,7 +162,8 @@ class LegacyGridPricingStrategy(PricingStrategy):
         """Trouve une regle correspondant aux criteres."""
         for rule in rules:
             # Verifier la marque (case insensitive)
-            if rule.get("brand", "").lower() != brand.lower():
+            rule_brand = rule.get("brand", "")
+            if rule_brand.lower() != brand.lower():
                 continue
 
             # Verifier la plage ETAS
@@ -212,8 +214,8 @@ class LegacyGridPricingStrategy(PricingStrategy):
         for product in context.products:
             line = QuoteLine(
                 product_id=product.id,
-                title=f"{product.brand} {product.name}",
-                description=product.description or "",
+                title=f"{product.brand or ''} {product.name}",
+                description=generate_product_description(product, context),
                 quantity=1,
                 unit_price_ht=product.price_ht,
                 tva_rate=5.5,

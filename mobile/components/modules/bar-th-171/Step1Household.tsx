@@ -1,3 +1,8 @@
+/**
+ * Step1Household - Simplified
+ * Just a client picker, no modal, no add button inline
+ */
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -111,26 +116,42 @@ export function Step1Household({ draftId, initialDraft }: Step1HouseholdProps) {
             {/* Content */}
             <ScrollView className="flex-1 px-4 py-6">
                 <View className="mb-6">
-                    <Text className="text-lg font-semibold text-gray-900 mb-2">Informations du foyer</Text>
-                    <Text className="text-gray-600">Sélectionnez ou créez un client particulier pour ce dossier</Text>
+                    <Text className="text-lg font-semibold text-gray-900 mb-2">
+                        Sélection du foyer
+                    </Text>
+                    <Text className="text-gray-600">
+                        Choisissez le client particulier pour ce dossier CEE
+                    </Text>
                 </View>
 
-                <View className="flex-row gap-3 items-center">
-                    <View className="flex-1">
-                        <ClientSelector value={clientId} onChange={handleClientChange} disabled={isCheckingDraft} />
-                    </View>
-                    <TouchableOpacity
-                        onPress={() => router.push('/(app)/clients/add')}
-                        className="w-14 h-14 bg-white rounded-xl items-center justify-center border border-gray-200 shadow-sm"
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="person-add-outline" size={24} color="#0066FF" />
-                    </TouchableOpacity>
-                </View>
+                {/* Client Picker */}
+                <ClientSelector
+                    value={clientId}
+                    onChange={handleClientChange}
+                    disabled={isCheckingDraft}
+                    clientType="PARTICULIER"
+                />
 
                 {isCheckingDraft && (
-                    <Text className="text-sm text-gray-500 mt-2">Vérification d'un brouillon existant...</Text>
+                    <Text className="text-sm text-gray-500 mt-3">
+                        Vérification d'un brouillon existant...
+                    </Text>
                 )}
+
+                {/* Info Card */}
+                <View className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <View className="flex-row items-start gap-3">
+                        <Ionicons name="information-circle" size={20} color="#0066FF" />
+                        <View className="flex-1">
+                            <Text className="text-sm text-blue-800 font-medium mb-1">
+                                Module BAR-TH-171
+                            </Text>
+                            <Text className="text-sm text-blue-700">
+                                Pompe à chaleur Air/Eau - Clients particuliers uniquement
+                            </Text>
+                        </View>
+                    </View>
+                </View>
             </ScrollView>
 
             {/* Footer */}

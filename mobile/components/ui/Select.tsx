@@ -1,184 +1,282 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { cn } from '@/lib/utils';
-import { Button } from './Button';
-import { Feather } from '@expo/vector-icons'; // Assuming Feather is available in expo/vector-icons
+/**
+ * NativePicker - Base component for all native picker-based selects
+ * DRY principle: Single source of truth for picker styling and behavior
+ */
 
-interface Option {
+import React from 'react';
+import { View, Text, ActivityIndicator, Platform } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { cn } from '@/lib/utils';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface PickerOption<T = string> {
+  label: string;
+  value: T;
+}
+
+export interface NativePickerProps<T = string> {
+  /** Label displayed above the picker */
+  label?: string;
+  /** Currently selected value */
+  value: T | null;
+  /** Available options */
+  options: PickerOption<T>[];
+  /** Callback when value changes */
+  onChange: (value: T | null) => void;
+  /** Placeholder text when no value selected */
+  placeholder?: string;
+  /** Error message to display */
+  error?: string;
+  /** Whether the picker is disabled */
+  disabled?: boolean;
+  /** Whether options are loading */
+  loading?: boolean;
+  /** Additional CSS classes */
+  className?: string;
+  /** Warning/info message below picker */
+  helperText?: string;
+  /** Helper text color variant */
+  helperVariant?: 'info' | 'warning' | 'error';
+}
+
+// ============================================================================
+// Component
+// ============================================================================
+
+export function NativePicker<T extends string | number | boolean = string>({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = 'Sélectionner...',
+  error,
+  disabled = false,
+  loading = false,
+  className,
+  helperText,
+  helperVariant = 'info',
+}: NativePickerProps<T>) {
+  // Loading state
+  if (loading) {
+    return (
+      <View className={cn('w-full mb-4', className)}>
+        {label && (
+          <Text className="mb-2 text-sm font-medium text-gray-700">{label}</Text>
+        )}
+        <View className="h-14 bg-gray-100 rounded-xl items-center justify-center">
+          <ActivityIndicator size="small" color="#0066FF" />
+        </View>
+      </View>
+    );
+  }
+
+  // Helper text color
+  const helperColors = {
+    info: 'text-blue-600',
+    warning: 'text-amber-600',
+    error: 'text-red-600',
+  };
+
+  return (
+    <View className={cn('w-full mb-4', className)}>
+      {label && (
+        <Text className="mb-2 text-sm font-medium text-gray-700">{label}</Text>
+      )}
+
+      <View
+        className={cn(
+          'rounded-xl border bg-white overflow-hidden',
+          error ? 'border-red-500' : 'border-gray-300',
+          disabled && 'opacity-50'
+        )}
+      >
+        <Picker
+          selectedValue={value ?? ('' as T)}
+          onValueChange={(itemValue) => {
+            onChange(itemValue === '' ? null : (itemValue as T));
+          }}
+          enabled={!disabled && options.length > 0}
+          style={{
+            height: Platform.OS === 'ios' ? 150 : 56,
+          }}
+          itemStyle={{
+            fontSize: 16,
+          }}
+        >
+          <Picker.Item label={placeholder} value="" color="#9CA3AF" />
+          {options.map((option, index) => (
+            <Picker.Item
+              key={index}
+              label={option.label}
+              value={option.value}
+            />
+          ))}
+        </Picker>
+      </View>
+
+      {error && (
+        <Text className="mt-1 px-1 text-xs text-red-500">{error}</Text>
+      )}
+
+      {helperText && !error && (
+        <Text className={cn('mt-1 text-sm', helperColors[helperVariant])}>
+          {helperText}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+// ============================================================================
+// Specialized Components (Composition over Inheritance)
+// ============================================================================
+
+/**
+ * Select - Simple select for static options
+ * Uses NativePicker under the hood
+ */
+interface SelectProps {
+  label?: string;
+  value?: string | number | boolean | null;
+  options: { label: string; value: string | number | boolean }[];
+  onValueChange: (value: any) => void;
+  placeholder?: string;
+  error?: string;
+  className?: string;
+  disabled?: boolean;
+}
+
+export function Select({
+  value,
+  options,
+  onValueChange,
+  ...props
+}: SelectProps) {
+  return (
+    <NativePicker
+      value={value ?? null}
+      options={options.map((o) => ({ label: o.label, value: o.value as any }))}
+      onChange={onValueChange}
+      {...props}
+    />
+  );
+}
+
+/**
+ * RadioGroup - Card-based selection for 2-4 options
+ * Better UX for binary choices like Yes/No
+ */
+interface RadioOption {
   label: string;
   value: string | number | boolean;
   description?: string;
 }
 
-interface SelectProps {
+interface RadioGroupProps {
   label?: string;
   value?: string | number | boolean | null;
-  options: Option[];
+  options: RadioOption[];
   onValueChange: (value: any) => void;
-  placeholder?: string;
-  error?: string;
   className?: string;
+  horizontal?: boolean;
 }
 
-export function Select({
-  label,
-  value,
-  options,
-  onValueChange,
-  placeholder = "Sélectionner...",
-  error,
-  className,
-}: SelectProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  const selectedOption = options.find((opt) => opt.value === value);
-
-  return (
-    <View className={cn("w-full mb-4", className)}>
-      {label && (
-        <Text className="mb-2 text-sm font-medium text-foreground">
-          {label}
-        </Text>
-      )}
-
-      <TouchableOpacity
-        onPress={() => setIsOpen(true)}
-        className={cn(
-          "h-14 w-full flex-row items-center justify-between rounded-xl border border-input bg-background px-4",
-          error && "border-destructive"
-        )}
-        activeOpacity={0.8}
-      >
-        <Text className={cn(
-          "text-base",
-          selectedOption ? "text-foreground" : "text-muted-foreground"
-        )}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </Text>
-        <Feather name="chevron-down" size={20} color="#64748B" />
-      </TouchableOpacity>
-
-      {error && (
-        <Text className="mt-1 px-1 text-xs text-destructive">
-          {error}
-        </Text>
-      )}
-
-      <Modal
-        visible={isOpen}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setIsOpen(false)}
-      >
-        <SafeAreaView className="flex-1 bg-background">
-          <View className="flex-row items-center justify-between border-b border-border p-4">
-            <Text className="text-lg font-bold text-foreground">
-              {label || "Sélectionner"}
-            </Text>
-            <TouchableOpacity onPress={() => setIsOpen(false)} className="p-2">
-              <Feather name="x" size={24} color="#1A1F2E" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView className="flex-1 p-4">
-            <View className="gap-3 pb-8">
-              {options.map((option, index) => {
-                const isSelected = option.value === value;
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => {
-                      onValueChange(option.value);
-                      setIsOpen(false);
-                    }}
-                    className={cn(
-                      "flex-row items-center justify-between rounded-xl border p-4",
-                      isSelected
-                        ? "border-primary bg-primary/5"
-                        : "border-input bg-card"
-                    )}
-                  >
-                    <View className="flex-1">
-                      <Text className={cn(
-                        "text-lg font-semibold",
-                        isSelected ? "text-primary" : "text-foreground"
-                      )}>
-                        {option.label}
-                      </Text>
-                      {option.description && (
-                        <Text className="mt-1 text-sm text-muted-foreground">
-                          {option.description}
-                        </Text>
-                      )}
-                    </View>
-                    {isSelected && (
-                      <Feather name="check" size={20} color="#8B1A2B" />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
-    </View>
-  );
-}
-
-// Simple Radio Group alternative for fewer options
 export function RadioGroup({
   label,
   value,
   options,
   onValueChange,
   className,
-}: SelectProps) {
+  horizontal = false,
+}: RadioGroupProps) {
   return (
-    <View className={cn("w-full mb-4", className)}>
+    <View className={cn('w-full mb-4', className)}>
       {label && (
-        <Text className="mb-2 text-sm font-medium text-foreground">
-          {label}
-        </Text>
+        <Text className="mb-2 text-sm font-medium text-gray-700">{label}</Text>
       )}
-      <View className="gap-3">
+      <View className={cn(horizontal ? 'flex-row gap-3' : 'gap-2')}>
         {options.map((option, index) => {
           const isSelected = option.value === value;
           return (
-            <TouchableOpacity
-              key={index}
-              onPress={() => onValueChange(option.value)}
-              className={cn(
-                "flex-row items-center gap-3 rounded-xl border p-4",
-                isSelected
-                  ? "border-primary bg-primary/5"
-                  : "border-input bg-card"
-              )}
-              activeOpacity={0.8}
-            >
-              <View className={cn(
-                "h-6 w-6 rounded-full border-2 items-center justify-center",
-                isSelected ? "border-primary" : "border-muted-foreground"
-              )}>
-                {isSelected && <View className="h-3 w-3 rounded-full bg-primary" />}
-              </View>
-              <View className="flex-1">
-                <Text className={cn(
-                  "text-base font-medium",
-                  isSelected ? "text-primary" : "text-foreground"
-                )}>
-                  {option.label}
-                </Text>
-                {option.description && (
-                  <Text className="text-sm text-muted-foreground">
-                    {option.description}
-                  </Text>
+            <View key={index} className={horizontal ? 'flex-1' : 'w-full'}>
+              <View
+                className={cn(
+                  'flex-row items-center gap-3 rounded-xl border p-4',
+                  isSelected
+                    ? 'border-primary bg-blue-50'
+                    : 'border-gray-200 bg-white'
                 )}
+                onTouchEnd={() => onValueChange(option.value)}
+              >
+                <View
+                  className={cn(
+                    'h-5 w-5 rounded-full border-2 items-center justify-center',
+                    isSelected ? 'border-primary' : 'border-gray-400'
+                  )}
+                >
+                  {isSelected && (
+                    <View className="h-2.5 w-2.5 rounded-full bg-primary" />
+                  )}
+                </View>
+                <View className="flex-1">
+                  <Text
+                    className={cn(
+                      'text-base font-medium',
+                      isSelected ? 'text-primary' : 'text-gray-900'
+                    )}
+                  >
+                    {option.label}
+                  </Text>
+                  {option.description && (
+                    <Text className="text-sm text-gray-500">
+                      {option.description}
+                    </Text>
+                  )}
+                </View>
               </View>
-            </TouchableOpacity>
-          )
+            </View>
+          );
         })}
       </View>
     </View>
-  )
+  );
+}
+
+/**
+ * BooleanSelect - Yes/No binary choice
+ * Convenience wrapper around RadioGroup
+ */
+interface BooleanSelectProps {
+  label?: string;
+  value?: boolean | null;
+  onValueChange: (value: boolean) => void;
+  yesLabel?: string;
+  noLabel?: string;
+  className?: string;
+}
+
+export function BooleanSelect({
+  label,
+  value,
+  onValueChange,
+  yesLabel = 'Oui',
+  noLabel = 'Non',
+  className,
+}: BooleanSelectProps) {
+  return (
+    <RadioGroup
+      label={label}
+      value={value}
+      options={[
+        { label: yesLabel, value: true },
+        { label: noLabel, value: false },
+      ]}
+      onValueChange={onValueChange}
+      className={className}
+      horizontal
+    />
+  );
 }

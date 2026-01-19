@@ -15,9 +15,12 @@ const MODULE_CODE = 'BAR-TH-171';
 
 export default function BarTh171Index() {
     const router = useRouter();
-    const { draftId } = useLocalSearchParams<{ draftId?: string }>();
+    const { draftId, step } = useLocalSearchParams<{ draftId?: string; step?: string }>();
     const [isRedirecting, setIsRedirecting] = useState(false);
     const [hasRedirected, setHasRedirected] = useState(false);
+
+    // If step=1 is explicitly passed, don't auto-redirect
+    const forceStep1 = step === '1';
 
     // Load draft to check current_step for redirect
     const { draft, isLoading } = useModuleDraft({
@@ -26,9 +29,10 @@ export default function BarTh171Index() {
         draftId: draftId && draftId !== 'new' ? draftId : null,
     });
 
-    // Redirect to correct step based on current_step
+    // Redirect to correct step based on current_step (unless forced to step 1)
     useEffect(() => {
         if (
+            !forceStep1 &&
             draft &&
             draftId &&
             draftId !== 'new' &&
@@ -48,14 +52,14 @@ export default function BarTh171Index() {
                 router.replace(route as any);
             }
         }
-    }, [draft, draftId, hasRedirected, isRedirecting, router]);
+    }, [draft, draftId, hasRedirected, isRedirecting, router, forceStep1]);
 
     const handleNewDraft = () => {
         router.push('/(app)/bar-th-171?draftId=new');
     };
 
-    // Show loading while checking draft
-    if (draftId && draftId !== 'new' && (isLoading || isRedirecting)) {
+    // Show loading while checking draft (but not if forced to step 1)
+    if (!forceStep1 && draftId && draftId !== 'new' && (isLoading || isRedirecting)) {
         return (
             <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center">
                 <ActivityIndicator size="large" color="#0066FF" />

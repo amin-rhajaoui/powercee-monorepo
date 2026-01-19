@@ -1,18 +1,11 @@
 /**
- * PropertySelector Component
- * Modal picker for selecting or creating a property for a client
+ * PropertySelector - Uses NativePicker base component
+ * DRY: All picker logic is in NativePicker, this just handles data fetching
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    Modal,
-    FlatList,
-    ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text } from 'react-native';
+import { NativePicker, PickerOption } from '@/components/ui/Select';
 import { Property, listProperties } from '@/lib/api/properties';
 
 // ============================================================================
@@ -27,6 +20,15 @@ interface PropertySelectorProps {
 }
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+function getPropertyDisplayName(property: Property): string {
+    const typeEmoji = property.type === 'MAISON' ? '🏠' : '🏢';
+    return `${typeEmoji} ${property.address}, ${property.postal_code || ''} ${property.city}`;
+}
+
+// ============================================================================
 // Component
 // ============================================================================
 
@@ -36,186 +38,70 @@ export function PropertySelector({
     onChange,
     disabled = false,
 }: PropertySelectorProps) {
-    const [isModalVisible, setIsModalVisible] = useState(false);
     const [properties, setProperties] = useState<Property[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
-    // Load properties for the client
+    // Load properties when clientId changes
     useEffect(() => {
         async function loadProperties() {
             if (!clientId) {
                 setProperties([]);
+                onChange(null);
                 return;
             }
 
             setIsLoading(true);
             try {
-                const result = await listProperties(clientId);
-                setProperties(result);
+                const result = await listProperties({ client_id: clientId });
+                setProperties(result.items);
+
+                // Auto-select if only one property
+                if (result.items.length === 1 && !value) {
+                    onChange(result.items[0].id);
+                }
             } catch (error) {
                 console.error('Error loading properties:', error);
             } finally {
                 setIsLoading(false);
             }
         }
+        loadProperties();
+    }, [clientId]);
 
-        if (isModalVisible && clientId) {
-            loadProperties();
-        }
-    }, [isModalVisible, clientId]);
-
-    // Load selected property details
-    useEffect(() => {
-        if (value && properties.length > 0) {
-            const property = properties.find((p) => p.id === value);
-            if (property) {
-                setSelectedProperty(property);
-            }
-        }
-    }, [value, properties]);
-
-    const getPropertyDisplayName = (property: Property): string => {
-        return `${property.address}, ${property.postal_code} ${property.city}`;
-    };
-
-    const getPropertyTypeLabel = (type: string): string => {
-        return type === 'MAISON' ? 'Maison' : 'Appartement';
-    };
-
-    const handleSelectProperty = (property: Property) => {
-        setSelectedProperty(property);
-        onChange(property.id);
-        setIsModalVisible(false);
-    };
-
-    const handleClear = () => {
-        setSelectedProperty(null);
-        onChange(null);
-    };
-
+    // No client selected state
     if (!clientId) {
         return (
-            <View>
-                <Text className="text-sm font-medium text-gray-700 mb-2">Logement</Text>
-                <View className="p-4 border border-gray-200 rounded-xl bg-gray-50">
-                    <Text className="text-gray-500 text-center">
-                        Veuillez d'abord sélectionner un client
-                    </Text>
+            <View className="w-full mb-4">
+                <Text className="mb-2 text-sm font-medium text-gray-700">Logement</Text>
+                <View className="h-14 bg-gray-100 rounded-xl items-center justify-center">
+                    <Text className="text-gray-400 text-sm">Sélectionnez d'abord un client</Text>
                 </View>
             </View>
         );
     }
 
+    // Transform properties to picker options
+    const options: PickerOption<string>[] = properties.map((property) => ({
+        label: getPropertyDisplayName(property),
+        value: property.id,
+    }));
+
+    // Helper text if no properties
+    const helperText = !isLoading && properties.length === 0
+        ? 'Aucun logement trouvé pour ce client'
+        : undefined;
+
     return (
-        <View>
-            <Text className="text-sm font-medium text-gray-700 mb-2">Logement</Text>
-
-            <TouchableOpacity
-                onPress={() => !disabled && setIsModalVisible(true)}
-                disabled={disabled}
-                className="flex-row items-center justify-between p-4 border border-gray-300 rounded-xl bg-white"
-                style={{ opacity: disabled ? 0.5 : 1 }}
-                activeOpacity={0.7}
-            >
-                {selectedProperty ? (
-                    <View className="flex-row items-center flex-1">
-                        <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center mr-3">
-                            <Ionicons
-                                name={selectedProperty.type === 'MAISON' ? 'home' : 'business'}
-                                size={20}
-                                color="#0066FF"
-                            />
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-gray-900 font-medium" numberOfLines={1}>
-                                {getPropertyDisplayName(selectedProperty)}
-                            </Text>
-                            <Text className="text-gray-500 text-sm">
-                                {getPropertyTypeLabel(selectedProperty.type)}
-                                {selectedProperty.living_area && ` • ${selectedProperty.living_area}m²`}
-                            </Text>
-                        </View>
-                        <TouchableOpacity onPress={handleClear} className="p-2">
-                            <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-                        </TouchableOpacity>
-                    </View>
-                ) : (
-                    <View className="flex-row items-center">
-                        <Ionicons name="home-outline" size={20} color="#6B7280" />
-                        <Text className="text-gray-500 ml-2">Sélectionner un logement</Text>
-                    </View>
-                )}
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-            </TouchableOpacity>
-
-            {/* Modal */}
-            <Modal
-                visible={isModalVisible}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setIsModalVisible(false)}
-            >
-                <View className="flex-1 bg-white">
-                    {/* Header */}
-                    <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
-                        <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                            <Text className="text-primary font-medium">Annuler</Text>
-                        </TouchableOpacity>
-                        <Text className="text-lg font-semibold">Sélectionner un logement</Text>
-                        <View style={{ width: 60 }} />
-                    </View>
-
-                    {/* List */}
-                    {isLoading ? (
-                        <View className="flex-1 items-center justify-center">
-                            <ActivityIndicator size="large" color="#0066FF" />
-                        </View>
-                    ) : (
-                        <FlatList
-                            data={properties}
-                            keyExtractor={(item) => item.id}
-                            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8 }}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    onPress={() => handleSelectProperty(item)}
-                                    className="flex-row items-center py-4 border-b border-gray-100"
-                                    activeOpacity={0.7}
-                                >
-                                    <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center mr-3">
-                                        <Ionicons
-                                            name={item.type === 'MAISON' ? 'home' : 'business'}
-                                            size={24}
-                                            color="#0066FF"
-                                        />
-                                    </View>
-                                    <View className="flex-1">
-                                        <Text className="text-gray-900 font-medium" numberOfLines={2}>
-                                            {getPropertyDisplayName(item)}
-                                        </Text>
-                                        <Text className="text-gray-500 text-sm">
-                                            {getPropertyTypeLabel(item.type)}
-                                            {item.living_area && ` • ${item.living_area}m²`}
-                                            {item.construction_year && ` • Construit en ${item.construction_year}`}
-                                        </Text>
-                                    </View>
-                                    {value === item.id && (
-                                        <Ionicons name="checkmark-circle" size={24} color="#0066FF" />
-                                    )}
-                                </TouchableOpacity>
-                            )}
-                            ListEmptyComponent={
-                                <View className="items-center py-12">
-                                    <Ionicons name="home-outline" size={48} color="#D1D5DB" />
-                                    <Text className="text-gray-500 mt-4 text-center">
-                                        Aucun logement trouvé{'\n'}pour ce client
-                                    </Text>
-                                </View>
-                            }
-                        />
-                    )}
-                </View>
-            </Modal>
-        </View>
+        <NativePicker
+            label="Logement"
+            value={value}
+            options={options}
+            onChange={onChange}
+            placeholder="Sélectionner un logement..."
+            disabled={disabled}
+            loading={isLoading}
+            helperText={helperText}
+            helperVariant="warning"
+        />
     );
 }

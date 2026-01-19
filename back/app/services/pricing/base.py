@@ -64,6 +64,13 @@ class PricingContext:
     # Produits charges (avec details PAC)
     products: list["Product"] = field(default_factory=list)
 
+    # Donnees techniques (Step 2)
+    old_heating_system: str | None = None
+    old_boiler_brand: str | None = None
+    electrical_phase: str | None = None
+    usage_mode: str | None = None
+    power_kva: int | None = None
+
     # Donnees calculees
     etas_35: int | None = None
     etas_55: int | None = None

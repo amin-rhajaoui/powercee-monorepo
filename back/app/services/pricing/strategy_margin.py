@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from .base import PricingStrategy, PricingContext, QuoteLine, QuotePreview
 from .rounding import round_to_x90
+from .helpers import generate_product_description
 
 if TYPE_CHECKING:
     from app.models.module_settings import ModuleSettings
@@ -53,8 +54,16 @@ class MarginBasedPricingStrategy(PricingStrategy):
         # 3. Convertir en TTC (TVA 5.5%)
         price_floor_ttc = price_floor_ht * 1.055
 
-        # 4. Calculer le RAC minimum
-        rac_minimum = price_floor_ttc - cee_prime
+        # 4. Calculer le RAC minimum (jamais negatif - si CEE > TTC, la societe absorbe)
+        rac_calculated = price_floor_ttc - cee_prime
+        if rac_calculated < 0:
+            warnings.append(
+                f"Prime CEE ({cee_prime:.2f}€) superieure au prix plancher ({price_floor_ttc:.2f}€). "
+                f"RAC minimum applique: 1€."
+            )
+            rac_minimum = 1.0  # RAC symbolique minimum comme le chatbot
+        else:
+            rac_minimum = rac_calculated
 
         # 5. Determiner le RAC final
         if context.target_rac is not None:
@@ -148,8 +157,8 @@ class MarginBasedPricingStrategy(PricingStrategy):
         for product in context.products:
             line = QuoteLine(
                 product_id=product.id,
-                title=f"{product.brand} {product.name}",
-                description=product.description or "",
+                title=f"{product.brand or ''} {product.name}",
+                description=generate_product_description(product, context),
                 quantity=1,
                 unit_price_ht=product.price_ht,
                 tva_rate=5.5,

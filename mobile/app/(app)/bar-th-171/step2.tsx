@@ -104,15 +104,13 @@ export default function Step2Property() {
     }, [draftData.step2]);
 
     const handlePrevious = async () => {
-        if (form.getValues('property_id')) {
-            navigate(
-                () => saveDraft({ step2: { ...form.getValues() } as any }, 1),
-                (id) => `/(app)/bar-th-171?draftId=${id}`,
-                'replace'
-            );
-        } else {
-            router.push(`/(app)/bar-th-171?draftId=${draftId}`);
+        // Save current progress if any, then go back
+        const values = form.getValues();
+        if (values.property_id) {
+            await saveDraft({ step2: values as any }, 1);
         }
+        // Always navigate back to step 1
+        router.replace(`/(app)/bar-th-171?draftId=${draftId}&step=1`);
     };
 
     const handleNext = async () => {
@@ -225,23 +223,12 @@ export default function Step2Property() {
             {/* Content */}
             <ScrollView className="flex-1 px-4 py-4" keyboardShouldPersistTaps="handled">
                 {/* Property Selector */}
-                <View className="mb-6 flex-row gap-3 items-center">
-                    <View className="flex-1">
-                        <PropertySelector
-                            clientId={clientId}
-                            value={propertyId || null}
-                            onChange={(id) => form.setValue('property_id', id || '', { shouldValidate: true })}
-                        />
-                    </View>
-                    <TouchableOpacity
-                        onPress={() => Alert.alert('Information', 'La création de logement sera disponible prochainement.')}
-                        className="w-14 h-14 bg-white rounded-xl items-center justify-center border border-gray-200 shadow-sm"
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="home-outline" size={24} color="#0066FF" />
-                        <View className="absolute top-3 right-3 w-3 h-3 bg-primary rounded-full border-2 border-white" />
-                        <Ionicons name="add" size={12} color="white" style={{ position: 'absolute', top: 3, right: 3 }} />
-                    </TouchableOpacity>
+                <View className="mb-6">
+                    <PropertySelector
+                        clientId={clientId}
+                        value={propertyId || null}
+                        onChange={(id) => form.setValue('property_id', id || '', { shouldValidate: true })}
+                    />
                 </View>
 
                 {/* Résidence principale */}
