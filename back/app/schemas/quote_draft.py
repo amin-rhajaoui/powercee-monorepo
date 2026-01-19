@@ -7,7 +7,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class QuoteLine(BaseModel):
     """Représente une ligne de devis."""
-    description: str = Field(..., description="Description de la ligne")
+    product_id: str | None = Field(None, description="ID du produit (null si ligne fixe)")
+    title: str = Field(..., description="Titre de la ligne")
+    description: str = Field("", description="Description enrichie de la ligne")
     quantity: int = Field(..., ge=1, description="Quantité")
     unit_price_ht: float = Field(..., ge=0, description="Prix unitaire HT")
     total_ht: float = Field(..., ge=0, description="Total HT de la ligne")

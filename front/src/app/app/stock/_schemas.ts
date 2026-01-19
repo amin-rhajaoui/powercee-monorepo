@@ -6,6 +6,12 @@ export const categoryOptions = [
   { value: "OTHER", label: "Autre" },
 ] as const;
 
+export const productTypeOptions = [
+  { value: "MATERIAL", label: "Materiel" },
+  { value: "LABOR", label: "Main d'oeuvre" },
+  { value: "SERVICE", label: "Service" },
+] as const;
+
 export const powerSupplyOptions = [
   { value: "MONOPHASE", label: "Monophase" },
   { value: "TRIPHASE", label: "Triphase" },
@@ -43,6 +49,7 @@ export const productSchema = z.object({
   reference: z.string().min(1, "La reference est requise").max(255),
   price_ht: z.coerce.number().min(0, "Le prix doit etre positif"),
   category: z.enum(["HEAT_PUMP", "THERMOSTAT", "OTHER"]),
+  product_type: z.enum(["MATERIAL", "LABOR", "SERVICE"]).default("MATERIAL"),
   module_codes: z.array(z.string()).nullable().optional(),
   image_url: z.string().max(500).nullable().optional(),
   description: z.string().nullable().optional(),
@@ -61,6 +68,7 @@ export const defaultProductValues: ProductFormValues = {
   reference: "",
   price_ht: 0,
   category: "HEAT_PUMP",
+  product_type: "MATERIAL",
   module_codes: [],
   image_url: null,
   description: null,

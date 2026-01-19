@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { TrendingUp } from "lucide-react";
 
 interface QuoteSummaryProps {
@@ -11,6 +12,7 @@ interface QuoteSummaryProps {
   racTtc: number;
   marginHt: number;
   marginPercent: number;
+  onUpdateRac?: (value: number) => void;
 }
 
 function formatCurrency(amount: number): string {
@@ -28,6 +30,7 @@ export function QuoteSummary({
   racTtc,
   marginHt,
   marginPercent,
+  onUpdateRac,
 }: QuoteSummaryProps) {
   return (
     <Card>
@@ -54,7 +57,18 @@ export function QuoteSummary({
 
         <div className="flex justify-between text-lg font-bold">
           <span>Reste à Charge</span>
-          <span>{formatCurrency(racTtc)}</span>
+          {onUpdateRac ? (
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={racTtc}
+              onChange={(e) => onUpdateRac(parseFloat(e.target.value) || 0)}
+              className="h-8 w-28 text-right font-bold"
+            />
+          ) : (
+            <span>{formatCurrency(racTtc)}</span>
+          )}
         </div>
 
         <Separator />

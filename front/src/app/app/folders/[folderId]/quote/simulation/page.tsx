@@ -49,6 +49,7 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [customRac, setCustomRac] = useState<number | null>(null);
 
   // Auto-save timer
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -112,7 +113,9 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
         const updated = [...prev];
         const line = { ...updated[index] };
 
-        if (field === "description") {
+        if (field === "title") {
+          line.title = value as string;
+        } else if (field === "description") {
           line.description = value as string;
         } else if (field === "unit_price_ht") {
           const price = parseFloat(value as string) || 0;
@@ -134,18 +137,33 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
     []
   );
 
+  const handleUpdateRac = useCallback((value: number) => {
+    setCustomRac(value);
+    setHasUnsavedChanges(true);
+  }, []);
+
   const handleAutoSave = useCallback(async () => {
     if (!quote) return;
 
     try {
-      const totals = editedLines.reduce(
+      const baseTotals = editedLines.reduce(
         (acc, line) => ({
           total_ht: acc.total_ht + line.total_ht,
           total_ttc: acc.total_ttc + line.total_ttc,
-          rac_ttc: acc.total_ttc + line.total_ttc - (quote?.cee_prime || 0),
         }),
-        { total_ht: 0, total_ttc: 0, rac_ttc: 0 }
+        { total_ht: 0, total_ttc: 0 }
       );
+
+      const ceePrime = quote.cee_prime;
+      const calculatedRac = baseTotals.total_ttc - ceePrime;
+
+      let finalTotalTtc = baseTotals.total_ttc;
+      let finalRac = calculatedRac;
+
+      if (customRac !== null) {
+        finalRac = customRac;
+        finalTotalTtc = customRac + ceePrime;
+      }
 
       const draftData: QuoteDraftCreate = {
         name: currentDraftId ? drafts.find((d) => d.id === currentDraftId)?.name || generateDraftName() : generateDraftName(),
@@ -153,10 +171,10 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
         module_code: folder?.module_code || "BAR-TH-171",
         product_ids: productIds,
         lines: editedLines,
-        total_ht: totals.total_ht,
-        total_ttc: totals.total_ttc,
-        rac_ttc: totals.rac_ttc,
-        cee_prime: quote.cee_prime,
+        total_ht: baseTotals.total_ht,
+        total_ttc: finalTotalTtc,
+        rac_ttc: finalRac,
+        cee_prime: ceePrime,
         margin_ht: quote.margin_ht,
         margin_percent: quote.margin_percent,
         strategy_used: quote.strategy_used,
@@ -176,7 +194,7 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
     } catch (err) {
       console.error("Erreur sauvegarde automatique:", err);
     }
-  }, [quote, editedLines, currentDraftId, drafts, folderId, folder?.module_code, productIds]);
+  }, [quote, editedLines, currentDraftId, drafts, folderId, folder?.module_code, productIds, customRac, loadDrafts]);
 
   const handleManualSave = async () => {
     if (!quote) return;
@@ -216,6 +234,7 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
   const handleLoadDraft = async (draft: QuoteDraft) => {
     setEditedLines(draft.lines);
     setCurrentDraftId(draft.id);
+    setCustomRac(draft.rac_ttc);
     setHasUnsavedChanges(false);
     toast.success(`Brouillon "${draft.name}" chargé`);
   };
@@ -241,14 +260,33 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
   };
 
   const calculateTotals = () => {
-    return editedLines.reduce(
+    const baseTotals = editedLines.reduce(
       (acc, line) => ({
         total_ht: acc.total_ht + line.total_ht,
         total_ttc: acc.total_ttc + line.total_ttc,
-        rac_ttc: acc.total_ttc + line.total_ttc - (quote?.cee_prime || 0),
       }),
-      { total_ht: 0, total_ttc: 0, rac_ttc: 0 }
+      { total_ht: 0, total_ttc: 0 }
     );
+
+    const ceePrime = quote?.cee_prime ?? 0;
+    const calculatedRac = baseTotals.total_ttc - ceePrime;
+
+    // Si le RAC est personnalisé, on ajuste le Total TTC en conséquence
+    if (customRac !== null) {
+      const adjustedTotalTtc = customRac + ceePrime;
+      return {
+        total_ht: baseTotals.total_ht,
+        total_ttc: adjustedTotalTtc,
+        rac_ttc: customRac,
+      };
+    }
+
+    // Sinon, calcul normal
+    return {
+      total_ht: baseTotals.total_ht,
+      total_ttc: baseTotals.total_ttc,
+      rac_ttc: calculatedRac,
+    };
   };
 
   const totals = calculateTotals();
@@ -356,6 +394,7 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
             racTtc={totals.rac_ttc}
             marginHt={quote?.margin_ht || 0}
             marginPercent={quote?.margin_percent || 0}
+            onUpdateRac={handleUpdateRac}
           />
         </div>
 

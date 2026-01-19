@@ -30,6 +30,7 @@ export type Product = {
   reference: string;
   price_ht: number;
   category: ProductCategory;
+  product_type: ProductType;
   module_codes?: string[] | null;
   image_url?: string | null;
   description?: string | null;
@@ -86,6 +87,7 @@ export type ProductCreatePayload = {
   reference: string;
   price_ht: number;
   category: ProductCategory;
+  product_type?: ProductType;
   module_codes?: string[] | null;
   image_url?: string | null;
   description?: string | null;

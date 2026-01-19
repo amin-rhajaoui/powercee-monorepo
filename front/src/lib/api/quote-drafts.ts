@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 
 export interface QuoteLine {
   product_id: string | null;
+  title: string;
   description: string;
   quantity: number;
   unit_price_ht: number;

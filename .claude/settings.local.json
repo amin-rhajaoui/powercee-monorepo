@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(python -m pip:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

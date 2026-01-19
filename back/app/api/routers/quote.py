@@ -55,6 +55,7 @@ async def simulate_quote(
         lines = [
             QuoteLineSchema(
                 product_id=line.product_id,
+                title=line.title,
                 description=line.description,
                 quantity=line.quantity,
                 unit_price_ht=round(line.unit_price_ht, 2),

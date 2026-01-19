@@ -206,7 +206,8 @@ class LegacyGridPricingStrategy(PricingStrategy):
         for product in context.products:
             line = QuoteLine(
                 product_id=product.id,
-                description=f"{product.brand} {product.name}",
+                title=f"{product.brand} {product.name}",
+                description=product.description or "",
                 quantity=1,
                 unit_price_ht=product.price_ht,
                 tva_rate=5.5,
@@ -220,7 +221,8 @@ class LegacyGridPricingStrategy(PricingStrategy):
         for item in (settings.fixed_line_items or []):
             line = QuoteLine(
                 product_id=None,
-                description=item.get("description", "Forfait"),
+                title=item.get("title", item.get("description", "Forfait")),
+                description=item.get("description", ""),
                 quantity=item.get("quantity", 1),
                 unit_price_ht=item.get("unit_price_ht", 0),
                 tva_rate=item.get("tva_rate", 5.5),

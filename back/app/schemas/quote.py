@@ -10,7 +10,8 @@ from pydantic import BaseModel, Field
 class QuoteLine(BaseModel):
     """Ligne de devis."""
     product_id: UUID | None = Field(None, description="ID du produit (null si ligne fixe)")
-    description: str = Field(..., description="Description de la ligne")
+    title: str = Field(..., description="Titre de la ligne")
+    description: str = Field("", description="Description enrichie de la ligne")
     quantity: int = Field(1, ge=1, description="Quantite")
     unit_price_ht: float = Field(..., ge=0, description="Prix unitaire HT")
     tva_rate: float = Field(5.5, ge=0, le=100, description="Taux TVA (%)")
@@ -41,6 +42,7 @@ class QuotePreviewResponse(BaseModel):
 
 class QuoteLineUpdate(BaseModel):
     """Mise a jour d'une ligne de devis (edition par l'utilisateur)."""
+    title: str | None = Field(None, description="Nouveau titre")
     description: str | None = Field(None, description="Nouvelle description")
     unit_price_ht: float | None = Field(None, ge=0, description="Nouveau prix unitaire HT")
     quantity: int | None = Field(None, ge=1, description="Nouvelle quantite")

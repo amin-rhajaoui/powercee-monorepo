@@ -1,6 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -30,28 +31,41 @@ export function QuoteLinesTable({ lines, onUpdateLine }: QuoteLinesTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[40%]">Description</TableHead>
+            <TableHead className="w-[50%]">Désignation</TableHead>
             <TableHead className="w-20 text-center">Qté</TableHead>
             <TableHead className="w-28 text-right">Prix HT</TableHead>
-            <TableHead className="w-16 text-center">TVA</TableHead>
-            <TableHead className="w-28 text-right">Total TTC</TableHead>
+            <TableHead className="w-28 text-right">Prix TTC</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {lines.map((line, index) => (
             <TableRow key={index}>
-              <TableCell>
+              <TableCell className="space-y-2">
                 {line.is_editable ? (
-                  <Input
-                    value={line.description}
-                    onChange={(e) => onUpdateLine(index, "description", e.target.value)}
-                    className="h-8"
-                  />
+                  <>
+                    <Input
+                      value={line.title}
+                      onChange={(e) => onUpdateLine(index, "title", e.target.value)}
+                      className="h-8 font-medium"
+                      placeholder="Titre de la ligne"
+                    />
+                    <Textarea
+                      value={line.description}
+                      onChange={(e) => onUpdateLine(index, "description", e.target.value)}
+                      className="min-h-[60px] text-sm text-muted-foreground resize-y"
+                      placeholder="Description détaillée..."
+                    />
+                  </>
                 ) : (
-                  <span className="text-muted-foreground">{line.description}</span>
+                  <div>
+                    <p className="font-medium">{line.title}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {line.description}
+                    </p>
+                  </div>
                 )}
               </TableCell>
-              <TableCell className="text-center">
+              <TableCell className="text-center align-top pt-4">
                 <Input
                   type="number"
                   min="1"
@@ -60,7 +74,7 @@ export function QuoteLinesTable({ lines, onUpdateLine }: QuoteLinesTableProps) {
                   className="h-8 w-16 text-center"
                 />
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right align-top pt-4">
                 {line.is_editable ? (
                   <Input
                     type="number"
@@ -72,14 +86,11 @@ export function QuoteLinesTable({ lines, onUpdateLine }: QuoteLinesTableProps) {
                   />
                 ) : (
                   <span className="text-muted-foreground">
-                    {formatCurrency(line.unit_price_ht)}
+                    {formatCurrency(line.total_ht)}
                   </span>
                 )}
               </TableCell>
-              <TableCell className="text-center text-muted-foreground">
-                {line.tva_rate}%
-              </TableCell>
-              <TableCell className="text-right font-medium">
+              <TableCell className="text-right font-medium align-top pt-4">
                 {formatCurrency(line.total_ttc)}
               </TableCell>
             </TableRow>

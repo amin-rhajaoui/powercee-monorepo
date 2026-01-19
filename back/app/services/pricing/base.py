@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 class QuoteLine:
     """Ligne de devis."""
     product_id: UUID | None
+    title: str
     description: str
     quantity: int
     unit_price_ht: float
