@@ -24,6 +24,8 @@ function ModuleCard({ module }: { module: Module }) {
   const getModuleRoute = (id: string) => {
     const routes: Record<string, string> = {
       'bar-th-171': '/bar-th-171',
+      'bar-th-175': '/bar-th-175',
+      'bar-th-175-pro': '/bar-th-175',
     };
     return routes[id] || `/modules/${id}`;
   };

@@ -18,7 +18,7 @@ export interface LegacyGridRule {
   etas_min: number;
   etas_max: number;
   surface_min: number;
-  surface_max: number;
+  surface_max: number | null;
   mpr_profile: string;
   rac_amount: number;
 }

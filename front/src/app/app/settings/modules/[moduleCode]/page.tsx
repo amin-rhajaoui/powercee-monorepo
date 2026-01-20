@@ -84,7 +84,7 @@ const legacyGridRuleSchema = z.object({
   etas_min: z.number().int().min(100, "ETAS min >= 100"),
   etas_max: z.number().int().max(300, "ETAS max <= 300"),
   surface_min: z.number().int().min(0, "Surface min >= 0"),
-  surface_max: z.number().int().min(0, "Surface max >= 0").nullable().optional(),
+  surface_max: z.number().int().min(0, "Surface max >= 0").nullable(),
   mpr_profile: z.string().min(1, "Profil MPR requis"),
   rac_amount: z.number().positive("RAC positif requis"),
 });
