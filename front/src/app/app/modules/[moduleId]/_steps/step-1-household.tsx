@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,13 +17,13 @@ type Step1HouseholdProps = {
   moduleId: string;
   moduleCode: string;
   draftId?: string | null;
+  initialData?: BarTh171Draft;
+  onSave: (data: Partial<BarTh171Draft>, step?: number, clientId?: string) => Promise<void>;
   onNext: () => void;
 };
 
-export function Step1Household({ moduleId, moduleCode, draftId, onNext }: Step1HouseholdProps) {
+export function Step1Household({ moduleId, moduleCode, draftId, initialData, onSave, onNext }: Step1HouseholdProps) {
   const {
-    draftData,
-    saveDraft,
     checkExistingDraft,
     loadDraftById,
     createNewDraft,
@@ -36,12 +36,19 @@ export function Step1Household({ moduleId, moduleCode, draftId, onNext }: Step1H
   const form = useForm<Step1HouseholdValues>({
     resolver: zodResolver(step1HouseholdSchema),
     defaultValues: {
-      client_id: draftData.step1?.client_id || "",
+      client_id: initialData?.step1?.client_id || "",
     },
     mode: "onChange",
   });
 
   const clientId = form.watch("client_id");
+
+  // Mettre à jour le formulaire si initialData change
+  useEffect(() => {
+    if (initialData?.step1?.client_id) {
+      form.setValue("client_id", initialData.step1.client_id);
+    }
+  }, [initialData, form]);
 
   // Vérifier l'existence d'un brouillon lors de la sélection d'un client
   const handleClientChange = useCallback(
@@ -49,7 +56,7 @@ export function Step1Household({ moduleId, moduleCode, draftId, onNext }: Step1H
       form.setValue("client_id", id || "", { shouldValidate: true });
 
       // Si un client est sélectionné et qu'on n'a pas déjà un brouillon chargé pour ce client
-      if (id && (!draftId || draftData.step1?.client_id !== id)) {
+      if (id && (!draftId || initialData?.step1?.client_id !== id)) {
         setIsCheckingDraft(true);
         try {
           const foundDraft = await checkExistingDraft(id);
@@ -64,7 +71,7 @@ export function Step1Household({ moduleId, moduleCode, draftId, onNext }: Step1H
         }
       }
     },
-    [form, checkExistingDraft, draftId, draftData.step1?.client_id]
+    [form, checkExistingDraft, draftId, initialData?.step1?.client_id]
   );
 
   // Reprendre le brouillon existant
@@ -74,19 +81,14 @@ export function Step1Household({ moduleId, moduleCode, draftId, onNext }: Step1H
     setShowResumeDialog(false);
     try {
       await loadDraftById(existingDraft.id);
-      // Mettre à jour le formulaire avec les données du brouillon
-      const draftData = existingDraft.data as BarTh171Draft;
-      if (draftData?.step1?.client_id) {
-        form.setValue("client_id", draftData.step1.client_id, {
-          shouldValidate: true,
-        });
-      }
+      // NOTE: loadDraftById updates the URL, which triggers parent re-render with new draftId
+      // The parent will then fetch new data and pass it down as initialData
       toast.success("Brouillon chargé avec succès");
     } catch (error) {
       console.error("Erreur lors du chargement du brouillon:", error);
       toast.error("Impossible de charger le brouillon");
     }
-  }, [existingDraft, loadDraftById, form]);
+  }, [existingDraft, loadDraftById]);
 
   // Créer un nouveau brouillon
   const handleNewDraft = useCallback(async () => {
@@ -129,8 +131,8 @@ export function Step1Household({ moduleId, moduleCode, draftId, onNext }: Step1H
     try {
       const values = form.getValues();
       console.log("Sauvegarde en cours...", values);
-      // Sauvegarder uniquement lors du clic sur "Suivant"
-      await saveDraft({ step1: values }, 2, clientId);
+      // Sauvegarder avec la fonction passée en props
+      await onSave({ step1: values }, 2, clientId);
       console.log("Sauvegarde réussie, navigation vers étape 2");
       onNext();
     } catch (error) {

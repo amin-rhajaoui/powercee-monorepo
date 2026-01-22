@@ -395,53 +395,53 @@ function ModuleOverview({
                   {Math.ceil(
                     foldersPagination.total / foldersPagination.pageSize
                   ) > 1 && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t">
-                      <p className="text-sm text-muted-foreground">
-                        {foldersPagination.total} dossier
-                        {foldersPagination.total > 1 ? "s" : ""} au total
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setFoldersPagination((prev) => ({
-                              ...prev,
-                              page: prev.page - 1,
-                            }))
-                          }
-                          disabled={foldersPagination.page === 1}
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <span className="text-sm">
-                          Page {foldersPagination.page} sur{" "}
-                          {Math.ceil(
-                            foldersPagination.total / foldersPagination.pageSize
-                          )}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setFoldersPagination((prev) => ({
-                              ...prev,
-                              page: prev.page + 1,
-                            }))
-                          }
-                          disabled={
-                            foldersPagination.page >=
-                            Math.ceil(
-                              foldersPagination.total /
+                      <div className="flex items-center justify-between px-4 py-3 border-t">
+                        <p className="text-sm text-muted-foreground">
+                          {foldersPagination.total} dossier
+                          {foldersPagination.total > 1 ? "s" : ""} au total
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setFoldersPagination((prev) => ({
+                                ...prev,
+                                page: prev.page - 1,
+                              }))
+                            }
+                            disabled={foldersPagination.page === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <span className="text-sm">
+                            Page {foldersPagination.page} sur{" "}
+                            {Math.ceil(
+                              foldersPagination.total / foldersPagination.pageSize
+                            )}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setFoldersPagination((prev) => ({
+                                ...prev,
+                                page: prev.page + 1,
+                              }))
+                            }
+                            disabled={
+                              foldersPagination.page >=
+                              Math.ceil(
+                                foldersPagination.total /
                                 foldersPagination.pageSize
-                            )
-                          }
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
+                              )
+                            }
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </>
               )}
             </CardContent>
@@ -467,7 +467,7 @@ function ModuleWizard({
   moduleTitle: string;
   draftId: string;
 }) {
-  const { currentStep, draftData, saveDraft } = useModuleDraft({
+  const { currentStep, draftData, draft, saveDraft, isLoading } = useModuleDraft({
     moduleId,
     moduleCode,
     draftId: draftId === "new" ? null : draftId,
@@ -476,13 +476,13 @@ function ModuleWizard({
   const [activeStep, setActiveStep] = useState(currentStep || 1);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Synchroniser activeStep avec currentStep du hook SEULEMENT au chargement initial
+  // Synchroniser activeStep avec currentStep du hook SEULEMENT quand le chargement est terminé
   useEffect(() => {
-    if (isInitialLoad && currentStep) {
+    if (!isLoading && isInitialLoad && currentStep) {
       setActiveStep(currentStep);
       setIsInitialLoad(false);
     }
-  }, [currentStep, isInitialLoad]);
+  }, [currentStep, isInitialLoad, isLoading]);
 
   const handleNext = () => {
     if (activeStep < STEP_LABELS.length) {
@@ -490,6 +490,14 @@ function ModuleWizard({
       setActiveStep(nextStep);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[450px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   const handlePrevious = async () => {
     if (activeStep > 1) {
@@ -509,6 +517,8 @@ function ModuleWizard({
             moduleId={moduleId}
             moduleCode={moduleCode}
             draftId={effectiveDraftId}
+            initialData={draftData}
+            onSave={saveDraft}
             onNext={handleNext}
           />
         );
@@ -518,6 +528,9 @@ function ModuleWizard({
             moduleId={moduleId}
             moduleCode={moduleCode}
             draftId={effectiveDraftId}
+            initialData={draftData}
+            draft={draft}
+            onSave={saveDraft}
             onNext={handleNext}
             onPrevious={handlePrevious}
           />

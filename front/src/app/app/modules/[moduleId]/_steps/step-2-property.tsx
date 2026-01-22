@@ -26,9 +26,10 @@ import { toast } from "sonner";
 import {
   getStep2Schema,
   type BarTh171Step2Values,
+  type BarTh171Draft,
 } from "../_schemas";
 import { PropertySelector } from "../_components/property-selector";
-import { useModuleDraft } from "../_hooks/use-module-draft";
+import { ModuleDraft } from "@/lib/api/modules";
 
 // ============================================================================
 // Types
@@ -38,6 +39,9 @@ type Step2PropertyProps = {
   moduleId: string;
   moduleCode: string;
   draftId?: string | null;
+  initialData?: BarTh171Draft;
+  draft?: ModuleDraft | null;
+  onSave: (data: Partial<BarTh171Draft>, step?: number, clientId?: string) => Promise<void>;
   onNext: () => void;
   onPrevious: () => void;
 };
@@ -93,18 +97,18 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
   const waterHeatingType = useWatch({ control: form.control, name: "water_heating_type" });
   const usageMode = useWatch({ control: form.control, name: "usage_mode" });
   const electricalPhase = useWatch({ control: form.control, name: "electrical_phase" });
-  
+
   // Utiliser un état local pour garantir que le re-render se déclenche
   const [localIsWaterHeatingLinked, setLocalIsWaterHeatingLinked] = useState<boolean | undefined>(isWaterHeatingLinked);
-  
+
   // Synchroniser l'état local avec la valeur du formulaire
   useEffect(() => {
     setLocalIsWaterHeatingLinked(isWaterHeatingLinked);
   }, [isWaterHeatingLinked]);
-  
+
   // Afficher les questions si is_water_heating_linked est explicitement false
   const shouldShowQuestions = localIsWaterHeatingLinked === false;
-  
+
   // Forcer la validation quand is_water_heating_linked change
   useEffect(() => {
     if (localIsWaterHeatingLinked === false) {
@@ -129,8 +133,8 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
                 isPrincipalResidence === undefined || isPrincipalResidence === null
                   ? ""
                   : isPrincipalResidence
-                  ? "oui"
-                  : "non"
+                    ? "oui"
+                    : "non"
               }
               onValueChange={(value) => {
                 if (value === "") return;
@@ -258,8 +262,8 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
               isWaterHeatingLinked === undefined || isWaterHeatingLinked === null
                 ? ""
                 : isWaterHeatingLinked
-                ? "oui"
-                : "non"
+                  ? "oui"
+                  : "non"
             }
             onValueChange={(value) => {
               if (value === "") return;
@@ -299,10 +303,10 @@ function BarTh171Fields({ form }: BarTh171FieldsProps) {
                   form.setValue(
                     "water_heating_type",
                     value as
-                      | "BALLON_ELECTRIQUE"
-                      | "CHAUFFE_EAU_GAZ"
-                      | "CHAUFFE_EAU_THERMODYNAMIQUE"
-                      | "AUTRE",
+                    | "BALLON_ELECTRIQUE"
+                    | "CHAUFFE_EAU_GAZ"
+                    | "CHAUFFE_EAU_THERMODYNAMIQUE"
+                    | "AUTRE",
                     { shouldValidate: true, shouldDirty: true, shouldTouch: true }
                   );
                 }}
@@ -446,17 +450,16 @@ export function Step2Property({
   moduleId,
   moduleCode,
   draftId,
+  initialData,
+  draft,
+  onSave,
   onNext,
   onPrevious,
 }: Step2PropertyProps) {
-  const { draftData, draft, saveDraft } = useModuleDraft({
-    moduleId,
-    moduleCode,
-    draftId,
-  });
   const [isNavigating, setIsNavigating] = useState(false);
 
-  const clientId = draftData.step1?.client_id || null;
+  // Fallback to draft.client_id for robustness
+  const clientId = initialData?.step1?.client_id || draft?.client_id || null;
 
   // Récupérer le schéma dynamiquement selon le module
   const schema = useMemo(() => getStep2Schema(moduleCode), [moduleCode]);
@@ -467,43 +470,43 @@ export function Step2Property({
   const form = useForm<BarTh171Step2Values>({
     resolver: zodResolver(schema),
     defaultValues: {
-      property_id: draftData.step2?.property_id || draft?.property_id || "",
-      // Charger les valeurs depuis draftData.step2
-      is_principal_residence: draftData.step2?.is_principal_residence ?? undefined,
-      occupation_status: draftData.step2?.occupation_status ?? undefined,
-      heating_system: draftData.step2?.heating_system ?? undefined,
-      old_boiler_brand: draftData.step2?.old_boiler_brand ?? undefined,
-      is_water_heating_linked: draftData.step2?.is_water_heating_linked ?? undefined,
-      water_heating_type: draftData.step2?.water_heating_type ?? undefined,
-      usage_mode: draftData.step2?.usage_mode ?? undefined,
-      electrical_phase: draftData.step2?.electrical_phase ?? undefined,
-      power_kva: draftData.step2?.power_kva != null ? draftData.step2.power_kva : undefined,
+      property_id: initialData?.step2?.property_id || draft?.property_id || "",
+      // Charger les valeurs depuis initialData.step2
+      is_principal_residence: initialData?.step2?.is_principal_residence ?? undefined,
+      occupation_status: initialData?.step2?.occupation_status ?? undefined,
+      heating_system: initialData?.step2?.heating_system ?? undefined,
+      old_boiler_brand: initialData?.step2?.old_boiler_brand ?? undefined,
+      is_water_heating_linked: initialData?.step2?.is_water_heating_linked ?? undefined,
+      water_heating_type: initialData?.step2?.water_heating_type ?? undefined,
+      usage_mode: initialData?.step2?.usage_mode ?? undefined,
+      electrical_phase: initialData?.step2?.electrical_phase ?? undefined,
+      power_kva: initialData?.step2?.power_kva != null ? initialData.step2.power_kva : undefined,
     },
     mode: "onChange",
   });
 
   // Recharger les valeurs quand le draft change
   useEffect(() => {
-    if (draftData.step2) {
+    if (initialData?.step2) {
       const resetValues = {
-        property_id: draftData.step2?.property_id || draft?.property_id || "",
-        is_principal_residence: draftData.step2.is_principal_residence ?? undefined,
-        occupation_status: draftData.step2.occupation_status ?? undefined,
-        heating_system: draftData.step2.heating_system ?? undefined,
-        old_boiler_brand: draftData.step2.old_boiler_brand ?? undefined,
-        is_water_heating_linked: draftData.step2.is_water_heating_linked ?? undefined,
-        water_heating_type: draftData.step2.water_heating_type ?? undefined,
-        usage_mode: draftData.step2.usage_mode ?? undefined,
-        electrical_phase: draftData.step2.electrical_phase ?? undefined,
-        power_kva: draftData.step2.power_kva != null ? draftData.step2.power_kva : undefined,
+        property_id: initialData.step2?.property_id || draft?.property_id || "",
+        is_principal_residence: initialData.step2.is_principal_residence ?? undefined,
+        occupation_status: initialData.step2.occupation_status ?? undefined,
+        heating_system: initialData.step2.heating_system ?? undefined,
+        old_boiler_brand: initialData.step2.old_boiler_brand ?? undefined,
+        is_water_heating_linked: initialData.step2.is_water_heating_linked ?? undefined,
+        water_heating_type: initialData.step2.water_heating_type ?? undefined,
+        usage_mode: initialData.step2.usage_mode ?? undefined,
+        electrical_phase: initialData.step2.electrical_phase ?? undefined,
+        power_kva: initialData.step2.power_kva != null ? initialData.step2.power_kva : undefined,
       };
       form.reset(resetValues);
       // Forcer la mise à jour du champ power_kva pour les inputs numériques
-      if (draftData.step2.power_kva != null) {
-        form.setValue("power_kva", draftData.step2.power_kva, { shouldValidate: false, shouldDirty: false });
+      if (initialData.step2.power_kva != null) {
+        form.setValue("power_kva", initialData.step2.power_kva, { shouldValidate: false, shouldDirty: false });
       }
     }
-  }, [draft, draftData.step2, form]);
+  }, [draft, initialData, form]);
 
   // Utiliser useWatch pour garantir la synchronisation
   const propertyId = useWatch({ control: form.control, name: "property_id" });
@@ -607,7 +610,7 @@ export function Step2Property({
       const values = form.getValues();
 
       // Envoyer toutes les données dans data.step2
-      await saveDraft(
+      await onSave(
         {
           step2: {
             property_id: values.property_id,

@@ -22,7 +22,7 @@ type UseModuleDraftOptions = {
 export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraftOptions) {
   const router = useRouter();
   const [draft, setDraft] = useState<ModuleDraft | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!draftId);
   const [isSaving, setIsSaving] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [draftData, setDraftData] = useState<BarTh171Draft>({});
@@ -61,7 +61,7 @@ export function useModuleDraft({ moduleId, moduleCode, draftId }: UseModuleDraft
           page: 1,
           pageSize: 1,
         });
-        
+
         // Retourner le premier brouillon non archivé trouvé
         const activeDraft = result.items.find((d) => !d.archived_at);
         return activeDraft || null;
