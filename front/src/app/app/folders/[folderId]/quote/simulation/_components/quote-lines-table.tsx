@@ -42,28 +42,21 @@ export function QuoteLinesTable({ lines, onUpdateLine }: QuoteLinesTableProps) {
             <TableRow key={index}>
               <TableCell className="space-y-2">
                 {line.is_editable ? (
-                  <>
-                    <Input
-                      value={line.title}
-                      onChange={(e) => onUpdateLine(index, "title", e.target.value)}
-                      className="h-8 font-medium"
-                      placeholder="Titre de la ligne"
-                    />
-                    <Textarea
-                      value={line.description}
-                      onChange={(e) => onUpdateLine(index, "description", e.target.value)}
-                      className="min-h-[60px] text-sm text-muted-foreground resize-y"
-                      placeholder="Description détaillée..."
-                    />
-                  </>
+                  <Input
+                    value={line.title}
+                    onChange={(e) => onUpdateLine(index, "title", e.target.value)}
+                    className="h-8 font-medium"
+                    placeholder="Titre de la ligne"
+                  />
                 ) : (
-                  <div>
-                    <p className="font-medium">{line.title}</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {line.description}
-                    </p>
-                  </div>
+                  <p className="font-medium">{line.title}</p>
                 )}
+                <Textarea
+                  value={line.description}
+                  readOnly
+                  className="min-h-[100px] text-sm text-muted-foreground resize-y cursor-default"
+                  placeholder="Description détaillée..."
+                />
               </TableCell>
               <TableCell className="text-center align-top pt-4">
                 <Input
