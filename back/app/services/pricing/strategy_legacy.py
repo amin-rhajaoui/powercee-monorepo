@@ -115,12 +115,11 @@ class LegacyGridPricingStrategy(PricingStrategy):
             f"Marge={margin_ht:.2f} ({margin_percent:.1f}%)"
         )
 
+        # Les totaux HT et TTC seront calculés automatiquement dans __post_init__
         return QuotePreview(
             lines=lines,
-            total_ht=total_ht,
-            total_ttc=actual_total_ttc,
             cee_prime=cee_prime,
-            rac_ttc=target_rac,
+            rac_ttc=target_rac,  # RAC depuis la grille
             margin_ht=margin_ht,
             margin_percent=margin_percent,
             strategy_used="LEGACY_GRID",
@@ -224,7 +223,22 @@ class LegacyGridPricingStrategy(PricingStrategy):
             lines.append(line)
             products_ttc += line.total_ttc
 
-        # 2. Ajouter les lignes fixes
+        # 2. Ajouter les produits de main d'oeuvre depuis les reglages
+        labor_ttc = 0
+        for labor_product in context.labor_products:
+            line = QuoteLine(
+                product_id=labor_product.id,
+                title=f"{labor_product.brand or ''} {labor_product.name}",
+                description=generate_product_description(labor_product, context),
+                quantity=1,
+                unit_price_ht=labor_product.price_ht,
+                tva_rate=5.5,
+                is_editable=False  # Non editable comme les lignes fixes
+            )
+            lines.append(line)
+            labor_ttc += line.total_ttc
+
+        # 3. Ajouter les lignes fixes
         fixed_ttc = 0
         for item in (settings.fixed_line_items or []):
             line = QuoteLine(
@@ -239,9 +253,9 @@ class LegacyGridPricingStrategy(PricingStrategy):
             lines.append(line)
             fixed_ttc += line.total_ttc
 
-        # 3. Ajuster le prix du premier produit pour atteindre le total cible
+        # 4. Ajuster le prix du premier produit pour atteindre le total cible
         if lines and total_ttc > 0:
-            current_ttc = products_ttc + fixed_ttc
+            current_ttc = products_ttc + labor_ttc + fixed_ttc
             diff_ttc = total_ttc - current_ttc
 
             if diff_ttc != 0 and lines[0].is_editable:
@@ -261,6 +275,12 @@ class LegacyGridPricingStrategy(PricingStrategy):
         for product in context.products:
             # Utiliser buying_price_ht si disponible, sinon 70% du prix de vente
             cost = product.buying_price_ht if product.buying_price_ht else product.price_ht * 0.7
+            total += cost
+
+        # Cout des produits de main d'oeuvre
+        for labor_product in context.labor_products:
+            # Utiliser buying_price_ht si disponible, sinon 70% du prix de vente
+            cost = labor_product.buying_price_ht if labor_product.buying_price_ht else labor_product.price_ht * 0.7
             total += cost
 
         # Ajouter les lignes fixes (consideres comme cout)

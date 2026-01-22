@@ -6,7 +6,7 @@ from typing import List, Any
 from uuid import UUID
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class RoundingMode(str, Enum):
@@ -62,10 +62,32 @@ class ModuleSettingsBase(BaseModel):
         default_factory=list,
         description="Lignes fixes du devis"
     )
+    line_percentages: dict[str, float] | None = Field(
+        None,
+        description="Repartition par pourcentages des lignes du devis (ex: {'HEAT_PUMP': 40.0, 'LABOR': 30.0})"
+    )
     legacy_grid_rules: List[LegacyGridRule] | None = Field(
         None,
         description="Regles de grille RAC"
     )
+
+    @field_validator('line_percentages')
+    @classmethod
+    def validate_line_percentages(cls, v: dict[str, float] | None) -> dict[str, float] | None:
+        """Valide que la somme des pourcentages est <= 100%."""
+        if v is None or len(v) == 0:
+            return v
+        
+        total = sum(v.values())
+        if total > 100:
+            raise ValueError(f"La somme des pourcentages ({total:.1f}%) ne peut pas depasser 100%")
+        
+        # Verifier que tous les pourcentages sont >= 0
+        for category, percentage in v.items():
+            if percentage < 0:
+                raise ValueError(f"Le pourcentage pour {category} ({percentage}%) ne peut pas etre negatif")
+        
+        return v
 
 
 class ModuleSettingsCreate(ModuleSettingsBase):
@@ -81,6 +103,7 @@ class ModuleSettingsUpdate(BaseModel):
     max_rac_addon: float | None = Field(None, ge=0)
     default_labor_product_ids: List[UUID] | None = None
     fixed_line_items: List[FixedLineItem] | None = None
+    line_percentages: dict[str, float] | None = Field(None, description="Repartition par pourcentages")
     legacy_grid_rules: List[LegacyGridRule] | None = None
 
 

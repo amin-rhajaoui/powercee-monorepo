@@ -96,6 +96,20 @@ const formSchema = z.object({
   max_rac_addon: z.number().nonnegative().nullable(),
   default_labor_product_ids: z.array(z.string()),
   fixed_line_items: z.array(fixedLineItemSchema),
+  line_percentages: z.object({
+    HEAT_PUMP: z.number().min(0).max(100).default(0),
+    LABOR: z.number().min(0).max(100).default(0),
+    THERMOSTAT: z.number().min(0).max(100).default(0),
+    FIXED: z.number().min(0).max(100).default(0),
+  }).refine(
+    (data) => {
+      const total = data.HEAT_PUMP + data.LABOR + data.THERMOSTAT + data.FIXED;
+      return total <= 100;
+    },
+    {
+      message: "La somme des pourcentages ne peut pas depasser 100%",
+    }
+  ),
   legacy_grid_rules: z.array(legacyGridRuleSchema),
 });
 
@@ -141,6 +155,12 @@ export default function ModuleSettingsPage({
       max_rac_addon: null,
       default_labor_product_ids: [],
       fixed_line_items: [],
+      line_percentages: {
+        HEAT_PUMP: 0,
+        LABOR: 0,
+        THERMOSTAT: 0,
+        FIXED: 0,
+      },
       legacy_grid_rules: [],
     },
   });
@@ -199,6 +219,12 @@ export default function ModuleSettingsPage({
         max_rac_addon: settings.max_rac_addon,
         default_labor_product_ids: settings.default_labor_product_ids,
         fixed_line_items: settings.fixed_line_items || [],
+        line_percentages: settings.line_percentages || {
+          HEAT_PUMP: 0,
+          LABOR: 0,
+          THERMOSTAT: 0,
+          FIXED: 0,
+        },
         legacy_grid_rules: settings.legacy_grid_rules || [],
       });
     } catch (error) {
@@ -219,6 +245,7 @@ export default function ModuleSettingsPage({
         max_rac_addon: values.max_rac_addon,
         default_labor_product_ids: values.default_labor_product_ids,
         fixed_line_items: values.fixed_line_items,
+        line_percentages: values.line_percentages,
         legacy_grid_rules: values.legacy_grid_rules,
       });
       toast.success("Parametres enregistres avec succes.");
@@ -413,7 +440,173 @@ export default function ModuleSettingsPage({
             </CardContent>
           </Card>
 
-          {/* Section 2: Produits main d'oeuvre */}
+          {/* Section 2: Repartition par pourcentages */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-indigo-100 dark:bg-indigo-900 p-2">
+                  <Calculator className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <CardTitle>Repartition par pourcentages</CardTitle>
+                  <CardDescription>
+                    Definissez la repartition du total TTC par categorie de produits
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="line_percentages.HEAT_PUMP"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pompe a chaleur (HEAT_PUMP) %</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          placeholder="40.0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value) || 0)
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="line_percentages.LABOR"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Main d'oeuvre (LABOR) %</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          placeholder="30.0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value) || 0)
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="line_percentages.THERMOSTAT"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Thermostat (THERMOSTAT) %</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          placeholder="10.0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value) || 0)
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="line_percentages.FIXED"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Lignes fixes (FIXED) %</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          placeholder="20.0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value) || 0)
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Indicateur de total */}
+              <div className="pt-4 border-t">
+                {(() => {
+                  const percentages = form.watch("line_percentages");
+                  const total = 
+                    (percentages?.HEAT_PUMP || 0) +
+                    (percentages?.LABOR || 0) +
+                    (percentages?.THERMOSTAT || 0) +
+                    (percentages?.FIXED || 0);
+                  const isValid = total <= 100;
+                  
+                  return (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Total des pourcentages:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-sm font-medium ${
+                            isValid
+                              ? total === 100
+                                ? "text-green-600"
+                                : "text-orange-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {total.toFixed(1)}% / 100%
+                        </span>
+                        {!isValid && (
+                          <Badge variant="destructive" className="text-xs">
+                            Depasse 100%
+                          </Badge>
+                        )}
+                        {isValid && total < 100 && (
+                          <Badge variant="outline" className="text-xs text-orange-600">
+                            Inferieur a 100%
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {form.formState.errors.line_percentages && (
+                <div className="text-sm text-red-600">
+                  {form.formState.errors.line_percentages.message}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Section 3: Produits main d'oeuvre */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -477,7 +670,7 @@ export default function ModuleSettingsPage({
             </CardContent>
           </Card>
 
-          {/* Section 3: Lignes fixes */}
+          {/* Section 4: Lignes fixes */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -599,7 +792,7 @@ export default function ModuleSettingsPage({
             </CardContent>
           </Card>
 
-          {/* Section 4: Regles de grille (conditionnel) */}
+          {/* Section 5: Regles de grille (conditionnel) */}
           {watchLegacyEnabled && (
             <Card>
               <CardHeader>

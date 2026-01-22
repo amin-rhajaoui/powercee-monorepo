@@ -33,6 +33,7 @@ export interface ModuleSettings {
   max_rac_addon: number | null;
   default_labor_product_ids: string[];
   fixed_line_items: FixedLineItem[];
+  line_percentages: Record<string, number> | null;
   legacy_grid_rules: LegacyGridRule[] | null;
   created_at: string;
   updated_at: string;
@@ -45,6 +46,7 @@ export interface ModuleSettingsUpdate {
   max_rac_addon?: number | null;
   default_labor_product_ids?: string[];
   fixed_line_items?: FixedLineItem[];
+  line_percentages?: Record<string, number> | null;
   legacy_grid_rules?: LegacyGridRule[] | null;
 }
 

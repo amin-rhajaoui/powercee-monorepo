@@ -111,12 +111,11 @@ class MarginBasedPricingStrategy(PricingStrategy):
             f"Marge reelle={margin_ht:.2f} ({margin_percent:.1f}%)"
         )
 
+        # Les totaux HT et TTC seront calculés automatiquement dans __post_init__
         return QuotePreview(
             lines=lines,
-            total_ht=actual_total_ht,
-            total_ttc=actual_total_ttc,
             cee_prime=cee_prime,
-            rac_ttc=target_rac,
+            rac_ttc=target_rac,  # RAC ajusté (arrondi, plafonné)
             margin_ht=margin_ht,
             margin_percent=margin_percent,
             strategy_used="COST_PLUS",
@@ -135,6 +134,12 @@ class MarginBasedPricingStrategy(PricingStrategy):
         for product in context.products:
             # Utiliser buying_price_ht si disponible, sinon estimer a 70%
             cost = product.buying_price_ht if product.buying_price_ht else product.price_ht * 0.7
+            total += cost
+
+        # Cout des produits de main d'oeuvre
+        for labor_product in context.labor_products:
+            # Utiliser buying_price_ht si disponible, sinon estimer a 70%
+            cost = labor_product.buying_price_ht if labor_product.buying_price_ht else labor_product.price_ht * 0.7
             total += cost
 
         # Cout des lignes fixes (cout = prix)
@@ -167,7 +172,22 @@ class MarginBasedPricingStrategy(PricingStrategy):
             lines.append(line)
             products_ht += line.total_ht
 
-        # 2. Ajouter les lignes fixes
+        # 2. Ajouter les produits de main d'oeuvre depuis les reglages
+        labor_ht = 0
+        for labor_product in context.labor_products:
+            line = QuoteLine(
+                product_id=labor_product.id,
+                title=f"{labor_product.brand or ''} {labor_product.name}",
+                description=generate_product_description(labor_product, context),
+                quantity=1,
+                unit_price_ht=labor_product.price_ht,
+                tva_rate=5.5,
+                is_editable=False  # Non editable comme les lignes fixes
+            )
+            lines.append(line)
+            labor_ht += line.total_ht
+
+        # 3. Ajouter les lignes fixes
         fixed_ht = 0
         for item in (settings.fixed_line_items or []):
             line = QuoteLine(
@@ -182,8 +202,8 @@ class MarginBasedPricingStrategy(PricingStrategy):
             lines.append(line)
             fixed_ht += line.total_ht
 
-        # 3. Ajuster pour atteindre le total cible
-        current_total_ht = products_ht + fixed_ht
+        # 4. Ajuster pour atteindre le total cible
+        current_total_ht = products_ht + labor_ht + fixed_ht
         diff_ht = target_total_ht - current_total_ht
 
         if diff_ht != 0 and lines:

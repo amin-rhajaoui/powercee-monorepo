@@ -35,14 +35,30 @@ class QuoteLine:
 class QuotePreview:
     """Resultat d'un calcul de devis."""
     lines: list[QuoteLine]
-    total_ht: float
-    total_ttc: float
     cee_prime: float
-    rac_ttc: float
     margin_ht: float
     margin_percent: float
     strategy_used: str
     warnings: list[str] = field(default_factory=list)
+    rac_ttc: float = 0.0  # RAC peut être ajusté (arrondi, plafonné), donc champ normal
+    
+    # Champs calculés automatiquement (ne pas initialiser manuellement)
+    total_ht: float = field(init=False)
+    total_ttc: float = field(init=False)
+    
+    def __post_init__(self):
+        """Recalcule automatiquement les totaux à partir des lignes."""
+        self._recalculate_totals()
+    
+    def _recalculate_totals(self):
+        """Recalcule les totaux HT et TTC à partir des lignes.
+        
+        Note: Le RAC n'est pas recalculé automatiquement ici car il peut être
+        ajusté par les stratégies (arrondi, plafonné). Il doit être recalculé
+        manuellement si nécessaire après modification des lignes.
+        """
+        self.total_ht = sum(line.total_ht for line in self.lines)
+        self.total_ttc = sum(line.total_ttc for line in self.lines)
 
 
 @dataclass
@@ -63,6 +79,9 @@ class PricingContext:
 
     # Produits charges (avec details PAC)
     products: list["Product"] = field(default_factory=list)
+    
+    # Produits de main d'oeuvre depuis les reglages du module
+    labor_products: list["Product"] = field(default_factory=list)
 
     # Donnees techniques (Step 2)
     old_heating_system: str | None = None

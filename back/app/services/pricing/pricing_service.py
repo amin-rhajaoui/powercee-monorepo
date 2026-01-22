@@ -15,6 +15,7 @@ from app.models.product import Product
 from app.services.cee_calculator_service import calculate_prime, select_etas
 
 from .base import PricingContext, QuotePreview
+from .strategy_percentage import PercentageBasedPricingStrategy
 from .strategy_legacy import LegacyGridPricingStrategy
 from .strategy_margin import MarginBasedPricingStrategy
 
@@ -31,12 +32,14 @@ class PricingService:
     Service de pricing utilisant le pattern Strategy.
 
     Ordre de priorite des strategies:
-    1. LegacyGridPricingStrategy (si activee et regle correspondante)
-    2. MarginBasedPricingStrategy (fallback)
+    1. PercentageBasedPricingStrategy (si line_percentages configure)
+    2. LegacyGridPricingStrategy (si activee et regle correspondante)
+    3. MarginBasedPricingStrategy (fallback)
     """
 
     def __init__(self):
         self.strategies = [
+            PercentageBasedPricingStrategy(),
             LegacyGridPricingStrategy(),
             MarginBasedPricingStrategy(),
         ]
@@ -80,6 +83,13 @@ class PricingService:
         if not products:
             raise PricingError("Aucun produit trouve")
 
+        # 3.5. Charger les produits de main d'oeuvre depuis les reglages
+        labor_products = []
+        if settings.default_labor_product_ids:
+            # Convertir les IDs de string en UUID
+            labor_product_ids = [UUID(str_id) for str_id in settings.default_labor_product_ids]
+            labor_products = await self._get_labor_products(db, tenant_id, labor_product_ids)
+
         # 4. Construire le contexte
         property_data = folder.property if hasattr(folder, 'property') else None
         context = PricingContext(
@@ -94,6 +104,7 @@ class PricingService:
             property_type=property_data.type.value if property_data and property_data.type else "MAISON",
             emitter_type=folder.emitter_type,
             products=products,
+            labor_products=labor_products,
             # Extraire les infos de Step 2 qui sont dans folder.data['step2'] normalement
             old_heating_system=folder.data.get('step2', {}).get('heating_system'),
             old_boiler_brand=folder.data.get('step2', {}).get('old_boiler_brand'),
@@ -133,6 +144,14 @@ class PricingService:
                 result = await strategy.calculate(context, settings, cee_prime)
                 if result is not None:
                     logger.info(f"Strategie {result.strategy_used} appliquee")
+                    
+                    # 7. Ajouter automatiquement les thermostats associés pour BAR-TH-171
+                    # (sauf pour PERCENTAGE_BASED qui gère déjà les thermostats)
+                    if module_code == "BAR-TH-171" and result.strategy_used != "PERCENTAGE_BASED":
+                        result = await self._add_associated_thermostats(
+                            db, result, products, tenant_id
+                        )
+                    
                     return result
 
         raise PricingError("Aucune strategie de pricing applicable")
@@ -189,12 +208,13 @@ class PricingService:
         tenant_id: UUID,
         product_ids: list[UUID]
     ) -> list[Product]:
-        """Recupere les produits avec leurs details."""
+        """Recupere les produits avec leurs details et produits compatibles."""
         result = await db.execute(
             select(Product)
             .options(
                 selectinload(Product.heat_pump_details),
                 selectinload(Product.thermostat_details),
+                selectinload(Product.compatible_products).selectinload(Product.thermostat_details),
             )
             .where(
                 and_(
@@ -205,6 +225,77 @@ class PricingService:
             )
         )
         return list(result.scalars().all())
+
+    async def _get_labor_products(
+        self,
+        db: AsyncSession,
+        tenant_id: UUID,
+        labor_product_ids: list[UUID]
+    ) -> list[Product]:
+        """Recupere les produits de main d'oeuvre."""
+        if not labor_product_ids:
+            return []
+        
+        result = await db.execute(
+            select(Product).where(
+                and_(
+                    Product.tenant_id == tenant_id,
+                    Product.id.in_(labor_product_ids),
+                    Product.category == "LABOR",
+                    Product.is_active == True,
+                )
+            )
+        )
+        return list(result.scalars().all())
+
+    async def _add_associated_thermostats(
+        self,
+        db: AsyncSession,
+        result: QuotePreview,
+        products: list[Product],
+        tenant_id: UUID,
+    ) -> QuotePreview:
+        """
+        Ajoute automatiquement les thermostats associés aux lignes de devis
+        pour les PAC avec module BAR-TH-171.
+        """
+        from .base import QuoteLine
+        
+        # Parcourir les produits pour trouver les PAC avec thermostats associés
+        for product in products:
+            # Vérifier si c'est une PAC avec le module BAR-TH-171
+            if (product.category.value == "HEAT_PUMP" and 
+                product.module_codes and 
+                "BAR-TH-171" in product.module_codes and
+                product.compatible_products):
+                
+                # Chercher un thermostat dans les produits compatibles
+                for compatible_product in product.compatible_products:
+                    if compatible_product.category.value == "THERMOSTAT":
+                        # Créer une ligne pour le thermostat
+                        thermostat_line = QuoteLine(
+                            product_id=compatible_product.id,
+                            title=f"Thermostat {compatible_product.brand or ''} {compatible_product.name}".strip(),
+                            description=compatible_product.description or "",
+                            quantity=1,
+                            unit_price_ht=compatible_product.price_ht,
+                            tva_rate=5.5,  # TVA réduite pour équipement de rénovation énergétique
+                            is_editable=False,  # Non éditable comme spécifié
+                        )
+                        
+                        # Ajouter la ligne au résultat
+                        result.lines.append(thermostat_line)
+                        
+                        # Recalculer automatiquement les totaux (total_ht et total_ttc)
+                        result._recalculate_totals()
+                        
+                        # Recalculer le RAC : RAC = Total TTC - Prime CEE
+                        result.rac_ttc = result.total_ttc - result.cee_prime
+                        
+                        logger.info(f"Thermostat {compatible_product.name} ajoute automatiquement au devis")
+                        break  # Un seul thermostat par PAC
+        
+        return result
 
 
 # Instance singleton pour import facile

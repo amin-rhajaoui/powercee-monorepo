@@ -83,6 +83,14 @@ class ModuleSettings(Base):
         doc="Lignes fixes du devis (ex: desembouage).",
     )
 
+    # Percentage-based Pricing Configuration
+    line_percentages: Mapped[dict[str, float] | None] = mapped_column(
+        JSONB,
+        default=dict,
+        nullable=True,
+        doc="Repartition par pourcentages des lignes du devis (ex: {'HEAT_PUMP': 40.0, 'LABOR': 30.0}).",
+    )
+
     # Legacy Grid Rules
     legacy_grid_rules: Mapped[List[dict[str, Any]] | None] = mapped_column(
         JSONB,

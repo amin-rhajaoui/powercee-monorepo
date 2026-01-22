@@ -50,9 +50,12 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [customRac, setCustomRac] = useState<number | null>(null);
+  const [isRecalculating, setIsRecalculating] = useState(false);
 
   // Auto-save timer
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Debounce timer for RAC recalculation
+  const racRecalcTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load folder and initial simulation
   const loadInitialData = useCallback(async () => {
@@ -97,6 +100,18 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
     loadInitialData();
   }, [productIds, loadInitialData]);
 
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+      if (racRecalcTimerRef.current) {
+        clearTimeout(racRecalcTimerRef.current);
+      }
+    };
+  }, []);
+
   const loadDrafts = useCallback(async () => {
     try {
       const data = await listQuoteDrafts(folderId);
@@ -140,7 +155,41 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
   const handleUpdateRac = useCallback((value: number) => {
     setCustomRac(value);
     setHasUnsavedChanges(true);
-  }, []);
+
+    // Debounce: Clear previous timer
+    if (racRecalcTimerRef.current) {
+      clearTimeout(racRecalcTimerRef.current);
+    }
+
+    // Only recalculate if strategy is PERCENTAGE_BASED
+    if (quote?.strategy_used === "PERCENTAGE_BASED" && folder) {
+      // Set loading state
+      setIsRecalculating(true);
+
+      // Debounce the API call (500ms delay)
+      racRecalcTimerRef.current = setTimeout(async () => {
+        try {
+          const simulationResult = await simulateQuote(
+            folder.module_code || "BAR-TH-171",
+            {
+              folder_id: folderId,
+              product_ids: productIds,
+              target_rac: value,
+            }
+          );
+
+          // Update quote and lines with new calculation
+          setQuote(simulationResult);
+          setEditedLines(simulationResult.lines);
+        } catch (err) {
+          console.error("Erreur recalcul:", err);
+          toast.error("Erreur lors du recalcul du devis");
+        } finally {
+          setIsRecalculating(false);
+        }
+      }, 500);
+    }
+  }, [quote?.strategy_used, folder, folderId, productIds]);
 
   const handleAutoSave = useCallback(async () => {
     if (!quote) return;
@@ -355,9 +404,27 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
       {quote && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Stratégie:</span>
-          <Badge variant={quote.strategy_used === "LEGACY_GRID" ? "default" : "secondary"}>
-            {quote.strategy_used === "LEGACY_GRID" ? "Grille héritée" : "Coût + Marge"}
+          <Badge
+            variant={
+              quote.strategy_used === "PERCENTAGE_BASED"
+                ? "default"
+                : quote.strategy_used === "LEGACY_GRID"
+                ? "default"
+                : "secondary"
+            }
+          >
+            {quote.strategy_used === "PERCENTAGE_BASED"
+              ? "Pourcentages"
+              : quote.strategy_used === "LEGACY_GRID"
+              ? "Grille héritée"
+              : "Coût + Marge"}
           </Badge>
+          {isRecalculating && (
+            <Badge variant="outline" className="text-xs">
+              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              Recalcul...
+            </Badge>
+          )}
         </div>
       )}
 
