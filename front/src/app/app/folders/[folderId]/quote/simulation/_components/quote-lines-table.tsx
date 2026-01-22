@@ -53,8 +53,8 @@ export function QuoteLinesTable({ lines, onUpdateLine }: QuoteLinesTableProps) {
                 )}
                 <Textarea
                   value={line.description}
-                  readOnly
-                  className="min-h-[100px] text-sm text-muted-foreground resize-y cursor-default"
+                  onChange={(e) => onUpdateLine(index, "description", e.target.value)}
+                  className="min-h-[100px] text-sm text-muted-foreground resize-y"
                   placeholder="Description détaillée..."
                 />
               </TableCell>

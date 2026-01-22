@@ -4,7 +4,7 @@ import { use, useState, useEffect, useMemo } from "react";
 import { notFound, useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, FileText } from "lucide-react";
 import Link from "next/link";
 import { getCompatiblePacs, type CompatiblePac } from "@/lib/api/sizing";
 import { HeatPumpCard } from "@/components/products/heat-pump-card";
@@ -12,6 +12,8 @@ import { getFolder, type Folder } from "@/lib/api/folders";
 import { getProperty, type Property } from "@/lib/api/properties";
 import { isEligibleForMPR } from "@/lib/utils/mpr-eligibility";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { listQuoteDrafts, type QuoteDraft } from "@/lib/api/quote-drafts";
 
 type QuotePageProps = {
   params: Promise<{ folderId: string }>;
@@ -22,6 +24,7 @@ function QuotePageContent({ folderId }: { folderId: string }) {
   const [pacs, setPacs] = useState<CompatiblePac[]>([]);
   const [folder, setFolder] = useState<Folder | null>(null);
   const [property, setProperty] = useState<Property | null>(null);
+  const [lastDraft, setLastDraft] = useState<QuoteDraft | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,15 +38,15 @@ function QuotePageContent({ folderId }: { folderId: string }) {
       setError(null);
 
       try {
-        // Load folder, property and PACs in parallel
-        const [folderData, pacsResponse] = await Promise.all([
+        // Load folder, property, PACs and drafts in parallel
+        const [folderData, pacsResponse, draftsResponse] = await Promise.all([
           getFolder(folderId),
           getCompatiblePacs(folderId).catch((err: unknown) => {
             const apiError = err as { status?: number; data?: { detail?: string } };
             if (apiError.status === 400) {
               throw new Error(
                 apiError.data?.detail ||
-                  "Le dimensionnement doit être validé avant de consulter les PAC compatibles."
+                "Le dimensionnement doit être validé avant de consulter les PAC compatibles."
               );
             } else if (apiError.status === 404) {
               notFound();
@@ -51,10 +54,27 @@ function QuotePageContent({ folderId }: { folderId: string }) {
               throw new Error("Erreur lors du chargement des pompes à chaleur compatibles.");
             }
           }),
+          listQuoteDrafts(folderId).catch(() => ({ drafts: [], total: 0 })),
         ]);
 
         setFolder(folderData);
         setPacs(pacsResponse.pacs);
+
+        // Check for drafts
+        if (draftsResponse.drafts.length > 0) {
+          const sortedDrafts = draftsResponse.drafts.sort(
+            (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          );
+          setLastDraft(sortedDrafts[0]);
+        }
+
+        // Check for drafts
+        if (draftsResponse.drafts.length > 0) {
+          const sortedDrafts = draftsResponse.drafts.sort(
+            (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          );
+          setLastDraft(sortedDrafts[0]);
+        }
 
         // Load property if available
         if (folderData.property_id) {
@@ -150,6 +170,25 @@ function QuotePageContent({ folderId }: { folderId: string }) {
           </p>
         </div>
       </div>
+
+      {/* Resume Draft Alert */}
+      {lastDraft && (
+        <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-900/50">
+          <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertTitle className="text-blue-800 dark:text-blue-300">
+            Brouillon détecté
+          </AlertTitle>
+          <AlertDescription className="text-blue-700 dark:text-blue-400 flex items-center justify-between gap-4 mt-2">
+            <span>
+              Un brouillon "<strong>{lastDraft.name}</strong>" existe déjà (modifié le{" "}
+              {new Date(lastDraft.updated_at).toLocaleDateString()}).
+            </span>
+            <Button size="sm" variant="default" onClick={() => router.push(`/app/folders/${folderId}/quote/simulation?product_ids=${lastDraft.product_ids?.join(",") || ""}`)}>
+              Reprendre le brouillon
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* PACs Grid */}
       {pacs.length === 0 ? (

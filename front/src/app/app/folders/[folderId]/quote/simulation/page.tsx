@@ -29,7 +29,7 @@ import { DraftSidebar } from "./_components/draft-sidebar";
 type SimulationPageProps = {
   params: Promise<{ folderId: string }>;
 };
-
+//refacto: ne pas se repeter
 const getQuoteTotals = (
   lines: QuoteLine[],
   ceePrime: number,
@@ -90,6 +90,8 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
   // Debounce timer for RAC recalculation
   const racRecalcTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+
+
   // Load folder and initial simulation
   const loadInitialData = useCallback(async () => {
     setLoading(true);
@@ -103,7 +105,10 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
       ]);
 
       setFolder(folderData);
-      setDrafts(draftsData.drafts);
+      const sortedDrafts = draftsData.drafts.sort(
+        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
+      setDrafts(sortedDrafts);
 
       // Load simulation
       const simulationResult = await simulateQuote(folderData.module_code || "BAR-TH-171", {
@@ -112,7 +117,19 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
       });
 
       setQuote(simulationResult);
-      setEditedLines(simulationResult.lines);
+
+      // Auto-load most recent draft if exists
+      if (sortedDrafts.length > 0) {
+        const lastDraft = sortedDrafts[0];
+        setEditedLines(lastDraft.lines);
+        setCurrentDraftId(lastDraft.id);
+        setCustomRac(lastDraft.rac_ttc);
+        setHasUnsavedChanges(false);
+        toast.info(`Reprise du brouillon "${lastDraft.name}"`);
+      } else {
+        setEditedLines(simulationResult.lines);
+      }
+
     } catch (err) {
       console.error("Erreur chargement:", err);
       setError(
@@ -148,81 +165,14 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
   const loadDrafts = useCallback(async () => {
     try {
       const data = await listQuoteDrafts(folderId);
-      setDrafts(data.drafts);
+      setDrafts(data.drafts.sort(
+        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      ));
     } catch (err) {
       console.error("Erreur chargement brouillons:", err);
       toast.error("Erreur lors du chargement des brouillons");
     }
   }, [folderId]);
-
-  const handleUpdateLine = useCallback(
-    (index: number, field: keyof QuoteLine, value: string | number) => {
-      setEditedLines((prev) => {
-        const updated = [...prev];
-        const line = { ...updated[index] };
-
-        if (field === "title") {
-          line.title = value as string;
-        } else if (field === "description") {
-          line.description = value as string;
-        } else if (field === "unit_price_ht") {
-          const price = parseFloat(value as string) || 0;
-          line.unit_price_ht = price;
-          line.total_ht = price * line.quantity;
-          line.total_ttc = line.total_ht * (1 + line.tva_rate / 100);
-        } else if (field === "quantity") {
-          const qty = parseInt(value as string) || 1;
-          line.quantity = qty;
-          line.total_ht = line.unit_price_ht * qty;
-          line.total_ttc = line.total_ht * (1 + line.tva_rate / 100);
-        }
-
-        updated[index] = line;
-        setHasUnsavedChanges(true);
-        return updated;
-      });
-    },
-    []
-  );
-
-  const handleUpdateRac = useCallback((value: number) => {
-    setCustomRac(value);
-    setHasUnsavedChanges(true);
-
-    // Debounce: Clear previous timer
-    if (racRecalcTimerRef.current) {
-      clearTimeout(racRecalcTimerRef.current);
-    }
-
-    // Only recalculate if strategy is COST_PLUS
-    if (quote?.strategy_used === "COST_PLUS" && folder) {
-      // Set loading state
-      setIsRecalculating(true);
-
-      // Debounce the API call (500ms delay)
-      racRecalcTimerRef.current = setTimeout(async () => {
-        try {
-          const simulationResult = await simulateQuote(
-            folder.module_code || "BAR-TH-171",
-            {
-              folder_id: folderId,
-              product_ids: productIds,
-              target_rac: value,
-            }
-          );
-
-          // Update quote and lines with new calculation
-          setQuote(simulationResult);
-          setEditedLines(simulationResult.lines);
-        } catch (err) {
-          console.error("Erreur recalcul:", err);
-          toast.error("Erreur lors du recalcul du devis");
-        } finally {
-          setIsRecalculating(false);
-        }
-      }, 500);
-    }
-  }, [quote?.strategy_used, folder, folderId, productIds]);
 
   const handleAutoSave = useCallback(async () => {
     if (!quote) return;
@@ -260,6 +210,90 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
       console.error("Erreur sauvegarde automatique:", err);
     }
   }, [quote, editedLines, currentDraftId, drafts, folderId, folder?.module_code, productIds, customRac, loadDrafts]);
+
+  // Trigger auto-save with debounce
+  const triggerAutoSave = useCallback(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    // Autosave after 2 seconds of inactivity
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleAutoSave();
+    }, 2000);
+  }, [handleAutoSave]);
+
+  const handleUpdateLine = useCallback(
+    (index: number, field: keyof QuoteLine, value: string | number) => {
+      setEditedLines((prev) => {
+        const updated = [...prev];
+        const line = { ...updated[index] };
+
+        if (field === "title") {
+          line.title = value as string;
+        } else if (field === "description") {
+          line.description = value as string;
+        } else if (field === "unit_price_ht") {
+          const price = parseFloat(value as string) || 0;
+          line.unit_price_ht = price;
+          line.total_ht = price * line.quantity;
+          line.total_ttc = line.total_ht * (1 + line.tva_rate / 100);
+        } else if (field === "quantity") {
+          const qty = parseInt(value as string) || 1;
+          line.quantity = qty;
+          line.total_ht = line.unit_price_ht * qty;
+          line.total_ttc = line.total_ht * (1 + line.tva_rate / 100);
+        }
+
+        updated[index] = line;
+        setHasUnsavedChanges(true);
+        triggerAutoSave();
+        return updated;
+      });
+    },
+    [triggerAutoSave]
+  );
+
+  const handleUpdateRac = useCallback((value: number) => {
+    setCustomRac(value);
+    setHasUnsavedChanges(true);
+    triggerAutoSave();
+
+    // Debounce: Clear previous timer
+    if (racRecalcTimerRef.current) {
+      clearTimeout(racRecalcTimerRef.current);
+    }
+
+    // Only recalculate if strategy is COST_PLUS
+    if (quote?.strategy_used === "COST_PLUS" && folder) {
+      // Set loading state
+      setIsRecalculating(true);
+
+      // Debounce the API call (500ms delay)
+      racRecalcTimerRef.current = setTimeout(async () => {
+        try {
+          const simulationResult = await simulateQuote(
+            folder.module_code || "BAR-TH-171",
+            {
+              folder_id: folderId,
+              product_ids: productIds,
+              target_rac: value,
+            }
+          );
+
+          // Update quote and lines with new calculation
+          setQuote(simulationResult);
+          setEditedLines(simulationResult.lines);
+        } catch (err) {
+          console.error("Erreur recalcul:", err);
+          toast.error("Erreur lors du recalcul du devis");
+        } finally {
+          setIsRecalculating(false);
+        }
+      }, 500);
+    }
+  }, [quote?.strategy_used, folder, folderId, productIds]);
+
+
 
   const handleManualSave = async () => {
     if (!quote) return;
