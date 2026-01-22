@@ -22,10 +22,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -40,6 +45,8 @@ import {
   createProduct,
   updateProduct,
   uploadProductImage,
+  listProducts,
+  type ProductListItem,
 } from "@/lib/api/products";
 import type { ApiError } from "@/lib/api";
 import {
@@ -67,6 +74,8 @@ export function ProductDialog({
 }: ProductDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [thermostats, setThermostats] = useState<ProductListItem[]>([]);
+  const [isLoadingThermostats, setIsLoadingThermostats] = useState(false);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -76,10 +85,16 @@ export function ProductDialog({
 
   const category = form.watch("category");
   const selectedModuleCodes = form.watch("module_codes") || [];
+  const associatedThermostatId = form.watch("associated_thermostat_id");
+  const associatedThermostatNew = form.watch("associated_thermostat_new");
 
   // Helpers pour l'affichage conditionnel
   const showBrandReference = category !== "LABOR";
   const showTechnicalTab = category === "HEAT_PUMP" || category === "THERMOSTAT";
+  const showThermostatSection = category === "HEAT_PUMP" && selectedModuleCodes.includes("BAR-TH-171");
+  
+  // Déterminer le mode thermostat
+  const thermostatMode = associatedThermostatNew ? "new" : associatedThermostatId ? "existing" : "none";
 
   // Auto-set product_type to LABOR when category is LABOR
   useEffect(() => {
@@ -88,8 +103,31 @@ export function ProductDialog({
     }
   }, [category, form]);
 
+  // Charger les thermostats existants
+  useEffect(() => {
+    if (showThermostatSection && open) {
+      setIsLoadingThermostats(true);
+      listProducts({ category: "THERMOSTAT", isActive: true, pageSize: 100 })
+        .then((data) => {
+          setThermostats(data.items);
+        })
+        .catch((err) => {
+          console.error("Erreur lors du chargement des thermostats:", err);
+        })
+        .finally(() => {
+          setIsLoadingThermostats(false);
+        });
+    }
+  }, [showThermostatSection, open]);
+
   useEffect(() => {
     if (product) {
+      // Le thermostat associé est le premier ID dans compatible_product_ids
+      // (on suppose qu'il n'y a qu'un seul thermostat associé par PAC)
+      const thermostatId = product.compatible_product_ids && product.compatible_product_ids.length > 0
+        ? product.compatible_product_ids[0]
+        : null;
+      
       form.reset({
         name: product.name,
         brand: product.brand,
@@ -120,6 +158,8 @@ export function ProductDialog({
             }
           : defaultProductValues.thermostat_details,
         compatible_product_ids: product.compatible_product_ids || [],
+        associated_thermostat_id: thermostatId,
+        associated_thermostat_new: null,
       });
     } else {
       form.reset(defaultProductValues);
@@ -143,9 +183,34 @@ export function ProductDialog({
     setIsSubmitting(true);
     try {
       let savedProduct: Product;
+      let thermostatId: string | null = null;
+
+      // Si un nouveau thermostat doit être créé
+      if (values.associated_thermostat_new) {
+        const newThermostat = await createProduct({
+          name: values.associated_thermostat_new.name,
+          brand: values.associated_thermostat_new.brand,
+          reference: values.associated_thermostat_new.reference,
+          price_ht: values.associated_thermostat_new.price_ht,
+          category: "THERMOSTAT",
+          product_type: "MATERIAL",
+          is_active: true,
+          thermostat_details: {
+            class_rank: values.associated_thermostat_new.class_rank || null,
+          },
+        });
+        thermostatId = newThermostat.id;
+      } else if (values.associated_thermostat_id) {
+        thermostatId = values.associated_thermostat_id;
+      }
 
       // Parse values to get correct types (coerce numbers, etc.)
       const parsedValues = productSchema.parse(values);
+
+      // Préparer les compatible_product_ids
+      const compatibleProductIds = thermostatId 
+        ? [thermostatId] 
+        : (parsedValues.compatible_product_ids || []);
 
       // Prepare payload based on category
       const payload = {
@@ -159,7 +224,12 @@ export function ProductDialog({
           parsedValues.category === "HEAT_PUMP" ? parsedValues.heat_pump_details : null,
         thermostat_details:
           parsedValues.category === "THERMOSTAT" ? parsedValues.thermostat_details : null,
+        compatible_product_ids: compatibleProductIds,
       };
+
+      // Retirer les champs associés_thermostat du payload
+      delete (payload as any).associated_thermostat_id;
+      delete (payload as any).associated_thermostat_new;
 
       if (product) {
         savedProduct = await updateProduct(product.id, payload);
@@ -394,6 +464,202 @@ export function ProductDialog({
                     </FormItem>
                   )}
                 />
+
+                {/* Section Thermostat associé - Uniquement pour PAC avec BAR-TH-171 */}
+                {showThermostatSection && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <div>
+                      <FormLabel className="text-base">Thermostat associé</FormLabel>
+                      <FormDescription>
+                        Sélectionnez un thermostat existant ou créez-en un nouveau pour cette pompe à chaleur
+                      </FormDescription>
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="associated_thermostat_id"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormControl>
+                            <RadioGroup
+                              value={thermostatMode}
+                              onValueChange={(value) => {
+                                if (value === "none") {
+                                  form.setValue("associated_thermostat_id", null);
+                                  form.setValue("associated_thermostat_new", null);
+                                } else if (value === "existing") {
+                                  form.setValue("associated_thermostat_new", null);
+                                  if (!field.value && thermostats.length > 0) {
+                                    form.setValue("associated_thermostat_id", thermostats[0].id);
+                                  }
+                                } else if (value === "new") {
+                                  form.setValue("associated_thermostat_id", null);
+                                  form.setValue("associated_thermostat_new", {
+                                    name: "",
+                                    brand: "",
+                                    reference: "",
+                                    price_ht: 0,
+                                    class_rank: null,
+                                  });
+                                }
+                              }}
+                              className="flex flex-col space-y-1"
+                            >
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="none" id="thermostat-none" />
+                                </FormControl>
+                                <Label htmlFor="thermostat-none" className="font-normal cursor-pointer">
+                                  Aucun thermostat
+                                </Label>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="existing" id="thermostat-existing" />
+                                </FormControl>
+                                <Label htmlFor="thermostat-existing" className="font-normal cursor-pointer">
+                                  Sélectionner un thermostat existant
+                                </Label>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="new" id="thermostat-new" />
+                                </FormControl>
+                                <Label htmlFor="thermostat-new" className="font-normal cursor-pointer">
+                                  Créer un nouveau thermostat
+                                </Label>
+                              </FormItem>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Sélection thermostat existant */}
+                    {thermostatMode === "existing" && (
+                      <FormField
+                        control={form.control}
+                        name="associated_thermostat_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Thermostat</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value || undefined}
+                              disabled={isLoadingThermostats}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder={isLoadingThermostats ? "Chargement..." : "Sélectionner un thermostat"} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {thermostats.map((thermo) => (
+                                  <SelectItem key={thermo.id} value={thermo.id}>
+                                    {thermo.brand} - {thermo.name} {thermo.reference ? `(${thermo.reference})` : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {/* Formulaire nouveau thermostat */}
+                    {thermostatMode === "new" && (
+                      <div className="space-y-4 p-4 border rounded-md bg-muted/50">
+                        <FormField
+                          control={form.control}
+                          name="associated_thermostat_new.name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nom / Modèle *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Thermostat connecté" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <FormField
+                            control={form.control}
+                            name="associated_thermostat_new.brand"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Marque *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Thermor" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="associated_thermostat_new.reference"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Référence *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="526 780" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <FormField
+                            control={form.control}
+                            name="associated_thermostat_new.price_ht"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Prix HT (EUR) *</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="200"
+                                    value={field.value === undefined || field.value === null ? "" : String(field.value)}
+                                    onChange={(e) => {
+                                      const val = e.target.value === "" ? undefined : e.target.value;
+                                      field.onChange(val);
+                                    }}
+                                    onBlur={field.onBlur}
+                                    name={field.name}
+                                    ref={field.ref}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="associated_thermostat_new.class_rank"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Classe</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="V" {...field} value={field.value ?? ""} />
+                                </FormControl>
+                                <FormDescription>
+                                  Classe du thermostat (ex: IV, V, VI)
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </TabsContent>
 
               {/* Technical Tab */}

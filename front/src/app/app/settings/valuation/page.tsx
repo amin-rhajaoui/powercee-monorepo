@@ -374,9 +374,6 @@ export default function ValuationPage() {
                                       </span>
                                     </div>
                                   </FormControl>
-                                  <p className="text-xs text-muted-foreground">
-                                    Applicable pour : Jaune (Modeste), Violet (Intermédiaire), Rose (Classique)
-                                  </p>
                                   <FormMessage />
                                 </FormItem>
                               )}

@@ -43,6 +43,15 @@ export const thermostatDetailsSchema = z.object({
   class_rank: z.string().max(10).nullable().optional(),
 });
 
+// Schema for new thermostat creation (inline in PAC form)
+export const associatedThermostatNewSchema = z.object({
+  name: z.string().min(1, "Le nom est requis").max(255),
+  brand: z.string().min(1, "La marque est requise").max(255),
+  reference: z.string().min(1, "La référence est requise").max(255),
+  price_ht: z.coerce.number().min(0, "Le prix doit être positif"),
+  class_rank: z.string().max(10).nullable().optional(),
+});
+
 // Main product schema with conditional validation
 export const productSchema = z
   .object({
@@ -59,6 +68,8 @@ export const productSchema = z
     heat_pump_details: heatPumpDetailsSchema.nullable().optional(),
     thermostat_details: thermostatDetailsSchema.nullable().optional(),
     compatible_product_ids: z.array(z.string()).nullable().optional(),
+    associated_thermostat_id: z.string().uuid().nullable().optional(),
+    associated_thermostat_new: associatedThermostatNewSchema.nullable().optional(),
   })
   .superRefine((data, ctx) => {
     // Validation conditionnelle selon la categorie
@@ -110,4 +121,6 @@ export const defaultProductValues: ProductFormValues = {
     class_rank: null,
   },
   compatible_product_ids: [],
+  associated_thermostat_id: null,
+  associated_thermostat_new: null,
 };
