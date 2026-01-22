@@ -73,6 +73,7 @@ import { listProducts, type ProductListItem } from "@/lib/api/products";
 // ============================================================================
 
 const fixedLineItemSchema = z.object({
+  title: z.string().min(1, "Titre requis"),
   description: z.string().min(1, "Description requise"),
   quantity: z.number().int().positive("Quantite positive requise"),
   unit_price_ht: z.number().nonnegative("Prix HT positif requis"),
@@ -259,6 +260,7 @@ export default function ModuleSettingsPage({
 
   const handleAddFixedLine = () => {
     appendFixedLine({
+      title: "",
       description: "",
       quantity: 1,
       unit_price_ht: 0,
@@ -705,6 +707,7 @@ export default function ModuleSettingsPage({
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Titre</TableHead>
                       <TableHead>Description</TableHead>
                       <TableHead className="w-24">Qte</TableHead>
                       <TableHead className="w-32">Prix HT</TableHead>
@@ -715,6 +718,15 @@ export default function ModuleSettingsPage({
                   <TableBody>
                     {fixedLineFields.map((field, index) => (
                       <TableRow key={field.id}>
+                        <TableCell>
+                          <FormField
+                            control={form.control}
+                            name={`fixed_line_items.${index}.title`}
+                            render={({ field }) => (
+                              <Input {...field} placeholder="Titre" />
+                            )}
+                          />
+                        </TableCell>
                         <TableCell>
                           <FormField
                             control={form.control}

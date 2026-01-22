@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 export type RoundingMode = "NONE" | "X90";
 
 export interface FixedLineItem {
+  title: string;
   description: string;
   quantity: number;
   unit_price_ht: number;

@@ -136,6 +136,8 @@ export type CompatiblePac = {
   // Champs Prime CEE
   estimated_cee_prime: number | null;
   cee_error: CeeErrorType | null;
+  // Reste à charge estimé selon la stratégie
+  estimated_rac: number | null;
 };
 
 export type CompatiblePacsResponse = {

@@ -20,6 +20,7 @@ from app.services.pdf_service import create_sizing_note_pdf
 from app.services.s3_service import upload_bytes_to_s3
 from app.services.pac_compatibility_service import get_compatible_pacs
 from app.services import cee_calculator_service
+from app.services.pricing import PricingService, PricingError
 from app.core.exceptions import ValuationMissingError
 from app.schemas.sizing import SizingRequest, SizingResponse, SizingPdfRequest, CompatiblePacResponse, CompatiblePacsResponse
 
@@ -743,6 +744,24 @@ async def get_compatible_pacs_for_folder(
             # En cas d'erreur inattendue, on ne bloque pas l'affichage des PAC
             cee_error = "MISSING_VALUATION"
 
+        # Calculer le RAC selon la stratégie de pricing
+        estimated_rac = None
+        if estimated_cee_prime is not None and estimated_cee_prime > 0:
+            try:
+                pricing_service = PricingService()
+                quote_preview = await pricing_service.simulate_quote(
+                    db=db,
+                    tenant_id=current_user.tenant_id,
+                    folder_id=folder_id,
+                    product_ids=[product.id],
+                    target_rac=None,  # Pas de RAC cible, on veut le RAC calculé par la stratégie
+                    module_code="BAR-TH-171",
+                )
+                estimated_rac = quote_preview.rac_ttc
+            except (PricingError, Exception):
+                # En cas d'erreur, on ne bloque pas l'affichage, le RAC reste None
+                estimated_rac = None
+
         pac_response = CompatiblePacResponse(
             id=str(product.id),
             name=product.name,
@@ -760,6 +779,7 @@ async def get_compatible_pacs_for_folder(
             noise_level=hp_details.noise_level,
             estimated_cee_prime=estimated_cee_prime,
             cee_error=cee_error,
+            estimated_rac=estimated_rac,
         )
         pacs_response.append(pac_response)
 

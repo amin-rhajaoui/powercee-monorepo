@@ -17,6 +17,7 @@ class RoundingMode(str, Enum):
 
 class FixedLineItem(BaseModel):
     """Ligne fixe de devis (ex: desembouage)."""
+    title: str = Field(..., min_length=1, description="Titre de la ligne")
     description: str = Field(..., min_length=1, description="Description de la ligne")
     quantity: int = Field(1, ge=1, description="Quantite")
     unit_price_ht: float = Field(..., ge=0, description="Prix unitaire HT")

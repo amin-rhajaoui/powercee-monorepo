@@ -69,6 +69,19 @@ export function HeatPumpCard({
           </div>
         ) : null}
 
+        {/* Reste à charge */}
+        {pac.estimated_rac !== null && pac.estimated_rac !== undefined ? (
+          <div className="flex items-center justify-between bg-red-50 dark:bg-red-950 rounded-md px-3 py-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <span className="text-sm text-red-700 dark:text-red-300">Reste à charge</span>
+            </div>
+            <span className="text-lg font-bold text-red-600">
+              {pac.estimated_rac.toLocaleString("fr-FR")} €
+            </span>
+          </div>
+        ) : null}
+
         {/* Informations techniques */}
         <div className="grid grid-cols-2 gap-3 pt-2 border-t">
           {pac.puissance_moins_7 && (

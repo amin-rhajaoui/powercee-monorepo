@@ -92,6 +92,8 @@ class CompatiblePacResponse(BaseModel):
     # Champs Prime CEE
     estimated_cee_prime: float | None = Field(None, description="Prime CEE estimée en EUR")
     cee_error: CeeErrorType | None = Field(None, description="Code erreur CEE si calcul impossible")
+    # Reste à charge estimé selon la stratégie de pricing
+    estimated_rac: float | None = Field(None, description="Reste à charge estimé en EUR TTC selon la stratégie")
 
 
 class CompatiblePacsResponse(BaseModel):
