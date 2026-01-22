@@ -33,7 +33,7 @@ import { DataTable } from "./_components/data-table";
 import { getColumns } from "./_components/columns";
 import { ProductCard } from "./_components/product-card";
 import { ProductDialog } from "./_components/product-dialog";
-import { ProductSheet } from "./_components/product-sheet";
+import { ProductSheet } from "@/components/products/product-sheet";
 
 const DEFAULT_PAGE_SIZE = 20;
 

@@ -303,125 +303,81 @@ export default function ValuationPage() {
                         <p className="text-sm text-muted-foreground">
                           {item.operation.description}
                         </p>
-                        {item.operation.code === "BAR-TH-171" ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Blue Field */}
-                            <FormField
-                              control={form.control}
-                              name={`valuations.${fieldIndex}.value_blue`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-blue-500" />
-                                    <span>Bleu (Très modeste)</span>
-                                  </FormLabel>
-                                  <FormControl>
-                                    <div className="relative">
-                                      <Input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        placeholder="0.00"
-                                        className="pr-20 border-blue-200 focus:ring-blue-500"
-                                        value={field.value ?? ""}
-                                        onChange={(e) =>
-                                          field.onChange(parseInputValue(e.target.value))
-                                        }
-                                      />
-                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                                        EUR/MWh
-                                      </span>
-                                    </div>
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Blue Field */}
+                          <FormField
+                            control={form.control}
+                            name={`valuations.${fieldIndex}.value_blue`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                                  <span>Bleu (Très modeste)</span>
+                                </FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      placeholder="0.00"
+                                      className="pr-20 border-blue-200 focus:ring-blue-500"
+                                      value={field.value ?? ""}
+                                      onChange={(e) =>
+                                        field.onChange(parseInputValue(e.target.value))
+                                      }
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                                      EUR/MWh
+                                    </span>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                            {/* Others Field (Syncs Yellow, Violet, Rose) */}
-                            <FormField
-                              control={form.control}
-                              name={`valuations.${fieldIndex}.value_rose`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="flex items-center gap-2">
-                                    <div className="flex -space-x-1">
-                                      <div className="w-3 h-3 rounded-full bg-yellow-500 ring-1 ring-white" />
-                                      <div className="w-3 h-3 rounded-full bg-purple-500 ring-1 ring-white" />
-                                      <div className="w-3 h-3 rounded-full bg-pink-500 ring-1 ring-white" />
-                                    </div>
-                                    <span>Autres couleurs</span>
-                                  </FormLabel>
-                                  <FormControl>
-                                    <div className="relative">
-                                      <Input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        placeholder="0.00"
-                                        className="pr-20"
-                                        value={field.value ?? ""}
-                                        onChange={(e) => {
-                                          const val = parseInputValue(e.target.value);
-                                          // Update all 3 "other" fields to keep them in sync
-                                          form.setValue(`valuations.${fieldIndex}.value_yellow`, val, { shouldDirty: true });
-                                          form.setValue(`valuations.${fieldIndex}.value_violet`, val, { shouldDirty: true });
-                                          field.onChange(val); // Updates rose
-                                        }}
-                                      />
-                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                                        EUR/MWh
-                                      </span>
-                                    </div>
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {MPR_COLORS.map((color) => (
-                              <FormField
-                                key={`${item.operation.code}-${color.key}`}
-                                control={form.control}
-                                name={`valuations.${fieldIndex}.${color.key}`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="flex items-center gap-2">
-                                      <div
-                                        className={`w-3 h-3 rounded-full ${color.bgColor}`}
-                                      />
-                                      <span>{color.label}</span>
-                                    </FormLabel>
-                                    <FormControl>
-                                      <div className="relative">
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          min="0"
-                                          placeholder="0.00"
-                                          className={`pr-20 ${color.borderColor} focus:ring-${color.bgColor}`}
-                                          value={field.value ?? ""}
-                                          onChange={(e) =>
-                                            field.onChange(parseInputValue(e.target.value))
-                                          }
-                                        />
-                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                                          EUR/MWh
-                                        </span>
-                                      </div>
-                                    </FormControl>
-                                    <p className="text-xs text-muted-foreground">
-                                      {color.description}
-                                    </p>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            ))}
-                          </div>
-                        )}
+                          {/* Others Field (Syncs Yellow, Violet, Rose) */}
+                          <FormField
+                            control={form.control}
+                            name={`valuations.${fieldIndex}.value_rose`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  <div className="flex -space-x-1">
+                                    <div className="w-3 h-3 rounded-full bg-yellow-500 ring-1 ring-white" />
+                                    <div className="w-3 h-3 rounded-full bg-purple-500 ring-1 ring-white" />
+                                    <div className="w-3 h-3 rounded-full bg-pink-500 ring-1 ring-white" />
+                                  </div>
+                                  <span>Autres couleurs</span>
+                                </FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      placeholder="0.00"
+                                      className="pr-20"
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const val = parseInputValue(e.target.value);
+                                        // Update all 3 "other" fields to keep them in sync
+                                        form.setValue(`valuations.${fieldIndex}.value_yellow`, val, { shouldDirty: true });
+                                        form.setValue(`valuations.${fieldIndex}.value_violet`, val, { shouldDirty: true });
+                                        field.onChange(val); // Updates rose
+                                      }}
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                                      EUR/MWh
+                                    </span>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </AccordionContent>
                     </AccordionItem>
                   );

@@ -147,7 +147,7 @@ export default function ModuleSettingsPage({
   const [addRuleDialogOpen, setAddRuleDialogOpen] = useState(false);
   const [addLineDialogOpen, setAddLineDialogOpen] = useState(false);
 
-  const form = useForm<FormValues>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       enable_legacy_grid_rules: false,
@@ -560,13 +560,13 @@ export default function ModuleSettingsPage({
               <div className="pt-4 border-t">
                 {(() => {
                   const percentages = form.watch("line_percentages");
-                  const total = 
+                  const total =
                     (percentages?.HEAT_PUMP || 0) +
                     (percentages?.LABOR || 0) +
                     (percentages?.THERMOSTAT || 0) +
                     (percentages?.FIXED || 0);
                   const isValid = total <= 100;
-                  
+
                   return (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">
@@ -574,13 +574,12 @@ export default function ModuleSettingsPage({
                       </span>
                       <div className="flex items-center gap-2">
                         <span
-                          className={`text-sm font-medium ${
-                            isValid
+                          className={`text-sm font-medium ${isValid
                               ? total === 100
                                 ? "text-green-600"
                                 : "text-orange-600"
                               : "text-red-600"
-                          }`}
+                            }`}
                         >
                           {total.toFixed(1)}% / 100%
                         </span>

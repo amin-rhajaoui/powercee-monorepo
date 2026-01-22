@@ -30,6 +30,39 @@ type SimulationPageProps = {
   params: Promise<{ folderId: string }>;
 };
 
+const getQuoteTotals = (
+  lines: QuoteLine[],
+  ceePrime: number,
+  customRac: number | null
+) => {
+  const baseTotals = lines.reduce(
+    (acc, line) => ({
+      total_ht: acc.total_ht + line.total_ht,
+      total_ttc: acc.total_ttc + line.total_ttc,
+    }),
+    { total_ht: 0, total_ttc: 0 }
+  );
+
+  const calculatedRac = baseTotals.total_ttc - ceePrime;
+
+  // Si le RAC est personnalisé, on ajuste le Total TTC en conséquence
+  if (customRac !== null) {
+    const adjustedTotalTtc = customRac + ceePrime;
+    return {
+      total_ht: baseTotals.total_ht,
+      total_ttc: adjustedTotalTtc,
+      rac_ttc: customRac,
+    };
+  }
+
+  // Sinon, calcul normal
+  return {
+    total_ht: baseTotals.total_ht,
+    total_ttc: baseTotals.total_ttc,
+    rac_ttc: calculatedRac,
+  };
+};
+
 function SimulationPageContent({ folderId }: { folderId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -161,8 +194,8 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
       clearTimeout(racRecalcTimerRef.current);
     }
 
-    // Only recalculate if strategy is PERCENTAGE_BASED
-    if (quote?.strategy_used === "PERCENTAGE_BASED" && folder) {
+    // Only recalculate if strategy is COST_PLUS
+    if (quote?.strategy_used === "COST_PLUS" && folder) {
       // Set loading state
       setIsRecalculating(true);
 
@@ -195,24 +228,7 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
     if (!quote) return;
 
     try {
-      const baseTotals = editedLines.reduce(
-        (acc, line) => ({
-          total_ht: acc.total_ht + line.total_ht,
-          total_ttc: acc.total_ttc + line.total_ttc,
-        }),
-        { total_ht: 0, total_ttc: 0 }
-      );
-
-      const ceePrime = quote.cee_prime;
-      const calculatedRac = baseTotals.total_ttc - ceePrime;
-
-      let finalTotalTtc = baseTotals.total_ttc;
-      let finalRac = calculatedRac;
-
-      if (customRac !== null) {
-        finalRac = customRac;
-        finalTotalTtc = customRac + ceePrime;
-      }
+      const totals = getQuoteTotals(editedLines, quote.cee_prime, customRac);
 
       const draftData: QuoteDraftCreate = {
         name: currentDraftId ? drafts.find((d) => d.id === currentDraftId)?.name || generateDraftName() : generateDraftName(),
@@ -220,10 +236,10 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
         module_code: folder?.module_code || "BAR-TH-171",
         product_ids: productIds,
         lines: editedLines,
-        total_ht: baseTotals.total_ht,
-        total_ttc: finalTotalTtc,
-        rac_ttc: finalRac,
-        cee_prime: ceePrime,
+        total_ht: totals.total_ht,
+        total_ttc: totals.total_ttc,
+        rac_ttc: totals.rac_ttc,
+        cee_prime: quote.cee_prime,
         margin_ht: quote.margin_ht,
         margin_percent: quote.margin_percent,
         strategy_used: quote.strategy_used,
@@ -309,33 +325,7 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
   };
 
   const calculateTotals = () => {
-    const baseTotals = editedLines.reduce(
-      (acc, line) => ({
-        total_ht: acc.total_ht + line.total_ht,
-        total_ttc: acc.total_ttc + line.total_ttc,
-      }),
-      { total_ht: 0, total_ttc: 0 }
-    );
-
-    const ceePrime = quote?.cee_prime ?? 0;
-    const calculatedRac = baseTotals.total_ttc - ceePrime;
-
-    // Si le RAC est personnalisé, on ajuste le Total TTC en conséquence
-    if (customRac !== null) {
-      const adjustedTotalTtc = customRac + ceePrime;
-      return {
-        total_ht: baseTotals.total_ht,
-        total_ttc: adjustedTotalTtc,
-        rac_ttc: customRac,
-      };
-    }
-
-    // Sinon, calcul normal
-    return {
-      total_ht: baseTotals.total_ht,
-      total_ttc: baseTotals.total_ttc,
-      rac_ttc: calculatedRac,
-    };
+    return getQuoteTotals(editedLines, quote?.cee_prime || 0, customRac);
   };
 
   const totals = calculateTotals();
@@ -404,20 +394,10 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
       {quote && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Stratégie:</span>
-          <Badge
-            variant={
-              quote.strategy_used === "PERCENTAGE_BASED"
-                ? "default"
-                : quote.strategy_used === "LEGACY_GRID"
-                ? "default"
-                : "secondary"
-            }
-          >
-            {quote.strategy_used === "PERCENTAGE_BASED"
-              ? "Pourcentages"
-              : quote.strategy_used === "LEGACY_GRID"
-              ? "Grille héritée"
-              : "Coût + Marge"}
+          <Badge variant="default">
+            {quote.strategy_used === "COST_PLUS"
+              ? "Coût + Marge"
+              : "Grille héritée"}
           </Badge>
           {isRecalculating && (
             <Badge variant="outline" className="text-xs">

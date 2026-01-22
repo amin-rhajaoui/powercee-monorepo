@@ -57,6 +57,7 @@ import {
   productTypeOptions,
   powerSupplyOptions,
   moduleCodes,
+  associatedThermostatNewSchema,
 } from "../_schemas";
 
 type ProductDialogProps = {
@@ -92,7 +93,7 @@ export function ProductDialog({
   const showBrandReference = category !== "LABOR";
   const showTechnicalTab = category === "HEAT_PUMP" || category === "THERMOSTAT";
   const showThermostatSection = category === "HEAT_PUMP" && selectedModuleCodes.includes("BAR-TH-171");
-  
+
   // Déterminer le mode thermostat
   const thermostatMode = associatedThermostatNew ? "new" : associatedThermostatId ? "existing" : "none";
 
@@ -127,7 +128,7 @@ export function ProductDialog({
       const thermostatId = product.compatible_product_ids && product.compatible_product_ids.length > 0
         ? product.compatible_product_ids[0]
         : null;
-      
+
       form.reset({
         name: product.name,
         brand: product.brand,
@@ -141,21 +142,21 @@ export function ProductDialog({
         is_active: product.is_active,
         heat_pump_details: product.heat_pump_details
           ? {
-              etas_35: product.heat_pump_details.etas_35,
-              etas_55: product.heat_pump_details.etas_55,
-              power_minus_7: product.heat_pump_details.power_minus_7,
-              power_minus_15: product.heat_pump_details.power_minus_15,
-              power_supply: product.heat_pump_details.power_supply,
-              refrigerant_type: product.heat_pump_details.refrigerant_type,
-              noise_level: product.heat_pump_details.noise_level,
-              is_duo: product.heat_pump_details.is_duo,
-              class_regulator: product.heat_pump_details.class_regulator,
-            }
+            etas_35: product.heat_pump_details.etas_35,
+            etas_55: product.heat_pump_details.etas_55,
+            power_minus_7: product.heat_pump_details.power_minus_7,
+            power_minus_15: product.heat_pump_details.power_minus_15,
+            power_supply: product.heat_pump_details.power_supply,
+            refrigerant_type: product.heat_pump_details.refrigerant_type,
+            noise_level: product.heat_pump_details.noise_level,
+            is_duo: product.heat_pump_details.is_duo,
+            class_regulator: product.heat_pump_details.class_regulator,
+          }
           : defaultProductValues.heat_pump_details,
         thermostat_details: product.thermostat_details
           ? {
-              class_rank: product.thermostat_details.class_rank,
-            }
+            class_rank: product.thermostat_details.class_rank,
+          }
           : defaultProductValues.thermostat_details,
         compatible_product_ids: product.compatible_product_ids || [],
         associated_thermostat_id: thermostatId,
@@ -186,17 +187,21 @@ export function ProductDialog({
       let thermostatId: string | null = null;
 
       // Si un nouveau thermostat doit être créé
+      // Si un nouveau thermostat doit être créé
       if (values.associated_thermostat_new) {
+        // Parse the sub-schema to ensure correct types (coercion)
+        const thermostatValues = associatedThermostatNewSchema.parse(values.associated_thermostat_new);
+
         const newThermostat = await createProduct({
-          name: values.associated_thermostat_new.name,
-          brand: values.associated_thermostat_new.brand,
-          reference: values.associated_thermostat_new.reference,
-          price_ht: values.associated_thermostat_new.price_ht,
+          name: thermostatValues.name,
+          brand: thermostatValues.brand,
+          reference: thermostatValues.reference,
+          price_ht: thermostatValues.price_ht,
           category: "THERMOSTAT",
           product_type: "MATERIAL",
           is_active: true,
           thermostat_details: {
-            class_rank: values.associated_thermostat_new.class_rank || null,
+            class_rank: thermostatValues.class_rank || null,
           },
         });
         thermostatId = newThermostat.id;
@@ -208,8 +213,8 @@ export function ProductDialog({
       const parsedValues = productSchema.parse(values);
 
       // Préparer les compatible_product_ids
-      const compatibleProductIds = thermostatId 
-        ? [thermostatId] 
+      const compatibleProductIds = thermostatId
+        ? [thermostatId]
         : (parsedValues.compatible_product_ids || []);
 
       // Prepare payload based on category
