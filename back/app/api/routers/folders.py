@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -13,6 +14,10 @@ from app.schemas.folder import (
     PaginatedFoldersResponse,
 )
 from app.services import folder_service
+from app.services.document_service import finalize_folder
+from app.schemas.document import FinalizeFolderResponse, DocumentResponse
+from app.models.document import Document
+from sqlalchemy import select, and_
 
 router = APIRouter(prefix="/folders", tags=["Folders"])
 
@@ -102,4 +107,41 @@ async def list_folders(
         total=total,
         page=page,
         page_size=page_size,
+    )
+
+
+@router.post("/{folder_id}/finalize", response_model=FinalizeFolderResponse, status_code=status.HTTP_200_OK)
+async def finalize_folder_endpoint(
+    folder_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(RoleChecker([UserRole.DIRECTION, UserRole.ADMIN_AGENCE, UserRole.COMMERCIAL])),
+) -> FinalizeFolderResponse:
+    """
+    Finalise un dossier en générant les 4 documents PDF (note de dimensionnement, devis, attestation TVA, CDC CEE).
+    Le dossier passe à l'état COMPLETED et devient non modifiable.
+    """
+    result = await finalize_folder(db, current_user, folder_id)
+    
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Impossible de finaliser le dossier. Vérifiez que le dossier est en IN_PROGRESS et qu'un brouillon de devis existe.",
+        )
+    
+    # Récupérer les documents depuis la base de données
+    documents_result = await db.execute(
+        select(Document).where(
+            and_(
+                Document.folder_id == folder_id,
+                Document.tenant_id == current_user.tenant_id,
+            )
+        )
+        .order_by(Document.created_at.desc())
+    )
+    documents = documents_result.scalars().all()
+    
+    return FinalizeFolderResponse(
+        folder_id=UUID(result['folder_id']),
+        quote_number=result['quote_number'],
+        documents=[DocumentResponse.model_validate(doc) for doc in documents],
     )

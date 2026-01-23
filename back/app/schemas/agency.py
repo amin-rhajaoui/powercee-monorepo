@@ -13,6 +13,10 @@ class AgencyBase(BaseModel):
     is_headquarters: bool = False
     siret: str | None = Field(None, min_length=14, max_length=14, pattern=r'^\d{14}$')
     vat_number: str | None = Field(None, max_length=50)
+    phone: str | None = Field(None, max_length=20, description="Numéro de téléphone de l'agence")
+    email: str | None = Field(None, max_length=255, description="Adresse email de l'agence")
+    manager_first_name: str | None = Field(None, max_length=100, description="Prénom du gérant (siège social uniquement)")
+    manager_last_name: str | None = Field(None, max_length=100, description="Nom du gérant (siège social uniquement)")
 
 class AgencyCreate(AgencyBase):
     """
@@ -32,6 +36,10 @@ class AgencyUpdate(BaseModel):
     is_headquarters: bool | None = None
     siret: str | None = Field(None, min_length=14, max_length=14, pattern=r'^\d{14}$')
     vat_number: str | None = Field(None, max_length=50)
+    phone: str | None = Field(None, max_length=20, description="Numéro de téléphone de l'agence")
+    email: str | None = Field(None, max_length=255, description="Adresse email de l'agence")
+    manager_first_name: str | None = Field(None, max_length=100, description="Prénom du gérant (siège social uniquement)")
+    manager_last_name: str | None = Field(None, max_length=100, description="Nom du gérant (siège social uniquement)")
 
 class AgencyResponse(AgencyBase):
     """

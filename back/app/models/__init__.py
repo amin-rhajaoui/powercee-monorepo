@@ -14,6 +14,7 @@ from .installation_recommendation import InstallationRecommendation
 from .technical_survey import TechnicalSurvey
 from .cee_valuation import CEEValuation
 from .quote_draft import QuoteDraft
+from .document import Document, DocumentType
 
 __all__ = [
     "Tenant",
@@ -44,5 +45,7 @@ __all__ = [
     "ModuleSettings",
     "RoundingMode",
     "QuoteDraft",
+    "Document",
+    "DocumentType",
 ]
 

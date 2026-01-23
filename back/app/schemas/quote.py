@@ -38,6 +38,7 @@ class QuotePreviewResponse(BaseModel):
     margin_percent: float = Field(..., description="Marge en pourcentage")
     strategy_used: str = Field(..., description="Strategie utilisee (LEGACY_GRID ou COST_PLUS)")
     warnings: List[str] = Field(default_factory=list, description="Avertissements")
+    has_percentage_distribution: bool = Field(False, description="Indique si line_percentages est configure")
 
 
 class QuoteLineUpdate(BaseModel):

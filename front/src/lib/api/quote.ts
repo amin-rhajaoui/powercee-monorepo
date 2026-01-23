@@ -26,6 +26,7 @@ export interface QuotePreview {
   margin_percent: number;
   strategy_used: "LEGACY_GRID" | "COST_PLUS";
   warnings: string[];
+  has_percentage_distribution: boolean;
 }
 
 export interface SimulateQuoteRequest {

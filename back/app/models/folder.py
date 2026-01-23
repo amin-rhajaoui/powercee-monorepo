@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from app.models.installation_recommendation import InstallationRecommendation
     from app.models.technical_survey import TechnicalSurvey
     from app.models.quote_draft import QuoteDraft
+    from app.models.document import Document
 
 
 class FolderStatus(str, Enum):
@@ -23,6 +24,7 @@ class FolderStatus(str, Enum):
     IN_PROGRESS = "IN_PROGRESS"
     CLOSED = "CLOSED"
     ARCHIVED = "ARCHIVED"
+    COMPLETED = "COMPLETED"
 
 
 class Folder(Base):
@@ -63,7 +65,13 @@ class Folder(Base):
         SAEnum(FolderStatus),
         default=FolderStatus.IN_PROGRESS,
         nullable=False,
-        doc="Statut du dossier (IN_PROGRESS, CLOSED, ARCHIVED).",
+        doc="Statut du dossier (IN_PROGRESS, CLOSED, ARCHIVED, COMPLETED).",
+    )
+    quote_number: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        index=True,
+        doc="Numéro de devis généré lors de la finalisation (ex: DEV-001).",
     )
     data: Mapped[dict] = mapped_column(
         JSONB,
@@ -121,6 +129,10 @@ class Folder(Base):
         cascade="all, delete-orphan",
     )
     quote_drafts: Mapped[List["QuoteDraft"]] = relationship(
+        back_populates="folder",
+        cascade="all, delete-orphan",
+    )
+    documents: Mapped[List["Document"]] = relationship(
         back_populates="folder",
         cascade="all, delete-orphan",
     )
