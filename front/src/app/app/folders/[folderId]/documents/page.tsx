@@ -1,8 +1,8 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Download, Loader2, FileText } from "lucide-react";
+import { ArrowLeft, Download, Loader2, FileText, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -31,11 +31,17 @@ function DocumentsPageContent({ folderId }: { folderId: string }) {
   const [folder, setFolder] = useState<Folder | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [downloading, setDownloading] = useState<string | null>(null);
+  /** URLs blob pour l'aperçu (évite Access Denied sur S3 privé) */
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  const [previewErrors, setPreviewErrors] = useState<Record<string, string>>({});
+  const blobUrlsRef = useRef<string[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       setError(null);
+      setPreviewUrls({});
+      setPreviewErrors({});
 
       try {
         const [folderData, documentsData] = await Promise.all([
@@ -58,6 +64,40 @@ function DocumentsPageContent({ folderId }: { folderId: string }) {
     loadData();
   }, [folderId]);
 
+  /** Charge les PDF via l'API (proxy) et crée des blob URLs pour l'iframe (évite Access Denied S3). */
+  useEffect(() => {
+    if (documents.length === 0) return;
+
+    blobUrlsRef.current.forEach((u) => window.URL.revokeObjectURL(u));
+    blobUrlsRef.current = [];
+
+    const urls: Record<string, string> = {};
+    const errors: Record<string, string> = {};
+
+    const loadPreviews = async () => {
+      await Promise.all(
+        documents.map(async (doc) => {
+          try {
+            const blob = await downloadDocument(doc.id);
+            const url = window.URL.createObjectURL(blob);
+            urls[doc.id] = url;
+            blobUrlsRef.current.push(url);
+          } catch (e) {
+            errors[doc.id] = e instanceof Error ? e.message : "Impossible de charger l'aperçu";
+          }
+        })
+      );
+      setPreviewUrls((prev) => ({ ...prev, ...urls }));
+      setPreviewErrors((prev) => ({ ...prev, ...errors }));
+    };
+
+    void loadPreviews();
+    return () => {
+      blobUrlsRef.current.forEach((u) => window.URL.revokeObjectURL(u));
+      blobUrlsRef.current = [];
+    };
+  }, [documents]);
+
   const handleDownload = async (doc: Document) => {
     setDownloading(doc.id);
     try {
@@ -65,7 +105,16 @@ function DocumentsPageContent({ folderId }: { folderId: string }) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${DOCUMENT_LABELS[doc.document_type] || doc.document_type}.pdf`;
+      
+      // Noms de fichiers standardisés (sans espaces, avec underscores)
+      const filenameMap: Record<string, string> = {
+        sizing_note: "note_dimensionnement.pdf",
+        quote: "devis.pdf",
+        tva_attestation: "attestation_tva.pdf",
+        cdc_cee: "cdc_cee.pdf",
+      };
+      
+      a.download = filenameMap[doc.document_type] || `${doc.document_type}.pdf`;
       const body = document.body;
       body.appendChild(a);
       a.click();
@@ -158,11 +207,22 @@ function DocumentsPageContent({ folderId }: { folderId: string }) {
               </CardHeader>
               <CardContent>
                 <div className="aspect-[8.5/11] border rounded-lg overflow-hidden bg-muted">
-                  <iframe
-                    src={doc.file_url}
-                    className="w-full h-full"
-                    title={DOCUMENT_LABELS[doc.document_type] || doc.document_type}
-                  />
+                  {previewErrors[doc.id] ? (
+                    <div className="flex flex-col items-center justify-center h-full gap-2 p-4 text-muted-foreground">
+                      <AlertCircle className="h-8 w-8" />
+                      <span className="text-sm text-center">{previewErrors[doc.id]}</span>
+                    </div>
+                  ) : previewUrls[doc.id] ? (
+                    <iframe
+                      src={previewUrls[doc.id]}
+                      className="w-full h-full"
+                      title={DOCUMENT_LABELS[doc.document_type] || doc.document_type}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
