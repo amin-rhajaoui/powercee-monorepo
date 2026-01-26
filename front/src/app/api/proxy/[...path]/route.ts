@@ -77,10 +77,11 @@ async function handleRequest(
       }
     });
 
-    // Pour les images et autres fichiers binaires, utiliser arrayBuffer
+    // Pour les images, PDFs et autres fichiers binaires, utiliser arrayBuffer
     // Pour les réponses JSON/text, utiliser text()
     const contentType = response.headers.get("content-type") || "";
-    const isBinary = contentType.startsWith("image/") || 
+    const isBinary = contentType.startsWith("image/") ||
+                     contentType.startsWith("application/pdf") ||
                      contentType.startsWith("application/octet-stream") ||
                      contentType.includes("binary");
 

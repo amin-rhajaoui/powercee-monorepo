@@ -25,8 +25,6 @@ export async function getFolderDocuments(folderId: string): Promise<Document[]> 
 }
 
 export async function downloadDocument(documentId: string): Promise<Blob> {
-  const res = await api.get(`/documents/${documentId}/download`, {
-    responseType: "blob",
-  });
+  const res = await api.get(`/documents/${documentId}/download`);
   return res.blob();
 }

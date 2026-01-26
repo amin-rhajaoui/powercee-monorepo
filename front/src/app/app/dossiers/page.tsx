@@ -53,6 +53,7 @@ const FOLDER_STATUS_LABELS: Record<FolderStatus, string> = {
   IN_PROGRESS: "En cours",
   CLOSED: "Clos",
   ARCHIVED: "Archive",
+  COMPLETED: "Terminé",
 };
 
 const FOLDER_STATUS_VARIANTS: Record<
@@ -62,6 +63,7 @@ const FOLDER_STATUS_VARIANTS: Record<
   IN_PROGRESS: "default",
   CLOSED: "secondary",
   ARCHIVED: "outline",
+  COMPLETED: "default",
 };
 
 // ============================================================================
@@ -198,6 +200,7 @@ export default function DossiersPage() {
                   <SelectItem value="IN_PROGRESS">En cours</SelectItem>
                   <SelectItem value="CLOSED">Clos</SelectItem>
                   <SelectItem value="ARCHIVED">Archive</SelectItem>
+                  <SelectItem value="COMPLETED">Terminé</SelectItem>
                 </SelectContent>
               </Select>
             </div>
