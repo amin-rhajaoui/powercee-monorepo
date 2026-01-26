@@ -25,7 +25,8 @@ interface PropertySelectorProps {
 
 function getPropertyDisplayName(property: Property): string {
     const typeEmoji = property.type === 'MAISON' ? '🏠' : '🏢';
-    return `${typeEmoji} ${property.address}, ${property.postal_code || ''} ${property.city}`;
+    // Afficher le nom (label) du logement plutôt que l'adresse
+    return `${typeEmoji} ${property.label || property.address}`;
 }
 
 // ============================================================================

@@ -418,7 +418,7 @@ function FoldersTableContent({
                           <TableCell>
                             <Badge 
                               className={FOLDER_STATUS_COLORS[folder.status]}
-                              variant="outline"
+                              variant={FOLDER_STATUS_VARIANTS[folder.status]}
                             >
                               {FOLDER_STATUS_LABELS[folder.status]}
                             </Badge>

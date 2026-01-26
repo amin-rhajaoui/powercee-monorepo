@@ -69,6 +69,8 @@ const FOLDER_STATUS_LABELS: Record<string, string> = {
   IN_PROGRESS: "En cours",
   CLOSED: "Clos",
   ARCHIVED: "Archive",
+  COMPLETED: "Terminé",
+  PENDING_SIGNATURE: "En attente de signature",
 };
 
 const FOLDER_STATUS_VARIANTS: Record<
@@ -78,6 +80,16 @@ const FOLDER_STATUS_VARIANTS: Record<
   IN_PROGRESS: "default",
   CLOSED: "secondary",
   ARCHIVED: "outline",
+  COMPLETED: "default",
+  PENDING_SIGNATURE: "secondary",
+};
+
+const FOLDER_STATUS_COLORS: Record<string, string> = {
+  IN_PROGRESS: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  CLOSED: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+  ARCHIVED: "bg-gray-50 text-gray-600 dark:bg-gray-900 dark:text-gray-400",
+  COMPLETED: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  PENDING_SIGNATURE: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
 };
 
 // ============================================================================
@@ -371,9 +383,10 @@ function ModuleOverview({
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={FOLDER_STATUS_VARIANTS[folder.status]}
+                              variant={FOLDER_STATUS_VARIANTS[folder.status] || "default"}
+                              className={FOLDER_STATUS_COLORS[folder.status] || ""}
                             >
-                              {FOLDER_STATUS_LABELS[folder.status]}
+                              {FOLDER_STATUS_LABELS[folder.status] || folder.status}
                             </Badge>
                           </TableCell>
                           <TableCell>{formatDate(folder.created_at)}</TableCell>

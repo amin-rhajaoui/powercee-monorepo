@@ -16,7 +16,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.powercee.mobile"
+      "bundleIdentifier": "com.powercee.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Nous avons besoin d'accéder à votre caméra pour scanner des documents"
+      }
     },
     "android": {
       "adaptiveIcon": {
