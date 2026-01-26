@@ -15,6 +15,7 @@ from .technical_survey import TechnicalSurvey
 from .cee_valuation import CEEValuation
 from .quote_draft import QuoteDraft
 from .document import Document, DocumentType
+from .integration import Integration, IntegrationType
 
 __all__ = [
     "Tenant",
@@ -47,5 +48,7 @@ __all__ = [
     "QuoteDraft",
     "Document",
     "DocumentType",
+    "Integration",
+    "IntegrationType",
 ]
 

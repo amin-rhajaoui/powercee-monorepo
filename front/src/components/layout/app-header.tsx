@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { Moon, Sun, User, Palette, MapPin } from "lucide-react";
+import { Moon, Sun, User, Palette, MapPin, Plug } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
@@ -134,6 +134,12 @@ export function AppHeader() {
                 <Link href="/app/settings/agencies" className="flex items-center cursor-pointer">
                   <MapPin className="mr-2 h-4 w-4" />
                   <span>Mes Agences</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/app/settings/integrations" className="flex items-center cursor-pointer">
+                  <Plug className="mr-2 h-4 w-4" />
+                  <span>Integrations</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

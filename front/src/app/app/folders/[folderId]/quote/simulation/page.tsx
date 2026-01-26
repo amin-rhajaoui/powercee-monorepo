@@ -362,8 +362,43 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
       return;
     }
 
+    if (!quote) {
+      toast.error("Impossible de générer les documents : simulation manquante");
+      return;
+    }
+
     setIsFinalizing(true);
     try {
+      // Si aucun brouillon n'existe, en créer un automatiquement avec les données actuelles
+      if (!currentDraftId) {
+        try {
+          const totals = calculateTotals();
+          const draftData: QuoteDraftCreate = {
+            name: generateDraftName(),
+            folder_id: folderId,
+            module_code: folder.module_code || "BAR-TH-171",
+            product_ids: productIds,
+            lines: editedLines,
+            total_ht: totals.total_ht,
+            total_ttc: totals.total_ttc,
+            rac_ttc: totals.rac_ttc,
+            cee_prime: quote.cee_prime,
+            margin_ht: quote.margin_ht,
+            margin_percent: quote.margin_percent,
+            strategy_used: quote.strategy_used,
+            warnings: quote.warnings,
+          };
+
+          const newDraft = await createQuoteDraft(draftData);
+          setCurrentDraftId(newDraft.id);
+          // Ne pas afficher de toast pour ne pas perturber l'utilisateur
+        } catch (draftErr) {
+          console.error("Erreur lors de la création automatique du brouillon:", draftErr);
+          // On continue quand même, le backend pourra peut-être créer le brouillon
+        }
+      }
+
+      // Finaliser le dossier
       const result = await finalizeFolder(folderId);
       toast.success(`Documents générés avec succès. Numéro de devis: ${result.quote_number}`);
       router.push(`/app/folders/${folderId}/documents`);

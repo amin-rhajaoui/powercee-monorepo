@@ -214,19 +214,33 @@ export default function ModuleSettingsPage({
 
       // Set form values
       form.reset({
-        enable_legacy_grid_rules: settings.enable_legacy_grid_rules,
+        enable_legacy_grid_rules: settings.enable_legacy_grid_rules ?? false,
         enable_rounding: settings.rounding_mode === "X90",
-        min_margin_amount: settings.min_margin_amount,
-        max_rac_addon: settings.max_rac_addon,
-        default_labor_product_ids: settings.default_labor_product_ids,
-        fixed_line_items: settings.fixed_line_items || [],
-        line_percentages: settings.line_percentages || {
-          HEAT_PUMP: 0,
-          LABOR: 0,
-          THERMOSTAT: 0,
-          FIXED: 0,
+        min_margin_amount: settings.min_margin_amount ?? 0,
+        max_rac_addon: settings.max_rac_addon ?? null,
+        default_labor_product_ids: settings.default_labor_product_ids ?? [],
+        fixed_line_items: (settings.fixed_line_items || []).map(item => ({
+          title: item.title ?? "",
+          description: item.description ?? "",
+          quantity: item.quantity ?? 1,
+          unit_price_ht: item.unit_price_ht ?? 0,
+          tva_rate: item.tva_rate ?? 5.5,
+        })),
+        line_percentages: {
+          HEAT_PUMP: settings.line_percentages?.HEAT_PUMP ?? 0,
+          LABOR: settings.line_percentages?.LABOR ?? 0,
+          THERMOSTAT: settings.line_percentages?.THERMOSTAT ?? 0,
+          FIXED: settings.line_percentages?.FIXED ?? 0,
         },
-        legacy_grid_rules: settings.legacy_grid_rules || [],
+        legacy_grid_rules: (settings.legacy_grid_rules || []).map(rule => ({
+          brand: rule.brand ?? brands[0] ?? "",
+          etas_min: rule.etas_min ?? 111,
+          etas_max: rule.etas_max ?? 140,
+          surface_min: rule.surface_min ?? 0,
+          surface_max: rule.surface_max ?? null,
+          mpr_profile: rule.mpr_profile ?? "Bleu",
+          rac_amount: rule.rac_amount ?? 0,
+        })),
       });
     } catch (error) {
       console.error("Erreur chargement:", error);
@@ -397,7 +411,7 @@ export default function ModuleSettingsPage({
                           step="100"
                           min="0"
                           placeholder="3000"
-                          {...field}
+                          value={field.value ?? 0}
                           onChange={(e) =>
                             field.onChange(parseFloat(e.target.value) || 0)
                           }
@@ -472,7 +486,7 @@ export default function ModuleSettingsPage({
                           min="0"
                           max="100"
                           placeholder="40.0"
-                          {...field}
+                          value={field.value ?? 0}
                           onChange={(e) =>
                             field.onChange(parseFloat(e.target.value) || 0)
                           }
@@ -722,7 +736,7 @@ export default function ModuleSettingsPage({
                             control={form.control}
                             name={`fixed_line_items.${index}.title`}
                             render={({ field }) => (
-                              <Input {...field} placeholder="Titre" />
+                              <Input {...field} value={field.value ?? ""} placeholder="Titre" />
                             )}
                           />
                         </TableCell>
@@ -731,7 +745,7 @@ export default function ModuleSettingsPage({
                             control={form.control}
                             name={`fixed_line_items.${index}.description`}
                             render={({ field }) => (
-                              <Input {...field} placeholder="Description" />
+                              <Input {...field} value={field.value ?? ""} placeholder="Description" />
                             )}
                           />
                         </TableCell>
@@ -743,7 +757,7 @@ export default function ModuleSettingsPage({
                               <Input
                                 type="number"
                                 min="1"
-                                {...field}
+                                value={field.value ?? 1}
                                 onChange={(e) =>
                                   field.onChange(parseInt(e.target.value) || 1)
                                 }
@@ -760,7 +774,7 @@ export default function ModuleSettingsPage({
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                {...field}
+                                value={field.value ?? 0}
                                 onChange={(e) =>
                                   field.onChange(parseFloat(e.target.value) || 0)
                                 }
@@ -777,7 +791,7 @@ export default function ModuleSettingsPage({
                                 type="number"
                                 step="0.1"
                                 min="0"
-                                {...field}
+                                value={field.value ?? 5.5}
                                 onChange={(e) =>
                                   field.onChange(parseFloat(e.target.value) || 5.5)
                                 }
@@ -860,7 +874,7 @@ export default function ModuleSettingsPage({
                                 name={`legacy_grid_rules.${index}.brand`}
                                 render={({ field }) => (
                                   <Select
-                                    value={field.value}
+                                    value={field.value || brands[0] || ""}
                                     onValueChange={field.onChange}
                                   >
                                     <SelectTrigger className="w-32">
@@ -885,7 +899,7 @@ export default function ModuleSettingsPage({
                                   <Input
                                     type="number"
                                     className="w-20"
-                                    {...field}
+                                    value={field.value ?? 111}
                                     onChange={(e) =>
                                       field.onChange(parseInt(e.target.value) || 111)
                                     }
@@ -901,7 +915,7 @@ export default function ModuleSettingsPage({
                                   <Input
                                     type="number"
                                     className="w-20"
-                                    {...field}
+                                    value={field.value ?? 140}
                                     onChange={(e) =>
                                       field.onChange(parseInt(e.target.value) || 140)
                                     }
@@ -917,7 +931,7 @@ export default function ModuleSettingsPage({
                                   <Input
                                     type="number"
                                     className="w-20"
-                                    {...field}
+                                    value={field.value ?? 0}
                                     onChange={(e) =>
                                       field.onChange(parseInt(e.target.value) || 0)
                                     }
@@ -949,7 +963,7 @@ export default function ModuleSettingsPage({
                                 name={`legacy_grid_rules.${index}.mpr_profile`}
                                 render={({ field }) => (
                                   <Select
-                                    value={field.value}
+                                    value={field.value || "Bleu"}
                                     onValueChange={field.onChange}
                                   >
                                     <SelectTrigger className="w-36">
@@ -977,7 +991,7 @@ export default function ModuleSettingsPage({
                                   <Input
                                     type="number"
                                     className="w-24"
-                                    {...field}
+                                    value={field.value ?? 0}
                                     onChange={(e) =>
                                       field.onChange(parseFloat(e.target.value) || 0)
                                     }

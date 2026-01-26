@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Receipt,
   ScrollText,
+  FileSignature,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -20,14 +21,23 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { getFolder, type Folder } from "@/lib/api/folders";
+import { getFolder, sendFolderForSignature, type Folder } from "@/lib/api/folders";
 import {
   getFolderDocuments,
   downloadDocument,
   type Document,
   type DocumentType,
 } from "@/lib/api/documents";
+import { getIntegrationTypes, type IntegrationTypeInfo } from "@/lib/api/integrations";
 
 type DocumentsPageProps = {
   params: Promise<{ folderId: string }>;
@@ -55,6 +65,9 @@ function DocumentsPageContent({ folderId }: { folderId: string }) {
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const [previewErrors, setPreviewErrors] = useState<Record<string, string>>({});
   const blobUrlsRef = useRef<string[]>([]);
+  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
+  const [sendingForSignature, setSendingForSignature] = useState(false);
+  const [yousignConfigured, setYousignConfigured] = useState(false);
 
   // Dédupliquer les documents par type (garder le plus récent)
   const uniqueDocuments = useMemo(() => {
@@ -93,13 +106,20 @@ function DocumentsPageContent({ folderId }: { folderId: string }) {
       setPreviewErrors({});
 
       try {
-        const [folderData, documentsData] = await Promise.all([
+        const [folderData, documentsData, integrationsData] = await Promise.all([
           getFolder(folderId),
           getFolderDocuments(folderId),
+          getIntegrationTypes().catch(() => [] as IntegrationTypeInfo[]),
         ]);
 
         setFolder(folderData);
         setDocuments(documentsData);
+        
+        // Vérifier si Yousign est configuré
+        const yousignIntegration = integrationsData.find(
+          (i) => i.type === "yousign" && i.configured && i.is_active
+        );
+        setYousignConfigured(!!yousignIntegration);
       } catch (err) {
         console.error("Erreur chargement:", err);
         setError(
@@ -201,6 +221,46 @@ function DocumentsPageContent({ folderId }: { folderId: string }) {
     }
   };
 
+  const handleSendForSignature = async (method: "yousign" | "manual") => {
+    setSendingForSignature(true);
+    try {
+      const result = await sendFolderForSignature(folderId, method);
+      
+      if (method === "manual") {
+        // Télécharger le PDF fusionné
+        const blob = result as Blob;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `dossier_${folder?.quote_number || folderId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success("PDF telecharge. Le dossier est maintenant en attente de signature.");
+      } else {
+        // Yousign
+        const response = result as { message: string; signature_request_id?: string; signature_link?: string };
+        toast.success("Dossier envoye pour signature via Yousign");
+        if (response.signature_link) {
+          console.log("Lien de signature:", response.signature_link);
+        }
+      }
+      
+      setSignatureDialogOpen(false);
+      
+      // Recharger les données pour mettre à jour le statut
+      const folderData = await getFolder(folderId);
+      setFolder(folderData);
+    } catch (err) {
+      console.error("Erreur envoi signature:", err);
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors de l'envoi pour signature";
+      toast.error(errorMessage);
+    } finally {
+      setSendingForSignature(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -254,21 +314,97 @@ function DocumentsPageContent({ folderId }: { folderId: string }) {
               </div>
             </div>
 
-            <Button
-              onClick={handleDownloadAll}
-              disabled={downloadingAll || uniqueDocuments.length === 0}
-              className="hidden sm:flex"
-            >
-              {downloadingAll ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="mr-2 h-4 w-4" />
-              )}
-              Tout telecharger
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setSignatureDialogOpen(true)}
+                disabled={uniqueDocuments.length === 0 || folder?.status !== "COMPLETED"}
+                variant="default"
+                className="hidden sm:flex"
+              >
+                <FileSignature className="mr-2 h-4 w-4" />
+                Envoyer pour signature
+              </Button>
+              <Button
+                onClick={handleDownloadAll}
+                disabled={downloadingAll || uniqueDocuments.length === 0}
+                variant="outline"
+                className="hidden sm:flex"
+              >
+                {downloadingAll ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" />
+                )}
+                Tout telecharger
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Dialog de choix de méthode de signature */}
+      <Dialog open={signatureDialogOpen} onOpenChange={setSignatureDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Envoyer pour signature</DialogTitle>
+            <DialogDescription>
+              Choisissez la methode de signature pour ce dossier.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-4">
+            {yousignConfigured && (
+              <Button
+                onClick={() => handleSendForSignature("yousign")}
+                disabled={sendingForSignature}
+                className="w-full justify-start h-auto py-4"
+                variant="outline"
+              >
+                <div className="flex flex-col items-start gap-1">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src="/yousignlogo.png"
+                      alt="Yousign"
+                      className="h-6 w-auto object-contain"
+                    />
+                    <span className="font-semibold">Signature electronique via Yousign</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    Le client recevra un email pour signer electroniquement
+                  </span>
+                </div>
+              </Button>
+            )}
+
+            <Button
+              onClick={() => handleSendForSignature("manual")}
+              disabled={sendingForSignature}
+              className="w-full justify-start h-auto py-4"
+              variant="outline"
+            >
+              <div className="flex flex-col items-start gap-1">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  <span className="font-semibold">Signature manuelle</span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Telechargez le PDF fusionne pour signature physique
+                </span>
+              </div>
+            </Button>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setSignatureDialogOpen(false)}
+              disabled={sendingForSignature}
+            >
+              Annuler
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Content */}
       {uniqueDocuments.length === 0 ? (
@@ -398,7 +534,7 @@ function DocumentsPageContent({ folderId }: { folderId: string }) {
                   </div>
 
                   {/* Document preview */}
-                  <div className="aspect-[8.5/11] lg:aspect-auto lg:h-[calc(100vh-220px)] bg-muted/50">
+                  <div className="aspect-[8.5/11] lg:aspect-auto lg:h-[calc(100vh-150px)] bg-muted/50">
                     {previewErrors[selectedDoc.id] ? (
                       <div className="flex flex-col items-center justify-center h-full gap-3 p-6 text-muted-foreground">
                         <div className="p-4 rounded-full bg-destructive/10">

@@ -28,3 +28,10 @@ export async function downloadDocument(documentId: string): Promise<Blob> {
   const res = await api.get(`/documents/${documentId}/download`);
   return res.blob();
 }
+
+export async function downloadFolderAsPdf(folderId: string): Promise<Blob> {
+  const res = await api.post(`/folders/${folderId}/send-for-signature`, {
+    method: "manual",
+  });
+  return res.blob();
+}

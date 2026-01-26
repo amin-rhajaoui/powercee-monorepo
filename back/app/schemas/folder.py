@@ -12,6 +12,7 @@ class FolderStatus(str, Enum):
     CLOSED = "CLOSED"
     ARCHIVED = "ARCHIVED"
     COMPLETED = "COMPLETED"
+    PENDING_SIGNATURE = "PENDING_SIGNATURE"
 
 
 class FolderBase(BaseModel):
@@ -68,3 +69,9 @@ class PaginatedFoldersResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class SendForSignatureRequest(BaseModel):
+    """Payload pour envoyer un dossier en signature."""
+
+    method: str = Field(..., description="Méthode de signature: 'yousign' ou 'manual'")

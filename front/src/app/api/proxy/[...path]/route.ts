@@ -25,8 +25,10 @@ async function handleRequest(
     headers["Cookie"] = cookieHeader;
   } else {
     // Logger si aucun cookie n'est présent (pour debug)
-    if (path.includes("tenants/me") || path.includes("auth")) {
-      console.warn(`[Proxy] No cookies found for request to ${path}`);
+    // Vérifier si c'est une route qui nécessite une authentification
+    const requiresAuth = !path.includes("auth/login") && !path.includes("auth/register");
+    if (requiresAuth) {
+      console.warn(`[Proxy] No cookies found for authenticated request to ${path}`);
     }
   }
 

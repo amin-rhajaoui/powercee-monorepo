@@ -25,6 +25,7 @@ class FolderStatus(str, Enum):
     CLOSED = "CLOSED"
     ARCHIVED = "ARCHIVED"
     COMPLETED = "COMPLETED"
+    PENDING_SIGNATURE = "PENDING_SIGNATURE"
 
 
 class Folder(Base):
@@ -65,7 +66,7 @@ class Folder(Base):
         SAEnum(FolderStatus),
         default=FolderStatus.IN_PROGRESS,
         nullable=False,
-        doc="Statut du dossier (IN_PROGRESS, CLOSED, ARCHIVED, COMPLETED).",
+        doc="Statut du dossier (IN_PROGRESS, CLOSED, ARCHIVED, COMPLETED, PENDING_SIGNATURE).",
     )
     quote_number: Mapped[str | None] = mapped_column(
         String(50),
