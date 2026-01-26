@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "PowerCEE",
-    "slug": "powercee-mobile",
+    "slug": "powercee",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.powercee.mobile",
+      "bundleIdentifier": "com.aminrhajaoui.powercee",
+      "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Nous avons besoin d'accéder à votre caméra pour scanner des documents"
       }
