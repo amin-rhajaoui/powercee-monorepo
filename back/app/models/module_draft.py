@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.models.tenant import Tenant
     from app.models.client import Client
     from app.models.property import Property
+    from app.models.project import Project
 
 
 class ModuleDraft(Base):
@@ -47,6 +48,12 @@ class ModuleDraft(Base):
         nullable=True,
         index=True,
         doc="Logement associé au brouillon (peut être null si pas encore sélectionné).",
+    )
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+        doc="Projet parent pour BAR-TH-175 (rénovation d'ampleur).",
     )
     current_step: Mapped[int] = mapped_column(
         default=1,
@@ -84,6 +91,7 @@ class ModuleDraft(Base):
     tenant: Mapped["Tenant"] = relationship(back_populates="module_drafts")
     client: Mapped["Client | None"] = relationship(back_populates="module_drafts")
     property: Mapped["Property | None"] = relationship(back_populates="module_drafts")
+    project: Mapped["Project | None"] = relationship(back_populates="module_drafts")
 
     __table_args__ = (
         Index("idx_module_drafts_tenant_module", "tenant_id", "module_code"),

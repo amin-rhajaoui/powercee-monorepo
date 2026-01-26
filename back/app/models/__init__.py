@@ -6,6 +6,7 @@ from .client import Client, ClientType, ClientStatus
 from .property import Property, PropertyType
 from .module_draft import ModuleDraft
 from .folder import Folder, FolderStatus
+from .project import Project, ProjectStatus
 from .climate_zone import ClimateZone
 from .base_temperature import BaseTemperature
 from .product import Product, ProductCategory, ProductType, PowerSupply, ProductHeatPump, ProductThermostat, ProductCompatibility
@@ -31,6 +32,8 @@ __all__ = [
     "ModuleDraft",
     "Folder",
     "FolderStatus",
+    "Project",
+    "ProjectStatus",
     "ClimateZone",
     "BaseTemperature",
     "Product",

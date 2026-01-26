@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from app.models.quote_draft import QuoteDraft
     from app.models.document import Document
     from app.models.integration import Integration
+    from app.models.project import Project
 
 
 class Tenant(Base):
@@ -87,4 +88,5 @@ class Tenant(Base):
     quote_drafts: Mapped[List["QuoteDraft"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     documents: Mapped[List["Document"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     integrations: Mapped[List["Integration"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
+    projects: Mapped[List["Project"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
 

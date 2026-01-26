@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api.routers import auth, users, upload, tenants, agencies, invitations, clients, properties, module_drafts, folders, sizing, products, recommendations, technical_surveys, valuation, module_settings, quote, quote_drafts, documents, integrations
+from app.api.routers import auth, users, upload, tenants, agencies, invitations, clients, properties, module_drafts, folders, sizing, products, recommendations, technical_surveys, valuation, module_settings, quote, quote_drafts, documents, integrations, projects
 
 app = FastAPI(
     title="PowerCEE API",
@@ -52,6 +52,7 @@ app.include_router(quote.router)
 app.include_router(quote_drafts.router)
 app.include_router(documents.router)
 app.include_router(integrations.router)
+app.include_router(projects.router)
 
 
 @app.get("/health", tags=["Health"])
