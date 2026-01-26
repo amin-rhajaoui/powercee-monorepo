@@ -2,8 +2,6 @@
 Service pour finaliser un dossier et générer les documents PDF.
 """
 import logging
-import os
-from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -23,75 +21,10 @@ from app.models.user import User
 from app.services.pdf_fillers import fill_cdc_cee_pdf, fill_tva_attestation
 from app.services.pricing import PricingService
 from app.services.quote_generator import generate_quote_pdf
-from app.services.s3_service import upload_bytes_to_s3, get_file_from_s3
+from app.services.s3_service import upload_bytes_to_s3
 from app.services.sizing_note_service import generate_and_upload_sizing_note
 
 logger = logging.getLogger(__name__)
-
-# ===== DEBUG: Sauvegarder les PDFs pour debugging =====
-DEBUG_PDF_ENABLED = True  # Mettre False pour désactiver le debugging
-DEBUG_PDF_DIR = "/tmp/powercee_pdf_debug"
-
-
-def _debug_save_pdf(pdf_bytes: bytes, stage: str, doc_type: str, folder_id: UUID) -> str | None:
-    """
-    Sauvegarde un PDF pour debugging.
-
-    Args:
-        pdf_bytes: Le contenu du PDF
-        stage: L'étape (1_generated, 2_uploaded_to_s3, 3_served)
-        doc_type: Le type de document (tva, cdc)
-        folder_id: L'ID du dossier
-
-    Returns:
-        Le chemin du fichier sauvegardé
-    """
-    if not DEBUG_PDF_ENABLED:
-        return None
-
-    try:
-        # Créer le dossier de debug
-        os.makedirs(DEBUG_PDF_DIR, exist_ok=True)
-
-        # Générer un nom de fichier unique
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{stage}_{doc_type}_{str(folder_id)[:8]}_{timestamp}.pdf"
-        filepath = os.path.join(DEBUG_PDF_DIR, filename)
-
-        # Sauvegarder le PDF
-        with open(filepath, "wb") as f:
-            f.write(pdf_bytes)
-
-        logger.info(f"[DEBUG PDF] Sauvegardé: {filepath} ({len(pdf_bytes)} bytes)")
-        return filepath
-    except Exception as e:
-        logger.error(f"[DEBUG PDF] Erreur lors de la sauvegarde: {e}")
-        return None
-
-
-def _debug_verify_from_s3(s3_url: str, doc_type: str, folder_id: UUID) -> str | None:
-    """
-    Re-télécharge un PDF depuis S3 immédiatement après l'upload pour vérifier.
-    """
-    if not DEBUG_PDF_ENABLED:
-        return None
-
-    try:
-        # Extraire la clé S3 depuis l'URL
-        s3_key = s3_url.split('.s3.')[1].split('/', 1)[1] if '.s3.' in s3_url else None
-        if not s3_key:
-            logger.error(f"[DEBUG PDF] Impossible d'extraire la clé S3 depuis: {s3_url}")
-            return None
-
-        # Télécharger depuis S3
-        content, _ = get_file_from_s3(s3_key)
-
-        # Sauvegarder
-        return _debug_save_pdf(content, "2_from_s3", doc_type, folder_id)
-    except Exception as e:
-        logger.error(f"[DEBUG PDF] Erreur lors de la vérification S3: {e}")
-        return None
-# ===== FIN DEBUG =====
 
 
 async def generate_quote_number(
@@ -398,18 +331,12 @@ async def finalize_folder(
             logger.error(f"Échec de la génération de l'attestation TVA pour le dossier {folder_id}")
             return None
 
-        # DEBUG: Sauvegarder le PDF généré (étape 1)
-        _debug_save_pdf(tva_pdf_bytes, "1_generated", "tva", folder_id)
-
         tva_url = upload_bytes_to_s3(
             file_bytes=tva_pdf_bytes,
             folder=f"folders/{folder_id}",
             filename="attestation_tva.pdf",
             content_type="application/pdf",
         )
-
-        # DEBUG: Re-télécharger depuis S3 pour vérifier (étape 2)
-        _debug_verify_from_s3(tva_url, "tva", folder_id)
         
         # 8.4. CDC CEE
         # Convertir quote_number en int pour fill_cdc_cee_pdf (utiliser le numéro sans DEV-)
@@ -423,18 +350,12 @@ async def finalize_folder(
             logger.error(f"Échec de la génération du CDC CEE pour le dossier {folder_id}")
             return None
 
-        # DEBUG: Sauvegarder le PDF généré (étape 1)
-        _debug_save_pdf(cdc_pdf_bytes, "1_generated", "cdc", folder_id)
-
         cdc_url = upload_bytes_to_s3(
             file_bytes=cdc_pdf_bytes,
             folder=f"folders/{folder_id}",
             filename="cdc_cee.pdf",
             content_type="application/pdf",
         )
-
-        # DEBUG: Re-télécharger depuis S3 pour vérifier (étape 2)
-        _debug_verify_from_s3(cdc_url, "cdc", folder_id)
         
         # 9. Créer les enregistrements Document en base
         documents = [

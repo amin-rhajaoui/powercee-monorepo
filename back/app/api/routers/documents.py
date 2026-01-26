@@ -2,9 +2,6 @@
 Router pour la gestion des documents générés.
 """
 import io
-import logging
-import os
-from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -14,40 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import RoleChecker, get_db
 from app.models import User, UserRole
-from app.models.document import Document, DocumentType
+from app.models.document import Document
 from app.schemas.document import DocumentResponse
 from app.services.s3_service import get_file_from_s3
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
-logger = logging.getLogger(__name__)
-
-# ===== DEBUG: Sauvegarder les PDFs pour debugging =====
-DEBUG_PDF_ENABLED = True  # Mettre False pour désactiver le debugging
-DEBUG_PDF_DIR = "/tmp/powercee_pdf_debug"
-
-
-def _debug_save_served_pdf(pdf_bytes: bytes, doc_type: str, document_id: UUID) -> str | None:
-    """
-    Sauvegarde le PDF servi au client pour debugging.
-    """
-    if not DEBUG_PDF_ENABLED:
-        return None
-
-    try:
-        os.makedirs(DEBUG_PDF_DIR, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"3_served_{doc_type}_{str(document_id)[:8]}_{timestamp}.pdf"
-        filepath = os.path.join(DEBUG_PDF_DIR, filename)
-
-        with open(filepath, "wb") as f:
-            f.write(pdf_bytes)
-
-        logger.info(f"[DEBUG PDF] Servi sauvegardé: {filepath} ({len(pdf_bytes)} bytes)")
-        return filepath
-    except Exception as e:
-        logger.error(f"[DEBUG PDF] Erreur lors de la sauvegarde: {e}")
-        return None
-# ===== FIN DEBUG =====
 
 
 @router.get("/folders/{folder_id}", response_model=list[DocumentResponse])
@@ -110,14 +78,6 @@ async def download_document(
     
     try:
         content, content_type = get_file_from_s3(s3_key)
-
-        # DEBUG: Sauvegarder le PDF servi (étape 3)
-        doc_type_str = "tva" if document.document_type == DocumentType.TVA_ATTESTATION else (
-            "cdc" if document.document_type == DocumentType.CDC_CEE else "other"
-        )
-        if doc_type_str in ["tva", "cdc"]:
-            _debug_save_served_pdf(content, doc_type_str, document_id)
-
         return StreamingResponse(
             io.BytesIO(content),
             media_type=content_type,
