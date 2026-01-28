@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.property import Property
     from app.models.module_draft import ModuleDraft
     from app.models.folder import Folder
+    from app.models.project import Project
 
 
 class ClientType(str, Enum):
@@ -130,5 +131,6 @@ class Client(Base):
     properties: Mapped[List["Property"]] = relationship(back_populates="client", cascade="all, delete-orphan")
     module_drafts: Mapped[list["ModuleDraft"]] = relationship(back_populates="client")
     folders: Mapped[list["Folder"]] = relationship(back_populates="client")
+    projects: Mapped[list["Project"]] = relationship(back_populates="client")
 
 

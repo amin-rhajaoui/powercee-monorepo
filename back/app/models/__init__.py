@@ -6,6 +6,7 @@ from .client import Client, ClientType, ClientStatus
 from .property import Property, PropertyType
 from .module_draft import ModuleDraft
 from .folder import Folder, FolderStatus
+from .project import Project, ProjectStatus
 from .climate_zone import ClimateZone
 from .base_temperature import BaseTemperature
 from .product import Product, ProductCategory, ProductType, PowerSupply, ProductHeatPump, ProductThermostat, ProductCompatibility
@@ -14,6 +15,8 @@ from .installation_recommendation import InstallationRecommendation
 from .technical_survey import TechnicalSurvey
 from .cee_valuation import CEEValuation
 from .quote_draft import QuoteDraft
+from .document import Document, DocumentType
+from .integration import Integration, IntegrationType
 
 __all__ = [
     "Tenant",
@@ -29,6 +32,8 @@ __all__ = [
     "ModuleDraft",
     "Folder",
     "FolderStatus",
+    "Project",
+    "ProjectStatus",
     "ClimateZone",
     "BaseTemperature",
     "Product",
@@ -44,5 +49,9 @@ __all__ = [
     "ModuleSettings",
     "RoundingMode",
     "QuoteDraft",
+    "Document",
+    "DocumentType",
+    "Integration",
+    "IntegrationType",
 ]
 

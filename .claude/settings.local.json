@@ -4,7 +4,17 @@
       "Bash(python -m pip:*)",
       "Bash(grep:*)",
       "Bash(npm run build:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(python3:*)",
+      "Bash(open:*)",
+      "Bash(md5:*)",
+      "Bash(pip install pdfrw)",
+      "Bash(python test_pdf_debug.py:*)",
+      "Bash(python:*)",
+      "Bash(source venv/bin/activate)",
+      "Bash(alembic downgrade:*)",
+      "Bash(alembic upgrade:*)",
+      "Bash(alembic current:*)"
     ]
   }
 }

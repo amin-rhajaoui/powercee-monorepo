@@ -19,4 +19,5 @@ pip install -r requirements.txt
 
 echo "🚀 Démarrage du serveur PowerCEE API sur le port 8000..."
 # On surveille uniquement le dossier 'app' pour éviter les reloads inutiles liés au 'venv'
-uvicorn app.main:app --reload --reload-dir app --port 8000
+# --host 0.0.0.0 permet d'écouter sur toutes les interfaces réseau (accessible depuis le réseau local)
+uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8000

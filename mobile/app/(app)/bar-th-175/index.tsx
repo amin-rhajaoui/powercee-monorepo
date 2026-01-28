@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, ActivityIndicator, Text } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useModuleDraft } from '@/hooks/useModuleDraft';
 import { ModuleOverview } from '@/components/modules/bar-th-175/ModuleOverview';

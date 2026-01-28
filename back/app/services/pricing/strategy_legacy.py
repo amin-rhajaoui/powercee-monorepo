@@ -52,6 +52,7 @@ class LegacyGridPricingStrategy(PricingStrategy):
             return False
 
         # Chercher une regle correspondante
+        # Note: brand peut etre None, on le gere dans _find_matching_rule
         rule = self._find_matching_rule(
             settings.legacy_grid_rules,
             brand=pac_product.brand,
@@ -153,23 +154,43 @@ class LegacyGridPricingStrategy(PricingStrategy):
     def _find_matching_rule(
         self,
         rules: list[dict],
-        brand: str,
+        brand: str | None,
         etas: int,
         surface: float,
         mpr_color: str | None
     ) -> dict | None:
         """Trouve une regle correspondant aux criteres."""
-        for rule in rules:
+        logger.debug(
+            f"Recherche de regle de grille: brand={brand}, etas={etas}, "
+            f"surface={surface}, mpr_color={mpr_color}"
+        )
+        
+        for idx, rule in enumerate(rules):
+            logger.debug(f"Test regle #{idx + 1}: {rule}")
+            
             # Verifier la marque (case insensitive)
             rule_brand = rule.get("brand", "")
-            if rule_brand.lower() != brand.lower():
-                continue
+            if rule_brand:
+                # Si la regle exige une marque
+                if brand is None:
+                    logger.debug(f"  -> Marque non matchee: regle exige '{rule_brand}' mais produit sans marque")
+                    continue
+                if rule_brand.lower() != brand.lower():
+                    logger.debug(f"  -> Marque non matchee: regle='{rule_brand}', produit='{brand}'")
+                    continue
+            # Si rule_brand est vide, la regle accepte n'importe quelle marque (ou None)
+            
+            logger.debug(f"  -> Marque OK: '{rule_brand}' matche '{brand}'")
 
             # Verifier la plage ETAS
             etas_min = rule.get("etas_min", 0)
             etas_max = rule.get("etas_max", 999)
             if not (etas_min <= etas < etas_max):
+                logger.debug(
+                    f"  -> ETAS non matche: {etas} pas dans [{etas_min}, {etas_max}["
+                )
                 continue
+            logger.debug(f"  -> ETAS OK: {etas} dans [{etas_min}, {etas_max}[")
 
             # Verifier la plage surface
             surface_min = rule.get("surface_min", 0)
@@ -177,11 +198,21 @@ class LegacyGridPricingStrategy(PricingStrategy):
             
             # Verifier la borne inferieure
             if surface < surface_min:
+                logger.debug(
+                    f"  -> Surface non matchee: {surface} < {surface_min}"
+                )
                 continue
             
             # Verifier la borne superieure (si definie)
             if surface_max is not None and surface >= surface_max:
+                logger.debug(
+                    f"  -> Surface non matchee: {surface} >= {surface_max}"
+                )
                 continue
+            logger.debug(
+                f"  -> Surface OK: {surface} dans [{surface_min}, "
+                f"{surface_max if surface_max else 'inf'}["
+            )
 
             # Verifier le profil MPR
             rule_mpr = rule.get("mpr_profile", "").lower()
@@ -190,12 +221,17 @@ class LegacyGridPricingStrategy(PricingStrategy):
             # "non-bleu" matche tout sauf bleu
             if rule_mpr == "non-bleu":
                 if ctx_mpr == "bleu":
+                    logger.debug(f"  -> MPR non matche: regle='non-bleu' mais contexte='bleu'")
                     continue
             elif rule_mpr and rule_mpr != ctx_mpr:
+                logger.debug(f"  -> MPR non matche: regle='{rule_mpr}', contexte='{ctx_mpr}'")
                 continue
+            logger.debug(f"  -> MPR OK: '{rule_mpr}' matche '{ctx_mpr}'")
 
+            logger.info(f"Regle de grille trouvee: {rule}")
             return rule
 
+        logger.debug("Aucune regle de grille ne correspond aux criteres")
         return None
 
     def _build_quote_lines(

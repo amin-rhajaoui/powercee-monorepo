@@ -55,6 +55,10 @@ const agencySchema = z.object({
     .optional()
     .or(z.literal("")),
   vat_number: z.string().max(50).optional().or(z.literal("")),
+  phone: z.string().max(20).optional().or(z.literal("")),
+  email: z.string().email("Email invalide").optional().or(z.literal("")),
+  manager_first_name: z.string().max(100).optional().or(z.literal("")),
+  manager_last_name: z.string().max(100).optional().or(z.literal("")),
 });
 
 type AgencyFormValues = z.infer<typeof agencySchema>;
@@ -90,6 +94,10 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
       is_headquarters: false,
       siret: "",
       vat_number: "",
+      phone: "",
+      email: "",
+      manager_first_name: "",
+      manager_last_name: "",
     },
   });
 
@@ -104,6 +112,10 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
         is_headquarters: agency.is_headquarters || false,
         siret: agency.siret || "",
         vat_number: agency.vat_number || "",
+        phone: agency.phone || "",
+        email: agency.email || "",
+        manager_first_name: agency.manager_first_name || "",
+        manager_last_name: agency.manager_last_name || "",
       });
     } else {
       form.reset({
@@ -115,6 +127,10 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
         is_headquarters: false,
         siret: "",
         vat_number: "",
+        phone: "",
+        email: "",
+        manager_first_name: "",
+        manager_last_name: "",
       });
     }
     // Réinitialiser les suggestions quand le dialog s'ouvre/ferme
@@ -462,6 +478,89 @@ export function AgencyDialog({ open, onOpenChange, onSuccess, agency }: AgencyDi
                     </FormItem>
                   )}
                 />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Téléphone</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Ex: 01 23 45 67 89" 
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email"
+                            placeholder="Ex: contact@entreprise.fr" 
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="manager_first_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prénom du gérant</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Ex: Jean" 
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Prénom du gérant (siège social uniquement)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="manager_last_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nom du gérant</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Ex: Dupont" 
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Nom du gérant (siège social uniquement)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             )}
 

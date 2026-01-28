@@ -248,12 +248,18 @@ def upload_bytes_to_s3(
     Returns:
         L'URL publique du fichier uploadé
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     # Vérification de la configuration AWS
     if not all([settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY, settings.AWS_BUCKET_NAME]):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Configuration AWS S3 manquante."
         )
+    
+    # Log de diagnostic (sans exposer les secrets)
+    logger.info(f"Configuration S3 - Bucket: {settings.AWS_BUCKET_NAME}, Région: {settings.AWS_REGION}, Access Key ID: {settings.AWS_ACCESS_KEY_ID[:10]}...")
     
     # Initialisation du client S3
     s3_client = boto3.client(
@@ -265,6 +271,31 @@ def upload_bytes_to_s3(
     
     # Génération de la clé S3
     s3_key = f"{folder}/{filename}"
+    logger.info(f"Tentative d'upload vers S3 - Bucket: {settings.AWS_BUCKET_NAME}, Clé: {s3_key}, Taille: {len(file_bytes)} bytes")
+    
+    # Test de connexion : vérifier si le bucket existe et est accessible
+    try:
+        s3_client.head_bucket(Bucket=settings.AWS_BUCKET_NAME)
+        logger.info(f"Bucket '{settings.AWS_BUCKET_NAME}' accessible")
+    except ClientError as e:
+        error_code = e.response.get("Error", {}).get("Code", "Unknown")
+        error_message = e.response.get("Error", {}).get("Message", str(e))
+        logger.error(f"Impossible d'accéder au bucket '{settings.AWS_BUCKET_NAME}': {error_code} - {error_message}")
+        if error_code == "403":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Accès refusé au bucket '{settings.AWS_BUCKET_NAME}'. Vérifiez: 1) Les credentials AWS sont corrects, 2) La région '{settings.AWS_REGION}' est correcte, 3) Les permissions IAM sont attachées à l'utilisateur, 4) Le bucket existe dans cette région. Erreur: {error_message}"
+            )
+        elif error_code == "404":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Le bucket '{settings.AWS_BUCKET_NAME}' n'existe pas dans la région '{settings.AWS_REGION}'. Vérifiez le nom du bucket et la région."
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Erreur lors de l'accès au bucket '{settings.AWS_BUCKET_NAME}': {error_code} - {error_message}"
+            )
     
     try:
         # Upload depuis bytes
@@ -275,6 +306,26 @@ def upload_bytes_to_s3(
             s3_key,
             ExtraArgs={"ContentType": content_type}
         )
+        logger.info(f"Upload réussi vers S3: {s3_key}")
+    except ClientError as e:
+        error_code = e.response.get("Error", {}).get("Code", "Unknown")
+        error_message = e.response.get("Error", {}).get("Message", str(e))
+        
+        if error_code == "AccessDenied":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Accès refusé à S3. Vérifiez les permissions IAM et les credentials AWS. Bucket: {settings.AWS_BUCKET_NAME}, Région: {settings.AWS_REGION}, Clé: {s3_key}. Erreur: {error_message}"
+            )
+        elif error_code == "NoSuchBucket":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Le bucket S3 '{settings.AWS_BUCKET_NAME}' n'existe pas ou n'est pas accessible dans la région '{settings.AWS_REGION}'."
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Erreur AWS S3 ({error_code}): {error_message}"
+            )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -305,15 +356,23 @@ def get_file_from_s3(s3_key: str) -> tuple[bytes, str]:
         return content, content_type
     except ClientError as e:
         error_code = e.response.get("Error", {}).get("Code", "Unknown")
+        error_message = e.response.get("Error", {}).get("Message", str(e))
+        
         if error_code == "NoSuchKey":
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Fichier introuvable dans S3."
+                detail=f"Fichier introuvable dans S3. Clé: {s3_key}"
             )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la récupération du fichier depuis S3 : {str(e)}"
-        )
+        elif error_code == "AccessDenied":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Accès refusé à S3. Vérifiez les permissions IAM et les credentials AWS. Bucket: {settings.AWS_BUCKET_NAME}, Région: {settings.AWS_REGION}, Clé: {s3_key}. Erreur: {error_message}"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Erreur AWS S3 ({error_code}): {error_message}"
+            )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

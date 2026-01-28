@@ -41,6 +41,7 @@ class QuotePreview:
     strategy_used: str
     warnings: list[str] = field(default_factory=list)
     rac_ttc: float = 0.0  # RAC peut être ajusté (arrondi, plafonné), donc champ normal
+    has_percentage_distribution: bool = False  # Indique si line_percentages est configuré
     
     # Champs calculés automatiquement (ne pas initialiser manuellement)
     total_ht: float = field(init=False)

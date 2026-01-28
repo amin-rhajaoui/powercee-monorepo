@@ -47,6 +47,7 @@ export type ModuleDraft = {
   module_code: string;
   client_id: string | null;
   property_id: string | null;
+  project_id: string | null;
   current_step: number;
   data: Record<string, unknown>;
   archived_at: string | null;

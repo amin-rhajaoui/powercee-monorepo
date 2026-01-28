@@ -20,7 +20,7 @@ import {
   type QuoteDraft,
   type QuoteDraftCreate,
 } from "@/lib/api/quote-drafts";
-import { getFolder, type Folder } from "@/lib/api/folders";
+import { getFolder, type Folder, finalizeFolder } from "@/lib/api/folders";
 
 import { QuoteLinesTable } from "./_components/quote-lines-table";
 import { QuoteSummary } from "./_components/quote-summary";
@@ -84,6 +84,7 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
   const [isSaving, setIsSaving] = useState(false);
   const [customRac, setCustomRac] = useState<number | null>(null);
   const [isRecalculating, setIsRecalculating] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
 
   // Auto-save timer
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -128,6 +129,8 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
         toast.info(`Reprise du brouillon "${lastDraft.name}"`);
       } else {
         setEditedLines(simulationResult.lines);
+        // Initialiser le RAC avec la valeur calculee par la strategie
+        setCustomRac(simulationResult.rac_ttc);
       }
 
     } catch (err) {
@@ -263,8 +266,9 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
       clearTimeout(racRecalcTimerRef.current);
     }
 
-    // Only recalculate if strategy is COST_PLUS
-    if (quote?.strategy_used === "COST_PLUS" && folder) {
+    // Toujours recalculer si pourcentages configures ou si on veut forcer le recalcul
+    // Appeler l'API avec le nouveau target_rac pour garantir la coherence avec le backend
+    if (folder) {
       // Set loading state
       setIsRecalculating(true);
 
@@ -291,7 +295,7 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
         }
       }, 500);
     }
-  }, [quote?.strategy_used, folder, folderId, productIds]);
+  }, [folder, folderId, productIds]);
 
 
 
@@ -352,10 +356,62 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
     }
   };
 
-  const handleGenerateQuote = () => {
-    // TODO: Navigate to quote PDF generation or save final quote
-    toast.success("Génération du devis (à implémenter)");
-    router.push(`/app/folders/${folderId}/quote`);
+  const handleGenerateQuote = async () => {
+    if (!folder || folder.status === "COMPLETED") {
+      toast.error("Ce dossier est déjà finalisé");
+      return;
+    }
+
+    if (!quote) {
+      toast.error("Impossible de générer les documents : simulation manquante");
+      return;
+    }
+
+    setIsFinalizing(true);
+    try {
+      // Si aucun brouillon n'existe, en créer un automatiquement avec les données actuelles
+      if (!currentDraftId) {
+        try {
+          const totals = calculateTotals();
+          const draftData: QuoteDraftCreate = {
+            name: generateDraftName(),
+            folder_id: folderId,
+            module_code: folder.module_code || "BAR-TH-171",
+            product_ids: productIds,
+            lines: editedLines,
+            total_ht: totals.total_ht,
+            total_ttc: totals.total_ttc,
+            rac_ttc: totals.rac_ttc,
+            cee_prime: quote.cee_prime,
+            margin_ht: quote.margin_ht,
+            margin_percent: quote.margin_percent,
+            strategy_used: quote.strategy_used,
+            warnings: quote.warnings,
+          };
+
+          const newDraft = await createQuoteDraft(draftData);
+          setCurrentDraftId(newDraft.id);
+          // Ne pas afficher de toast pour ne pas perturber l'utilisateur
+        } catch (draftErr) {
+          console.error("Erreur lors de la création automatique du brouillon:", draftErr);
+          // On continue quand même, le backend pourra peut-être créer le brouillon
+        }
+      }
+
+      // Finaliser le dossier
+      const result = await finalizeFolder(folderId);
+      toast.success(`Documents générés avec succès. Numéro de devis: ${result.quote_number}`);
+      router.push(`/app/folders/${folderId}/documents`);
+    } catch (err) {
+      console.error("Erreur lors de la finalisation:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Erreur lors de la génération des documents"
+      );
+    } finally {
+      setIsFinalizing(false);
+    }
   };
 
   const calculateTotals = () => {
@@ -417,9 +473,13 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
             )}
             Sauvegarder brouillon
           </Button>
-          <Button onClick={handleGenerateQuote}>
-            <FileText className="mr-2 h-4 w-4" />
-            Générer le devis
+          <Button onClick={handleGenerateQuote} disabled={isFinalizing || folder?.status === "COMPLETED"}>
+            {isFinalizing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="mr-2 h-4 w-4" />
+            )}
+            {folder?.status === "COMPLETED" ? "Documents générés" : "Générer les documents"}
           </Button>
         </div>
       </div>
@@ -464,7 +524,22 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
               <CardTitle>Lignes du devis</CardTitle>
             </CardHeader>
             <CardContent>
-              <QuoteLinesTable lines={editedLines} onUpdateLine={handleUpdateLine} />
+              {folder?.status === "COMPLETED" ? (
+                <Alert>
+                  <AlertDescription>
+                    Ce dossier est finalisé. Les modifications ne sont plus possibles.
+                    <Button
+                      variant="link"
+                      className="ml-2 p-0 h-auto"
+                      onClick={() => router.push(`/app/folders/${folderId}/documents`)}
+                    >
+                      Voir les documents
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <QuoteLinesTable lines={editedLines} onUpdateLine={handleUpdateLine} />
+              )}
             </CardContent>
           </Card>
 
@@ -475,7 +550,7 @@ function SimulationPageContent({ folderId }: { folderId: string }) {
             racTtc={totals.rac_ttc}
             marginHt={quote?.margin_ht || 0}
             marginPercent={quote?.margin_percent || 0}
-            onUpdateRac={handleUpdateRac}
+            onUpdateRac={folder?.status === "COMPLETED" ? undefined : handleUpdateRac}
           />
         </div>
 

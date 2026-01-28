@@ -1,12 +1,14 @@
 /**
  * FileUpload Component
  * Handles PDF and image file uploads using expo-document-picker and expo-image-picker
+ * On iOS, uses native VisionKit document scanner for better UX
  */
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { launchScanner } from '@dariyd/react-native-document-scanner';
 import { Ionicons } from '@expo/vector-icons';
 import { uploadDocument, uploadImage, UploadResponse } from '@/lib/api/upload';
 
@@ -39,6 +41,90 @@ export function FileUpload({
 }: FileUploadProps) {
     const [fileName, setFileName] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+
+    const handleDocumentScan = async () => {
+        // iOS only: Use native VisionKit document scanner
+        try {
+            // Request camera permission
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission requise', 'L\'accès à la caméra est nécessaire pour scanner des documents');
+                return;
+            }
+
+            // Launch the native document scanner
+            const result = await launchScanner({
+                quality: 0.9,
+                includeBase64: false,
+            });
+
+            if (result.didCancel) {
+                return;
+            }
+
+            if (result.error) {
+                console.error('Scanner error:', result.errorMessage);
+                Alert.alert('Erreur', result.errorMessage || 'Erreur lors du scan du document');
+                return;
+            }
+
+            if (!result.images || result.images.length === 0) {
+                Alert.alert('Erreur', 'Aucune image scannée');
+                return;
+            }
+
+            // Use the first scanned page (or all pages if needed)
+            // For now, we'll use the first page as the main document
+            const scannedImage = result.images[0];
+
+            // Validate size
+            if (scannedImage.fileSize && scannedImage.fileSize > maxSizeMB * 1024 * 1024) {
+                Alert.alert('Erreur', `Le fichier scanné est trop volumineux (max ${maxSizeMB}Mo).`);
+                return;
+            }
+
+            const imageName = scannedImage.fileName || `scan_${Date.now()}.${scannedImage.type === 'image/png' ? 'png' : 'jpg'}`;
+
+            setFileName(imageName);
+
+            if (onFileChange) {
+                onFileChange({
+                    uri: scannedImage.uri,
+                    name: imageName,
+                    type: scannedImage.type || 'image/jpeg',
+                });
+            }
+
+            // Upload immediately
+            setIsUploading(true);
+            try {
+                const response = await uploadImage({
+                    uri: scannedImage.uri,
+                    fileName: imageName,
+                    mimeType: scannedImage.type,
+                });
+                onChange(response.url);
+            } catch (error) {
+                console.error('Upload error:', error);
+                Alert.alert('Erreur', 'Erreur lors du téléversement du document scanné');
+                setFileName(null);
+                if (onFileChange) onFileChange(null);
+            } finally {
+                setIsUploading(false);
+            }
+        } catch (error) {
+            console.error('Document scanner error:', error);
+            // Fallback to document picker if scanner fails
+            Alert.alert(
+                'Erreur',
+                'Impossible d\'ouvrir le scanner. Voulez-vous utiliser le sélecteur de fichiers ?',
+                [
+                    { text: 'Oui', onPress: handleDocumentPick },
+                    { text: 'Non', style: 'cancel' },
+                ]
+            );
+        }
+    };
 
     const handleDocumentPick = async () => {
         try {
@@ -156,21 +242,45 @@ export function FileUpload({
     };
 
     const showPickerOptions = () => {
+        // On iOS, use native document scanner for PDF/any files
+        // On Android, use the standard document picker
+        const isIOS = Platform.OS === 'ios';
+
         if (accept === 'pdf') {
-            handleDocumentPick();
+            if (isIOS) {
+                // iOS: Use native VisionKit scanner
+                handleDocumentScan();
+            } else {
+                // Android: Use standard document picker
+                handleDocumentPick();
+            }
         } else if (accept === 'image') {
+            // For images, always use ImagePicker (camera/gallery)
             Alert.alert('Choisir une image', '', [
                 { text: 'Appareil photo', onPress: () => handleImagePick(true) },
                 { text: 'Galerie', onPress: () => handleImagePick(false) },
                 { text: 'Annuler', style: 'cancel' },
             ]);
         } else {
-            Alert.alert('Choisir un fichier', '', [
-                { text: 'Document (PDF)', onPress: handleDocumentPick },
-                { text: 'Photo (Caméra)', onPress: () => handleImagePick(true) },
-                { text: 'Photo (Galerie)', onPress: () => handleImagePick(false) },
-                { text: 'Annuler', style: 'cancel' },
-            ]);
+            // accept === 'any'
+            if (isIOS) {
+                // iOS: Offer scanner as first option, then fallback options
+                Alert.alert('Choisir un fichier', '', [
+                    { text: 'Scanner un document', onPress: handleDocumentScan },
+                    { text: 'Document (PDF)', onPress: handleDocumentPick },
+                    { text: 'Photo (Caméra)', onPress: () => handleImagePick(true) },
+                    { text: 'Photo (Galerie)', onPress: () => handleImagePick(false) },
+                    { text: 'Annuler', style: 'cancel' },
+                ]);
+            } else {
+                // Android: Standard options
+                Alert.alert('Choisir un fichier', '', [
+                    { text: 'Document (PDF)', onPress: handleDocumentPick },
+                    { text: 'Photo (Caméra)', onPress: () => handleImagePick(true) },
+                    { text: 'Photo (Galerie)', onPress: () => handleImagePick(false) },
+                    { text: 'Annuler', style: 'cancel' },
+                ]);
+            }
         }
     };
 

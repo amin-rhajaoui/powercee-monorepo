@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 // Types
 // ============================================================================
 
-export type FolderStatus = "IN_PROGRESS" | "CLOSED" | "ARCHIVED";
+export type FolderStatus = "IN_PROGRESS" | "CLOSED" | "ARCHIVED" | "COMPLETED" | "PENDING_SIGNATURE";
 
 export type Folder = {
   id: string;
@@ -18,6 +18,7 @@ export type Folder = {
   mpr_color?: string | null;
   emitter_type?: string | null;
   zone_climatique?: string | null;
+  quote_number?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -80,5 +81,46 @@ export async function listFolders(params: {
   if (params.status) searchParams.set("status", params.status);
 
   const res = await api.get(`/folders?${searchParams.toString()}`);
+  return res.json();
+}
+
+export type FinalizeFolderResponse = {
+  folder_id: string;
+  quote_number: string;
+  documents: Array<{
+    id: string;
+    folder_id: string;
+    tenant_id: string;
+    document_type: "sizing_note" | "quote" | "tva_attestation" | "cdc_cee";
+    file_url: string;
+    created_at: string;
+  }>;
+};
+
+export async function finalizeFolder(folderId: string): Promise<FinalizeFolderResponse> {
+  const res = await api.post(`/folders/${folderId}/finalize`, {} as any);
+  return res.json();
+}
+
+export type SendForSignatureResponse = {
+  message: string;
+  signature_request_id?: string;
+  signature_link?: string;
+};
+
+export async function sendFolderForSignature(
+  folderId: string,
+  method: "yousign" | "manual"
+): Promise<SendForSignatureResponse | Blob> {
+  const res = await api.post(`/folders/${folderId}/send-for-signature`, {
+    method,
+  });
+  
+  // Si c'est manuel, on retourne un Blob (PDF)
+  if (method === "manual") {
+    return res.blob();
+  }
+  
+  // Sinon, on retourne la réponse JSON
   return res.json();
 }

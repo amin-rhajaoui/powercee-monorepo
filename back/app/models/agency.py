@@ -63,6 +63,26 @@ class Agency(Base):
         nullable=True,
         doc="Numéro de TVA intracommunautaire (optionnel)"
     )
+    phone: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Numéro de téléphone de l'agence"
+    )
+    email: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        doc="Adresse email de l'agence"
+    )
+    manager_first_name: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        doc="Prénom du gérant (siège social uniquement)"
+    )
+    manager_last_name: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        doc="Nom du gérant (siège social uniquement)"
+    )
 
     # Isolation Multi-tenant
     tenant_id: Mapped[uuid.UUID] = mapped_column(

@@ -77,6 +77,7 @@ async def simulate_quote(
             margin_percent=round(result.margin_percent, 2),
             strategy_used=result.strategy_used,
             warnings=result.warnings,
+            has_percentage_distribution=result.has_percentage_distribution,
         )
 
     except ValuationMissingError as e:

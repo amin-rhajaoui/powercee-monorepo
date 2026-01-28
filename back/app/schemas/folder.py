@@ -11,6 +11,8 @@ class FolderStatus(str, Enum):
     IN_PROGRESS = "IN_PROGRESS"
     CLOSED = "CLOSED"
     ARCHIVED = "ARCHIVED"
+    COMPLETED = "COMPLETED"
+    PENDING_SIGNATURE = "PENDING_SIGNATURE"
 
 
 class FolderBase(BaseModel):
@@ -53,6 +55,7 @@ class FolderResponse(FolderBase):
     mpr_color: str | None = Field(None, description="Couleur MPR calculée (Bleu, Jaune, Violet, Rose, Inconnu)")
     emitter_type: str | None = Field(None, description="Type d'émetteur (BASSE_TEMPERATURE, MOYENNE_HAUTE_TEMPERATURE)")
     zone_climatique: str | None = Field(None, description="Zone climatique (h1, h2, h3)")
+    quote_number: str | None = Field(None, description="Numéro de devis généré lors de la finalisation")
     created_at: datetime
     updated_at: datetime
 
@@ -66,3 +69,9 @@ class PaginatedFoldersResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class SendForSignatureRequest(BaseModel):
+    """Payload pour envoyer un dossier en signature."""
+
+    method: str = Field(..., description="Méthode de signature: 'yousign' ou 'manual'")
