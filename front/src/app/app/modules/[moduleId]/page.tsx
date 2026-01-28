@@ -69,10 +69,10 @@ const STEP_DESCRIPTIONS = [
 ];
 
 // Steps spécifiques pour BAR-TH-175
-const STEP_LABELS_175 = ["Audit", "Simulation", "Devis"];
+const STEP_LABELS_175 = ["Client", "Simulation", "Devis"];
 
 const STEP_DESCRIPTIONS_175 = [
-  "Renseignez les données d'audit énergétique",
+  "Sélectionnez ou créez le client pour ce dossier de rénovation d'ampleur",
   "Configurez la simulation de rénovation",
   "Générez le devis",
 ];
@@ -485,11 +485,13 @@ function ModuleWizard({
   moduleId,
   moduleCode,
   moduleTitle,
+  moduleCategory,
   draftId,
 }: {
   moduleId: string;
   moduleCode: string;
   moduleTitle: string;
+  moduleCategory: "PARTICULIER" | "PROFESSIONNEL";
   draftId: string;
 }) {
   const { currentStep, draftData, draft, saveDraft, isLoading } = useModuleDraft({
@@ -547,6 +549,7 @@ function ModuleWizard({
             <Step1Audit175
               moduleId={moduleId}
               moduleCode={moduleCode}
+              moduleCategory={moduleCategory}
               draftId={effectiveDraftId}
               initialData={draftData}
               onSave={saveDraft}
@@ -707,6 +710,7 @@ function ModuleDetailPageContent({ moduleId }: ModuleDetailPageContentProps) {
         moduleId={moduleId}
         moduleCode={module.code}
         moduleTitle={module.title}
+        moduleCategory={module.category}
         draftId={draftId}
       />
     );

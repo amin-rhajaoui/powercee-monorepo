@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Search, Check, User } from "lucide-react";
+import { Search, Check, User, Mail, Phone, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +13,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ClientDialog } from "@/app/app/clients/_components/client-dialog";
 import { listClients, getClient, type Client } from "@/lib/api/clients";
 import { toast } from "sonner";
@@ -129,46 +134,67 @@ export function ClientSelector({ value, onChange, disabled = false, clientType =
     return name || client.email;
   };
 
+  const getClientInitials = (client: Client): string => {
+    if (client.type === "PROFESSIONNEL" && client.company_name) {
+      return client.company_name.slice(0, 2).toUpperCase();
+    }
+    const first = client.first_name?.slice(0, 1) ?? "";
+    const last = client.last_name?.slice(0, 1) ?? "";
+    return (first + last).toUpperCase() || "?";
+  };
+
   if (!isMounted) {
     return (
       <div className="space-y-4">
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full h-12 justify-start"
-          disabled
-        >
-          <User className="h-4 w-4 mr-2" />
-          <span className="text-muted-foreground">Chargement...</span>
-        </Button>
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+          <Skeleton className="h-11 w-11 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-48" />
+          </div>
+        </div>
       </div>
     );
   }
 
+  const emptyTitle = searchQuery
+    ? "Aucun client trouvé"
+    : clientType === "PROFESSIONNEL"
+      ? "Aucun bailleur social"
+      : "Aucun client particulier";
+  const emptyDescription = searchQuery
+    ? "Essayez un autre nom ou une autre adresse email."
+    : clientType === "PROFESSIONNEL"
+      ? "Créez un premier bailleur pour ce projet."
+      : "Créez un premier client pour ce dossier CEE.";
+
   return (
     <div className="space-y-4">
-      {/* Bouton principal de sélection - Plus visible et intuitif */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button
             type="button"
             variant="outline"
             className={cn(
-              "w-full h-14 justify-start text-left font-normal",
-              selectedClient && "bg-primary/5 border-primary/20"
+              "w-full h-14 justify-start text-left font-normal rounded-xl border-2 transition-colors",
+              selectedClient
+                ? "bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/30"
+                : "hover:bg-muted/50 hover:border-muted-foreground/20"
             )}
             disabled={isLoading || disabled}
           >
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className={cn(
-                "flex items-center justify-center h-10 w-10 rounded-full",
-                selectedClient ? "bg-primary/10" : "bg-muted"
-              )}>
-                <User className={cn(
-                  "h-5 w-5",
-                  selectedClient ? "text-primary" : "text-muted-foreground"
-                )} />
-              </div>
+              {selectedClient ? (
+                <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-primary/20">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                    {getClientInitials(selectedClient)}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+                  <User className="h-5 w-5 text-muted-foreground" />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 {selectedClient ? (
                   <>
@@ -182,9 +208,9 @@ export function ClientSelector({ value, onChange, disabled = false, clientType =
                     )}
                   </>
                 ) : (
-                  <div className="text-muted-foreground">
+                  <span className="text-muted-foreground">
                     Sélectionner un client...
-                  </div>
+                  </span>
                 )}
               </div>
               {selectedClient && (
@@ -193,110 +219,159 @@ export function ClientSelector({ value, onChange, disabled = false, clientType =
             </div>
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-[85vh] sm:h-[80vh]">
-          <SheetHeader>
-            <SheetTitle>Sélectionner un client</SheetTitle>
-            <SheetDescription>
+        <SheetContent
+          side="bottom"
+          className="flex h-[85vh] max-h-[720px] flex-col gap-0 rounded-t-2xl border-t px-0 sm:h-[80vh]"
+        >
+          <SheetHeader className="px-4 pb-4 pr-12 pt-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <SheetTitle className="text-xl">Sélectionner un client</SheetTitle>
+            <SheetDescription className="text-base">
               {clientType === "PROFESSIONNEL"
-                ? "Choisissez le bailleur social pour ce projet"
-                : "Choisissez le client particulier pour ce dossier CEE"}
+                ? "Choisissez le bailleur social pour ce projet."
+                : "Choisissez le client particulier pour ce dossier CEE."}
             </SheetDescription>
           </SheetHeader>
-          
-          <div className="mt-6 space-y-4">
-            {/* Barre de recherche */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
+          <div className="flex flex-1 flex-col gap-4 overflow-hidden px-4">
+            <div className="relative shrink-0">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Rechercher un client..."
+                placeholder="Rechercher par nom ou email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-11"
+                className="h-11 rounded-xl border-border bg-muted/30 pl-10 focus-visible:ring-2 focus-visible:ring-primary/20"
                 autoFocus
               />
             </div>
 
-            {/* Liste des clients */}
-            <div className="space-y-2 overflow-y-auto max-h-[calc(85vh-200px)] sm:max-h-[calc(80vh-200px)]">
+            <div className="flex min-h-0 flex-1 flex-col">
               {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-sm text-muted-foreground">Chargement...</div>
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-4"
+                    >
+                      <Skeleton className="h-11 w-11 shrink-0 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-36" />
+                        <Skeleton className="h-3 w-48" />
+                        <Skeleton className="h-3 w-28" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : filteredClients.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <User className="h-12 w-12 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {searchQuery
-                      ? "Aucun client trouvé"
-                      : clientType === "PROFESSIONNEL"
-                        ? "Aucun client professionnel disponible"
-                        : "Aucun client particulier disponible"}
-                  </p>
-                </div>
+                <EmptyState
+                  icon={User}
+                  title={emptyTitle}
+                  description={emptyDescription}
+                  action={
+                    searchQuery
+                      ? undefined
+                      : {
+                          label: "Créer un client",
+                          onClick: () => {
+                            setIsSheetOpen(false);
+                            setIsCreateDialogOpen(true);
+                          },
+                          icon: UserPlus,
+                        }
+                  }
+                  secondaryAction={
+                    searchQuery
+                      ? {
+                          label: "Effacer la recherche",
+                          onClick: () => setSearchQuery(""),
+                        }
+                      : undefined
+                  }
+                  className="flex-1"
+                />
               ) : (
-                filteredClients.map((client) => {
-                  const isSelected = value === client.id;
-                  return (
-                    <button
-                      key={client.id}
-                      type="button"
-                      onClick={() => handleClientSelect(client.id)}
-                      className={cn(
-                        "w-full text-left p-4 rounded-lg border transition-colors",
-                        "hover:bg-accent hover:border-accent-foreground/20",
-                        isSelected && "bg-primary/10 border-primary/30"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={cn(
-                          "flex items-center justify-center h-10 w-10 rounded-full flex-shrink-0",
-                          isSelected ? "bg-primary/20" : "bg-muted"
-                        )}>
-                          <User className={cn(
-                            "h-5 w-5",
-                            isSelected ? "text-primary" : "text-muted-foreground"
-                          )} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className={cn(
-                            "font-medium truncate",
-                            isSelected && "text-primary"
-                          )}>
-                            {getClientDisplayName(client)}
+                <ScrollArea className="min-h-0 flex-1 pr-2">
+                  <div className="space-y-2 pb-4">
+                    {filteredClients.map((client) => {
+                      const isSelected = value === client.id;
+                      return (
+                        <button
+                          key={client.id}
+                          type="button"
+                          onClick={() => handleClientSelect(client.id)}
+                          className={cn(
+                            "flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all",
+                            "hover:border-primary/30 hover:bg-primary/5 hover:shadow-sm",
+                            isSelected &&
+                              "border-primary/40 bg-primary/10 shadow-sm"
+                          )}
+                        >
+                          <Avatar
+                            className={cn(
+                              "h-11 w-11 shrink-0",
+                              isSelected && "ring-2 ring-primary/40"
+                            )}
+                          >
+                            <AvatarFallback
+                              className={cn(
+                                "text-sm font-medium",
+                                isSelected
+                                  ? "bg-primary/20 text-primary"
+                                  : "bg-muted text-muted-foreground"
+                              )}
+                            >
+                              {getClientInitials(client)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <div
+                              className={cn(
+                                "font-medium truncate",
+                                isSelected && "text-primary"
+                              )}
+                            >
+                              {getClientDisplayName(client)}
+                            </div>
+                            {client.email && (
+                              <div className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+                                <Mail className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{client.email}</span>
+                              </div>
+                            )}
+                            {client.phone && (
+                              <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Phone className="h-3.5 w-3.5 shrink-0" />
+                                {client.phone}
+                              </div>
+                            )}
                           </div>
-                          {client.email && (
-                            <div className="text-sm text-muted-foreground truncate">
-                              {client.email}
+                          {isSelected && (
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
+                              <Check className="h-4 w-4 text-primary-foreground" />
                             </div>
                           )}
-                          {client.phone && (
-                            <div className="text-xs text-muted-foreground mt-0.5">
-                              {client.phone}
-                            </div>
-                          )}
-                        </div>
-                        {isSelected && (
-                          <Check className="h-5 w-5 text-primary flex-shrink-0" />
-                        )}
-                      </div>
-                    </button>
-                  );
-                })
+                        </button>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               )}
             </div>
 
-            {/* Bouton créer nouveau client */}
-            <div className="pt-4 border-t">
+            <Separator className="shrink-0" />
+            <div className="shrink-0 pb-6">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-11"
+                className="h-12 w-full rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 font-medium hover:border-primary/50 hover:bg-primary/10"
                 onClick={() => {
                   setIsSheetOpen(false);
                   setIsCreateDialogOpen(true);
                 }}
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <UserPlus className="mr-2 h-4 w-4" />
                 Créer un nouveau client
               </Button>
             </div>
@@ -304,27 +379,37 @@ export function ClientSelector({ value, onChange, disabled = false, clientType =
         </SheetContent>
       </Sheet>
 
-      {/* Affichage des informations du client sélectionné */}
       {selectedClient && (
-        <Card className="border-primary/20 bg-primary/5">
+        <Card className="overflow-hidden rounded-xl border-2 border-primary/20 bg-primary/5">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Client sélectionné</CardTitle>
-            <CardDescription className="text-xs">
-              Informations du foyer
-            </CardDescription>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+                <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                  {getClientInitials(selectedClient)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-base">Client sélectionné</CardTitle>
+                <CardDescription className="text-xs">
+                  Informations du foyer
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-2 text-sm">
-              <div>
-                <span className="font-medium">Nom :</span>{" "}
-                {getClientDisplayName(selectedClient)}
+            <div className="flex flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span>{getClientDisplayName(selectedClient)}</span>
               </div>
-              <div>
-                <span className="font-medium">Email :</span> {selectedClient.email}
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span>{selectedClient.email}</span>
               </div>
               {selectedClient.phone && (
-                <div>
-                  <span className="font-medium">Téléphone :</span> {selectedClient.phone}
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span>{selectedClient.phone}</span>
                 </div>
               )}
             </div>
