@@ -22,9 +22,10 @@ type ClientSelectorProps = {
   value: string | null;
   onChange: (clientId: string | null) => void;
   disabled?: boolean;
+  clientType?: "PARTICULIER" | "PROFESSIONNEL";
 };
 
-export function ClientSelector({ value, onChange, disabled = false }: ClientSelectorProps) {
+export function ClientSelector({ value, onChange, disabled = false, clientType = "PARTICULIER" }: ClientSelectorProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -38,7 +39,7 @@ export function ClientSelector({ value, onChange, disabled = false }: ClientSele
     setIsMounted(true);
   }, []);
 
-  // Charger la liste des clients particuliers
+  // Charger la liste des clients selon le type
   useEffect(() => {
     async function loadClients() {
       setIsLoading(true);
@@ -47,7 +48,7 @@ export function ClientSelector({ value, onChange, disabled = false }: ClientSele
           page: 1,
           pageSize: 100,
           status: "ACTIF",
-          type: "PARTICULIER",
+          type: clientType,
         });
         setClients(data.items);
       } catch (error) {
@@ -58,7 +59,7 @@ export function ClientSelector({ value, onChange, disabled = false }: ClientSele
       }
     }
     loadClients();
-  }, []);
+  }, [clientType]);
 
   // Charger le client sélectionné
   useEffect(() => {
@@ -105,7 +106,7 @@ export function ClientSelector({ value, onChange, disabled = false }: ClientSele
         page: 1,
         pageSize: 100,
         status: "ACTIF",
-        type: "PARTICULIER",
+        type: clientType,
       });
       setClients(data.items);
       // Sélectionner le dernier client créé (le premier de la liste triée par date)
@@ -196,7 +197,9 @@ export function ClientSelector({ value, onChange, disabled = false }: ClientSele
           <SheetHeader>
             <SheetTitle>Sélectionner un client</SheetTitle>
             <SheetDescription>
-              Choisissez le client particulier pour ce dossier CEE
+              {clientType === "PROFESSIONNEL"
+                ? "Choisissez le bailleur social pour ce projet"
+                : "Choisissez le client particulier pour ce dossier CEE"}
             </SheetDescription>
           </SheetHeader>
           
@@ -225,7 +228,9 @@ export function ClientSelector({ value, onChange, disabled = false }: ClientSele
                   <p className="text-sm text-muted-foreground">
                     {searchQuery
                       ? "Aucun client trouvé"
-                      : "Aucun client particulier disponible"}
+                      : clientType === "PROFESSIONNEL"
+                        ? "Aucun client professionnel disponible"
+                        : "Aucun client particulier disponible"}
                   </p>
                 </div>
               ) : (
@@ -331,7 +336,7 @@ export function ClientSelector({ value, onChange, disabled = false }: ClientSele
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onSuccess={handleClientCreated}
-        forceType="PARTICULIER"
+        forceType={clientType}
       />
     </div>
   );

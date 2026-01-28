@@ -39,6 +39,9 @@ import { Step1Household } from "./_steps/step-1-household";
 import { Step2Property } from "./_steps/step-2-property";
 import { Step3Documents } from "./_steps/step-3-documents";
 import { Step4TechnicalVisit } from "./_steps/step-4-technical-visit";
+import { Step1Audit175 } from "./_steps/step-1-audit-175";
+import { Step2Simulation175 } from "./_steps/step-2-simulation-175";
+import { Step3Devis175 } from "./_steps/step-3-devis-175";
 import { listModuleDrafts, type ModuleDraft } from "@/lib/api/modules";
 import { listFolders, type Folder } from "@/lib/api/folders";
 import { getClient, type Client } from "@/lib/api/clients";
@@ -63,6 +66,15 @@ const STEP_DESCRIPTIONS = [
   "Selectionnez ou creez un logement pour ce dossier",
   "Collectez les documents administratifs du foyer",
   "Relevez les informations techniques du logement",
+];
+
+// Steps spécifiques pour BAR-TH-175
+const STEP_LABELS_175 = ["Audit", "Simulation", "Devis"];
+
+const STEP_DESCRIPTIONS_175 = [
+  "Renseignez les données d'audit énergétique",
+  "Configurez la simulation de rénovation",
+  "Générez le devis",
 ];
 
 const FOLDER_STATUS_LABELS: Record<string, string> = {
@@ -497,8 +509,12 @@ function ModuleWizard({
     }
   }, [currentStep, isInitialLoad, isLoading]);
 
+  // Déterminer les labels et descriptions selon le module
+  const stepLabels = moduleCode === "BAR-TH-175" ? STEP_LABELS_175 : STEP_LABELS;
+  const stepDescriptions = moduleCode === "BAR-TH-175" ? STEP_DESCRIPTIONS_175 : STEP_DESCRIPTIONS;
+
   const handleNext = () => {
-    if (activeStep < STEP_LABELS.length) {
+    if (activeStep < stepLabels.length) {
       const nextStep = activeStep + 1;
       setActiveStep(nextStep);
     }
@@ -523,6 +539,50 @@ function ModuleWizard({
   const renderStep = () => {
     const effectiveDraftId = draftId === "new" ? null : draftId;
 
+    // Gérer BAR-TH-175 avec ses steps spécifiques
+    if (moduleCode === "BAR-TH-175") {
+      switch (activeStep) {
+        case 1:
+          return (
+            <Step1Audit175
+              moduleId={moduleId}
+              moduleCode={moduleCode}
+              draftId={effectiveDraftId}
+              initialData={draftData}
+              onSave={saveDraft}
+              onNext={handleNext}
+            />
+          );
+        case 2:
+          return (
+            <Step2Simulation175
+              moduleId={moduleId}
+              moduleCode={moduleCode}
+              draftId={effectiveDraftId}
+              initialData={draftData}
+              draft={draft}
+              onSave={saveDraft}
+              onNext={handleNext}
+              onPrevious={handlePrevious}
+            />
+          );
+        case 3:
+          return (
+            <Step3Devis175
+              moduleId={moduleId}
+              moduleCode={moduleCode}
+              draftId={effectiveDraftId}
+              initialData={draftData}
+              onSave={saveDraft}
+              onPrevious={handlePrevious}
+            />
+          );
+        default:
+          return null;
+      }
+    }
+
+    // Steps BAR-TH-171 (comportement par défaut)
     switch (activeStep) {
       case 1:
         return (
@@ -573,14 +633,25 @@ function ModuleWizard({
     }
   };
 
+  // Déterminer l'URL de retour selon la présence de project_id
+  const backUrl = draft?.project_id
+    ? `/app/projects/${draft.project_id}`
+    : `/app/modules/${moduleId}`;
+  const backLabel = draft?.project_id ? "Retour au Projet" : undefined;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href={`/app/modules/${moduleId}`}>
+          <Link href={backUrl}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
+        {backLabel && (
+          <Button variant="ghost" asChild>
+            <Link href={backUrl}>{backLabel}</Link>
+          </Button>
+        )}
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">{moduleTitle}</h1>
           <p className="text-muted-foreground mt-1 font-mono text-sm">
@@ -594,18 +665,18 @@ function ModuleWizard({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">
-                Etape {activeStep} : {STEP_LABELS[activeStep - 1]}
+                Etape {activeStep} : {stepLabels[activeStep - 1]}
               </h2>
               <span className="text-sm text-muted-foreground">
-                {activeStep} / {STEP_LABELS.length}
+                {activeStep} / {stepLabels.length}
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              {STEP_DESCRIPTIONS[activeStep - 1]}
+              {stepDescriptions[activeStep - 1]}
             </p>
           </div>
           <Progress
-            value={(activeStep / STEP_LABELS.length) * 100}
+            value={(activeStep / stepLabels.length) * 100}
             className="h-2"
           />
         </div>

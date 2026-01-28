@@ -9,6 +9,9 @@
       "distribution": "internal",
       "ios": {
         "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://192.168.1.19:8000"
       }
     },
     "preview": {
@@ -22,7 +25,10 @@
       "ios": {
         "simulator": false
       },
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://powercee-monorepo-production.up.railway.app"
+      }
     }
   },
   "submit": {
