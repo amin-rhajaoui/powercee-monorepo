@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SortingState } from "@tanstack/react-table";
-import { Plus, RefreshCw, Search, LayoutGrid, LayoutList } from "lucide-react";
+import { Plus, RefreshCw, Search, LayoutGrid, LayoutList, Boxes } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   ProductListItem,
   Product,
@@ -311,16 +313,41 @@ export default function StockPage() {
       ) : (
         <div>
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
-              Chargement des produits...
+            // Grid skeleton loading
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <Skeleton className="h-40 w-full" />
+                  <CardContent className="p-4 space-y-3">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <div className="flex justify-between pt-2">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-5 w-16" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : products.length === 0 ? (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
-              Aucun produit trouve.
-            </div>
+            <Card>
+              <CardContent className="p-0">
+                <EmptyState
+                  icon={Boxes}
+                  title="Aucun produit trouve"
+                  description="Ajoutez des produits au catalogue ou modifiez vos filtres de recherche."
+                  action={{
+                    label: "Ajouter un produit",
+                    onClick: onCreate,
+                    icon: Plus,
+                  }}
+                  className="py-16"
+                />
+              </CardContent>
+            </Card>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 stagger-children">
                 {products.map((product) => (
                   <ProductCard
                     key={product.id}
@@ -330,30 +357,48 @@ export default function StockPage() {
                 ))}
               </div>
               {/* Pagination for grid view */}
-              <div className="mt-6 flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Affichage {Math.min((page - 1) * pageSize + 1, total)} -{" "}
-                  {Math.min(page * pageSize, total)} sur {total}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page - 1)}
-                    disabled={page === 1 || isLoading}
-                  >
-                    Precedent
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page + 1)}
-                    disabled={page >= Math.ceil(total / pageSize) || isLoading}
-                  >
-                    Suivant
-                  </Button>
-                </div>
-              </div>
+              <Card className="mt-6">
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      Affichage{" "}
+                      <span className="font-medium text-foreground">
+                        {Math.min((page - 1) * pageSize + 1, total)}
+                      </span>{" "}
+                      -{" "}
+                      <span className="font-medium text-foreground">
+                        {Math.min(page * pageSize, total)}
+                      </span>{" "}
+                      sur <span className="font-medium text-foreground">{total}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(page - 1)}
+                        disabled={page === 1 || isLoading}
+                      >
+                        Precedent
+                      </Button>
+                      <span className="text-sm px-2">
+                        <span className="font-medium">{page}</span>
+                        <span className="text-muted-foreground">
+                          {" "}
+                          / {Math.ceil(total / pageSize)}
+                        </span>
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(page + 1)}
+                        disabled={page >= Math.ceil(total / pageSize) || isLoading}
+                      >
+                        Suivant
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </>
           )}
         </div>

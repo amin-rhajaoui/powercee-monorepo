@@ -14,7 +14,10 @@
       "Bash(source venv/bin/activate)",
       "Bash(alembic downgrade:*)",
       "Bash(alembic upgrade:*)",
-      "Bash(alembic current:*)"
+      "Bash(alembic current:*)",
+      "Bash(ls:*)",
+      "Bash(xargs:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

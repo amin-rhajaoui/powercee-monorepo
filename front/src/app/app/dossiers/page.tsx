@@ -32,14 +32,23 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import {
-  Loader2,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
   FolderOpen,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Eye,
   FileText,
   CheckCircle2,
   FileSignature,
+  Plus,
+  Filter,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -331,6 +340,45 @@ interface FoldersTableContentProps {
   viewMode: ViewMode;
 }
 
+function TableRowSkeleton() {
+  return (
+    <TableRow className="animate-pulse">
+      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+      <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+      <TableCell className="text-right"><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
+    </TableRow>
+  );
+}
+
+function getEmptyStateMessage(viewMode: ViewMode) {
+  switch (viewMode) {
+    case "to-finalize":
+      return {
+        title: "Aucun dossier a finaliser",
+        description: "Tous vos dossiers en cours sont complets ou en attente de signature.",
+      };
+    case "pending-signature":
+      return {
+        title: "Aucun dossier en attente",
+        description: "Aucun dossier n'est actuellement en attente de signature.",
+      };
+    case "completed":
+      return {
+        title: "Aucun dossier termine",
+        description: "Vous n'avez pas encore de dossiers termines.",
+      };
+    default:
+      return {
+        title: "Aucun dossier",
+        description: "Commencez par creer votre premier dossier pour suivre vos projets.",
+      };
+  }
+}
+
 function FoldersTableContent({
   folders,
   clientsMap,
@@ -345,142 +393,192 @@ function FoldersTableContent({
   formatDate,
   viewMode,
 }: FoldersTableContentProps) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const emptyState = getEmptyStateMessage(viewMode);
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Additional Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filtres avancés</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <div className="w-48">
-              <Select
-                value={statusFilter}
-                onValueChange={onStatusFilterChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Tous les statuts</SelectItem>
-                  <SelectItem value="IN_PROGRESS">En cours</SelectItem>
-                  <SelectItem value="PENDING_SIGNATURE">En attente de signature</SelectItem>
-                  <SelectItem value="COMPLETED">Terminé</SelectItem>
-                  <SelectItem value="CLOSED">Clos</SelectItem>
-                  <SelectItem value="ARCHIVED">Archive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex flex-col gap-4">
+      {/* Collapsible Filters */}
+      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filtres avances
+                </CardTitle>
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                    filtersOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <div className="flex gap-4">
+                <div className="w-48">
+                  <Select
+                    value={statusFilter}
+                    onValueChange={onStatusFilterChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Statut" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Tous les statuts</SelectItem>
+                      <SelectItem value="IN_PROGRESS">En cours</SelectItem>
+                      <SelectItem value="PENDING_SIGNATURE">En attente de signature</SelectItem>
+                      <SelectItem value="COMPLETED">Termine</SelectItem>
+                      <SelectItem value="CLOSED">Clos</SelectItem>
+                      <SelectItem value="ARCHIVED">Archive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Table */}
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : folders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <FolderOpen className="h-12 w-12 mb-4" />
-                  <p className="font-medium">Aucun dossier trouvé</p>
-                  <p className="text-sm mt-1">
-                    {viewMode === "to-finalize" && "Aucun dossier à finaliser"}
-                    {viewMode === "pending-signature" && "Aucun dossier en attente de signature"}
-                    {viewMode === "completed" && "Aucun dossier complété"}
-                    {viewMode === "all" && "Commencez par créer un nouveau dossier"}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Module</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead>Numéro de devis</TableHead>
-                        <TableHead>Créé le</TableHead>
-                        <TableHead>Mis à jour</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {folders.map((folder) => (
-                        <TableRow key={folder.id}>
-                          <TableCell className="font-medium">
-                            {getClientName(folder.client_id)}
-                          </TableCell>
-                          <TableCell>{getModuleLabel(folder.module_code)}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              className={FOLDER_STATUS_COLORS[folder.status]}
-                              variant={FOLDER_STATUS_VARIANTS[folder.status]}
-                            >
-                              {FOLDER_STATUS_LABELS[folder.status]}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {folder.quote_number ? (
-                              <Badge variant="secondary" className="font-mono">
-                                {folder.quote_number}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{formatDate(folder.created_at)}</TableCell>
-                          <TableCell>{formatDate(folder.updated_at)}</TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link href={`/app/folders/${folder.id}`}>
-                                <Eye className="h-4 w-4 mr-1" />
-                                Voir
-                              </Link>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+          {isLoading ? (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead>Client</TableHead>
+                  <TableHead>Module</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Numero de devis</TableHead>
+                  <TableHead>Cree le</TableHead>
+                  <TableHead>Mis a jour</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableRowSkeleton key={i} />
+                ))}
+              </TableBody>
+            </Table>
+          ) : folders.length === 0 ? (
+            <EmptyState
+              icon={FolderOpen}
+              title={emptyState.title}
+              description={emptyState.description}
+              action={
+                viewMode === "all"
+                  ? {
+                      label: "Creer un dossier",
+                      onClick: () => {},
+                      icon: Plus,
+                    }
+                  : undefined
+              }
+              className="py-16"
+            />
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold">Client</TableHead>
+                    <TableHead className="font-semibold">Module</TableHead>
+                    <TableHead className="font-semibold">Statut</TableHead>
+                    <TableHead className="font-semibold">Numero de devis</TableHead>
+                    <TableHead className="font-semibold">Cree le</TableHead>
+                    <TableHead className="font-semibold">Mis a jour</TableHead>
+                    <TableHead className="font-semibold text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {folders.map((folder, index) => (
+                    <TableRow
+                      key={folder.id}
+                      className="animate-fade-in transition-colors"
+                      style={{ animationDelay: `${index * 30}ms` }}
+                    >
+                      <TableCell className="font-medium">
+                        {getClientName(folder.client_id)}
+                      </TableCell>
+                      <TableCell>{getModuleLabel(folder.module_code)}</TableCell>
+                      <TableCell>
+                        <Badge
+                          className={FOLDER_STATUS_COLORS[folder.status]}
+                          variant={FOLDER_STATUS_VARIANTS[folder.status]}
+                        >
+                          {FOLDER_STATUS_LABELS[folder.status]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {folder.quote_number ? (
+                          <Badge variant="secondary" className="font-mono">
+                            {folder.quote_number}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(folder.created_at)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(folder.updated_at)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/app/folders/${folder.id}`}>
+                            <Eye className="h-4 w-4 mr-1" />
+                            Voir
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t">
-                      <p className="text-sm text-muted-foreground">
-                        {pagination.total} dossier{pagination.total > 1 ? "s" : ""}{" "}
-                        au total
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onPageChange(pagination.page - 1)}
-                          disabled={pagination.page === 1}
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <span className="text-sm">
-                          Page {pagination.page} sur {totalPages}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onPageChange(pagination.page + 1)}
-                          disabled={pagination.page >= totalPages}
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{pagination.total}</span>{" "}
+                    dossier{pagination.total > 1 ? "s" : ""} au total
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onPageChange(pagination.page - 1)}
+                      disabled={pagination.page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm px-2">
+                      <span className="font-medium">{pagination.page}</span>
+                      <span className="text-muted-foreground"> / {totalPages}</span>
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onPageChange(pagination.page + 1)}
+                      disabled={pagination.page >= totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               )}
-            </CardContent>
-          </Card>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
