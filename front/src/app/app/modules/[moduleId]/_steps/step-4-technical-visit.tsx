@@ -186,6 +186,7 @@ export function Step4TechnicalVisit({
   const isFloorIsolated = form.watch("is_floor_isolated");
   const wallIsolationType = form.watch("wall_isolation_type");
   const wallSameYear = form.watch("wall_same_year");
+  const wallYearInterior = form.watch("wall_isolation_year_interior");
 
   // Initialize form with draft data when it loads
   useEffect(() => {
@@ -227,15 +228,15 @@ export function Step4TechnicalVisit({
     }
   }, [nbLevels]);
 
-  // Handle wall_same_year checkbox - duplicate year to both fields
+  // Handle wall_same_year: sync interior → exterior whenever interior changes or box is checked
   useEffect(() => {
     if (wallSameYear && wallIsolationType === "DOUBLE") {
-      const interiorYear = form.getValues("wall_isolation_year_interior");
-      if (interiorYear) {
-        form.setValue("wall_isolation_year_exterior", interiorYear);
+      const year = form.getValues("wall_isolation_year_interior");
+      if (typeof year === "number" && !Number.isNaN(year)) {
+        form.setValue("wall_isolation_year_exterior", year);
       }
     }
-  }, [wallSameYear, wallIsolationType, form]);
+  }, [wallSameYear, wallIsolationType, wallYearInterior, form]);
 
   // Update emitter for a specific level
   const handleEmitterChange = (level: number, emitters: EmitterType[]) => {
@@ -248,6 +249,14 @@ export function Step4TechnicalVisit({
 
   const handleValidateFolder = async (e?: React.MouseEvent) => {
     e?.preventDefault();
+
+    const values = form.getValues();
+    if (values.wall_same_year && values.wall_isolation_type === "DOUBLE") {
+      const interior = values.wall_isolation_year_interior;
+      if (typeof interior === "number" && !Number.isNaN(interior)) {
+        form.setValue("wall_isolation_year_exterior", interior);
+      }
+    }
 
     const isValid = await form.trigger();
     if (!isValid) {
@@ -617,9 +626,15 @@ export function Step4TechnicalVisit({
                     <Checkbox
                       id="wall_same_year"
                       checked={wallSameYear}
-                      onCheckedChange={(checked) =>
-                        form.setValue("wall_same_year", checked === true)
-                      }
+                      onCheckedChange={(checked) => {
+                        form.setValue("wall_same_year", checked === true);
+                        if (checked === true) {
+                          const interior = form.getValues("wall_isolation_year_interior");
+                          if (typeof interior === "number" && !Number.isNaN(interior)) {
+                            form.setValue("wall_isolation_year_exterior", interior);
+                          }
+                        }
+                      }}
                     />
                     <Label
                       htmlFor="wall_same_year"
