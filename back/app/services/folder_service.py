@@ -368,7 +368,11 @@ async def update_folder(
             # Si les données fiscales sont supprimées, attribuer une couleur par défaut
             folder.mpr_color = "Rose"
             logger.info("Couleur MPR par défaut attribuée: Rose (données fiscales supprimées)")
-    
+
+        # Appliquer la mise à jour de data (merge pour supporter mises à jour partielles,
+        # ex. sizing_validated, sizing_note_pdf_url, etc.)
+        folder.data = {**(folder.data or {}), **new_data}
+
     # Appliquer les autres mises à jour
     for field, value in update_data.items():
         if field != "data":  # On a déjà traité data ci-dessus

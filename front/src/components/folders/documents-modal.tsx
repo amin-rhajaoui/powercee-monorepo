@@ -23,7 +23,11 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, Info } from "lucide-react";
 import { toast } from "sonner";
-import { barTh171Step3Schema, type BarTh171Step3Values } from "@/app/app/modules/[moduleId]/_schemas";
+import { 
+  barTh171Step3Schema, 
+  type BarTh171Step3Values,
+  type BarTh171Step2Values 
+} from "@/app/app/modules/[moduleId]/_schemas";
 import { FileUpload } from "@/components/upload/file-upload";
 import { api } from "@/lib/api";
 import { updateFolder, type Folder } from "@/lib/api/folders";
@@ -77,8 +81,8 @@ export function DocumentsModal({
 
   // Récupérer les données du dossier
   const folderData = folder.data || {};
-  const step3Data = folderData.step3 || {};
-  const step2Data = folderData.step2 || {};
+  const step3Data = (folderData.step3 || {}) as Partial<BarTh171Step3Values>;
+  const step2Data = (folderData.step2 || {}) as Partial<BarTh171Step2Values>;
   const occupationStatus = step2Data.occupation_status;
 
   const form = useForm<BarTh171Step3Values>({
@@ -98,7 +102,7 @@ export function DocumentsModal({
   // Recharger les valeurs quand le dossier change
   useEffect(() => {
     if (open && folder) {
-      const step3Data = (folder.data || {}).step3 || {};
+      const step3Data = ((folder.data || {}).step3 || {}) as Partial<BarTh171Step3Values>;
       form.reset({
         tax_notice_url: step3Data.tax_notice_url ?? undefined,
         is_address_same_as_works: step3Data.is_address_same_as_works ?? undefined,

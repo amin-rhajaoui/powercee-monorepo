@@ -54,6 +54,7 @@ import {
   Settings,
   Plus,
   Trash2,
+  Copy,
   Grid3X3,
   Calculator,
   Package,
@@ -178,6 +179,7 @@ export default function ModuleSettingsPage({
   const {
     fields: gridRuleFields,
     append: appendGridRule,
+    insert: insertGridRule,
     remove: removeGridRule,
   } = useFieldArray({
     control: form.control,
@@ -294,6 +296,14 @@ export default function ModuleSettingsPage({
       rac_amount: 1990,
     });
     setAddRuleDialogOpen(false);
+  };
+
+  const handleDuplicateGridRule = (index: number) => {
+    const rules = form.getValues("legacy_grid_rules");
+    const rule = rules[index];
+    if (!rule) return;
+    insertGridRule(index + 1, { ...rule });
+    toast.success("Regle dupliquee.");
   };
 
   if (loading) {
@@ -862,7 +872,7 @@ export default function ModuleSettingsPage({
                           <TableHead>Surface max</TableHead>
                           <TableHead>Profil MPR</TableHead>
                           <TableHead>RAC (EUR)</TableHead>
-                          <TableHead className="w-16"></TableHead>
+                          <TableHead className="w-24 text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -999,15 +1009,27 @@ export default function ModuleSettingsPage({
                                 )}
                               />
                             </TableCell>
-                            <TableCell>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeGridRule(index)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Dupliquer la regle"
+                                  onClick={() => handleDuplicateGridRule(index)}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Supprimer la regle"
+                                  onClick={() => removeGridRule(index)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
