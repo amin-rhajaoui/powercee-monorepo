@@ -230,6 +230,19 @@ async def get_valuation_price(
         # Si pas de prix pour cette couleur, essayer value_standard
         price = valuation.value_standard
 
+    # Si toujours None, essayer de trouver une valeur disponible parmi les couleurs MPR
+    if price is None:
+        # Essayer dans l'ordre : bleu, jaune, violet, rose
+        for color_value in [valuation.value_blue, valuation.value_yellow, 
+                           valuation.value_violet, valuation.value_rose]:
+            if color_value is not None:
+                price = color_value
+                logger.info(
+                    f"Utilisation du prix par défaut ({price} EUR/MWh) pour tenant={tenant_id}, "
+                    f"operation={operation_code}, color={mpr_color}"
+                )
+                break
+
     if price is None:
         logger.warning(
             f"Prix non défini pour tenant={tenant_id}, operation={operation_code}, color={mpr_color}"

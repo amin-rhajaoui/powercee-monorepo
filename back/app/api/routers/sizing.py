@@ -1,6 +1,7 @@
 """
 Routes API pour le dimensionnement de PAC.
 """
+import logging
 from uuid import UUID
 from datetime import datetime, timezone
 
@@ -23,6 +24,8 @@ from app.services import cee_calculator_service
 from app.services.pricing import PricingService, PricingError
 from app.core.exceptions import ValuationMissingError
 from app.schemas.sizing import SizingRequest, SizingResponse, SizingPdfRequest, CompatiblePacResponse, CompatiblePacsResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/folders", tags=["Sizing"])
 
@@ -740,9 +743,14 @@ async def get_compatible_pacs_for_folder(
             )
         except ValuationMissingError:
             cee_error = "MISSING_VALUATION"
-        except Exception:
-            # En cas d'erreur inattendue, on ne bloque pas l'affichage des PAC
-            cee_error = "MISSING_VALUATION"
+        except Exception as e:
+            # En cas d'erreur inattendue, on log l'erreur mais on ne bloque pas l'affichage des PAC
+            # On ne définit PAS cee_error car ce n'est pas une erreur de valorisation manquante
+            logger.error(
+                f"Erreur lors du calcul de la prime CEE pour la PAC {product.id}: {str(e)}",
+                exc_info=True
+            )
+            # cee_error reste None, estimated_cee_prime reste None
 
         # Calculer le RAC selon la stratégie de pricing
         estimated_rac = None

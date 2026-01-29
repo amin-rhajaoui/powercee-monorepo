@@ -51,6 +51,7 @@ import { SizingDialog } from "@/components/sizing/sizing-dialog";
 import { RecommendationsSheet } from "@/components/recommendations";
 import { getRecommendation, type InstallationRecommendation } from "@/lib/api/recommendations";
 import { TechnicalSurveySheet } from "@/components/folders/technical-survey-sheet";
+import { DocumentsModal } from "@/components/folders/documents-modal";
 import {
   getTechnicalSurvey,
   isTechnicalSurveyComplete,
@@ -475,6 +476,7 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
   const [recommendation, setRecommendation] = useState<InstallationRecommendation | null>(null);
   const [technicalSurveySheetOpen, setTechnicalSurveySheetOpen] = useState(false);
   const [technicalSurvey, setTechnicalSurvey] = useState<TechnicalSurvey | null>(null);
+  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
 
   // Load folder data
   useEffect(() => {
@@ -920,12 +922,26 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="space-y-3 pl-7">
-                  <DocumentStatusRow
-                    label="Avis d'imposition"
-                    url={data.tax_notice_url as string | null | undefined}
-                    downloadLabel="Télécharger l'avis d'imposition"
-                  />
+                <div className="space-y-4 pl-7">
+                  {/* Bouton pour ouvrir la modale */}
+                  <div className="flex justify-end pb-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDocumentsModalOpen(true)}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      Compléter les documents
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <DocumentStatusRow
+                      label="Avis d'imposition"
+                      url={data.tax_notice_url as string | null | undefined}
+                      downloadLabel="Télécharger l'avis d'imposition"
+                    />
                   <DocumentStatusRow
                     label="Justificatif de domicile"
                     url={data.address_proof_url as string | null | undefined}
@@ -953,6 +969,7 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
                     label="Personnes dans le foyer"
                     value={data.household_size as number}
                   />
+                  </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -1167,6 +1184,24 @@ function FolderDetailPageContent({ folderId }: { folderId: string }) {
           setTechnicalSurvey(updatedSurvey);
         }}
       />
+
+      {/* Modal des documents administratifs */}
+      {folder && (
+        <DocumentsModal
+          open={documentsModalOpen}
+          onOpenChange={setDocumentsModalOpen}
+          folder={folder}
+          onUpdate={async () => {
+            // Recharger les données du dossier
+            try {
+              const updatedFolder = await getFolder(folderId);
+              setFolder(updatedFolder);
+            } catch (error) {
+              console.error("Erreur lors du rechargement du dossier:", error);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

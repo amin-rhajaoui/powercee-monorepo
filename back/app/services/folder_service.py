@@ -220,6 +220,12 @@ async def create_folder_from_draft(
             logger.warning("Code postal non disponible pour calculer la couleur MPR")
     else:
         logger.warning("RFR ou household_size manquant pour calculer la couleur MPR")
+    
+    # Toujours attribuer une couleur par défaut si aucune couleur n'a été calculée
+    # "Rose" correspond à la catégorie la plus élevée et est généralement utilisée pour "Autres couleurs"
+    if mpr_color is None:
+        mpr_color = "Rose"
+        logger.info("Couleur MPR par défaut attribuée: Rose (prospect non éligible à MPR ou données manquantes)")
 
     # Déterminer le type d'émetteur
     emitters_configuration = step4_data.get("emitters_configuration")
@@ -313,8 +319,60 @@ async def update_folder(
         return None
 
     update_data = folder_update.model_dump(exclude_unset=True)
+    
+    # Si les données sont mises à jour, vérifier si on doit recalculer la couleur MPR
+    if "data" in update_data:
+        new_data = update_data["data"]
+        folder_data = folder.data or {}
+        step3_data = new_data.get("step3") or {}
+        
+        # Vérifier si les données fiscales ont été mises à jour
+        reference_tax_income = step3_data.get("reference_tax_income")
+        household_size = step3_data.get("household_size")
+        
+        # Si les données fiscales sont présentes, recalculer la couleur MPR
+        if reference_tax_income is not None and household_size is not None:
+            # Récupérer le code postal depuis la Property
+            postal_code = None
+            if folder.property_id:
+                property_result = await db.execute(
+                    select(Property).where(
+                        and_(
+                            Property.id == folder.property_id,
+                            Property.tenant_id == user.tenant_id,
+                        )
+                    )
+                )
+                property_obj = property_result.scalar_one_or_none()
+                if property_obj and property_obj.postal_code:
+                    postal_code = property_obj.postal_code
+            
+            if postal_code:
+                try:
+                    mpr_color = calculate_mpr_color(
+                        rfr=float(reference_tax_income),
+                        household_size=household_size,
+                        postal_code=postal_code
+                    )
+                    folder.mpr_color = mpr_color
+                    logger.info(f"Couleur MPR recalculée: {mpr_color} pour RFR={reference_tax_income}, household_size={household_size}, postal_code={postal_code}")
+                except Exception as e:
+                    logger.error(f"Erreur lors du recalcul de la couleur MPR: {e}")
+                    # Attribuer une couleur par défaut si le calcul échoue
+                    folder.mpr_color = "Rose"
+            else:
+                logger.warning("Code postal non disponible pour recalculer la couleur MPR")
+                # Attribuer une couleur par défaut
+                folder.mpr_color = "Rose"
+        elif reference_tax_income is None and household_size is None:
+            # Si les données fiscales sont supprimées, attribuer une couleur par défaut
+            folder.mpr_color = "Rose"
+            logger.info("Couleur MPR par défaut attribuée: Rose (données fiscales supprimées)")
+    
+    # Appliquer les autres mises à jour
     for field, value in update_data.items():
-        setattr(folder, field, value)
+        if field != "data":  # On a déjà traité data ci-dessus
+            setattr(folder, field, value)
 
     await db.commit()
     await db.refresh(folder)
